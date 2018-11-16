@@ -133,6 +133,27 @@ target_inputs = [
 rule all:
     input: target_inputs
 
+rule make_mt_gmap_db:
+    input:
+        mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
+    output:
+        gmap_db = gsnap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
+    shell:
+        """
+        # gmap_build command
+        """
+
+rule make_mt_n_gmap_db:
+    input:
+        mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
+        n_genome_fasta = "data/genomes/{ref_genome_n}.fasta"
+    output:
+        gmap_db = gsnap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+    shell:
+        """
+        # gmap_build command
+        """
+
 rule map_MT_PE_SE:
     input:
         #gsnap_inputs,
@@ -151,7 +172,7 @@ rule map_MT_PE_SE:
         # gsnap_db = config['map_exome']['gsnap_mt_db'],
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample'
     log:
-        log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{map_dir}/logmt.txt"
+        log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/" + map_dir + "/logmt.txt"
     threads:
         config["map"]["gsnap_threads"]
     run:
