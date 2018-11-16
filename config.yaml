@@ -1,0 +1,6 @@
+results:    "results"
+map_dir:    "map"
+log_dir:    "logs"
+map:
+    gsnap_db_dir:       "gmap_db"
+    gsnap_threads:      10
