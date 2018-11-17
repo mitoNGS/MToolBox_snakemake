@@ -4,7 +4,9 @@
 conda env create -n heterobasidion_mt -f environment.yaml
 ```
 
-## Activation/deactivation of the conda environment
+## Running the pipeline
+
+### Activation/deactivation of the conda environment
 
 ```bash
 # To activate this environment, use
