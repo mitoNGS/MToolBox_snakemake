@@ -21,9 +21,6 @@ def get_out_files(df, res_dir="results", map_dir="map"):
 def get_mt_genomes(df):
     return list(set(analysis_tab['ref_genome_mt']))
 
-def get_other_fields(df, ref_genome_mt, field):
-    return list(df.loc[df['ref_genome_mt'] == ref_genome_mt, field])
-
 def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     sig=1
     pai=1
@@ -110,6 +107,14 @@ def gsnap_inputs(wildcards):
     elif (seq_type == "both"):
         return expand("data/reads/{sample}{strand}.fastq.gz", strand=[".R1", ".R2", ""], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
 
+# def gsnap_inputs(wildcards):
+#     if (seq_type == "pe"):
+#         return expand("{filtered_reads}/{sample}.{strand}.fastq.gz", strand=["R1", "R2"], sample=wildcards.sample, filtered_reads=config['proj_dirs']['filtered_reads'])
+#     elif (seq_type == "se"):
+#         return expand("{filtered_reads}/{sample}.fastq.gz", sample=wildcards.sample, filtered_reads=config['proj_dirs']['filtered_reads'])
+#     elif (seq_type == "both"):
+#         return expand("{filtered_reads}/{sample}{strand}.fastq.gz", strand=[".R1", ".R2", ""], sample=wildcards.sample, filtered_reads=config['proj_dirs']['filtered_reads'])
+
 # def filtering_reads_input():
 #     if (seq_type == "pe"):
 #         return "outhumanP.sam"
@@ -123,22 +128,19 @@ def gsnap_inputs(wildcards):
 
 seq_type = "both"
 
-#outpaths = get_out_files(analysis_tab, res_dir = "results", map_dir = "map")
-outpaths = get_mt_genomes(analysis_tab)
+outpaths = get_out_files(analysis_tab, res_dir = "results", map_dir = "map")
 
 target_inputs = [
     outpaths ]
 
-rule all:
-    input:
-        expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab))
-
+# rule all:
+#     input: target_inputs
 
 #"results/vcf/{ref_genome_mt}.vcf"
-# rule all:
-#     input:
-#         target_inputs,
-#         #all_VCF = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab))
+rule all:
+    input:
+        target_inputs,
+        #all_VCF = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab))
 
 rule make_mt_gmap_db:
     input:
@@ -160,7 +162,7 @@ rule make_mt_n_gmap_db:
         """
         # gmap_build command
         """
-#
+
 rule map_MT_PE_SE:
     input:
         #gsnap_inputs,
@@ -289,23 +291,11 @@ rule filtering_mt_alignments:
                           output.sam, \
                           gsnap_db = {params.gsnap_db})
 
-rule make_single_VCF:
+rule make_VCF:
     input:
         sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
     output:
-        single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
-    shell:
-        """
-        """
-
-rule make_VCF:
-    input:
-        single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf", \
-                        sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"), \
-                        ref_genome_mt = wildcards.ref_genome_mt, \
-                        ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
-    output:
-        "results/vcf/{ref_genome_mt}.vcf"
+        vcf = "results/vcf/{ref_genome_mt}.vcf"
     shell:
         """
         # do something
