@@ -2,13 +2,15 @@ import pandas as pd
 import os
 
 # fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab = pd.read_table("analysis.tab", sep = "\t", comment='#')
+analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
+print(reference_tab.loc["mt1", "ref_genome_mt_file"])
 
 configfile: "config.yaml"
 res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
-gsnap_db_dir = config["map"]["gsnap_db_dir"]
+gmap_db_dir = config["map"]["gmap_db_dir"]
 # res_dir = "results"
 # map_dir = "map"
 
@@ -17,6 +19,9 @@ def get_out_files(df, res_dir="results", map_dir="map"):
     for row in df.itertuples():
         outpaths.append("{}/OUT_{}_{}_{}/{}/OUT.sam".format(res_dir, getattr(row, "sample"), getattr(row, "ref_genome_mt"), getattr(row, "ref_genome_n"), map_dir))
     return outpaths
+
+def get_genome_files(df, ref_genome_mt, field):
+    return expand(df.loc[ref_genome_mt, field])
 
 def get_mt_genomes(df):
     return list(set(analysis_tab['ref_genome_mt']))
@@ -142,11 +147,19 @@ rule all:
 
 rule make_mt_gmap_db:
     input:
-        mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
+        #mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
+        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}", \
+                            ref_genome_mt_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     output:
-        gmap_db = gsnap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
+    params:
+        gmap_db_dir = config["map"]["gmap_db_dir"],
+        #gsnap_db_folder = config['map']['gsnap_db_folder'],
+        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
     shell:
         """
+        if {input.mt_genome_fasta} 
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
         # gmap_build command
         """
 
@@ -155,10 +168,11 @@ rule make_mt_n_gmap_db:
         mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
         n_genome_fasta = "data/genomes/{ref_genome_n}.fasta"
     output:
-        gmap_db = gsnap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
     shell:
         """
         # gmap_build command
+        gmap_build -D $gmap_db -d $database_name_nfasta_rcrs -g $nfasta_rcrs -s numeric-alpha -k $kmer
         """
 #
 rule map_MT_PE_SE:
@@ -167,31 +181,31 @@ rule map_MT_PE_SE:
         R1 = "data/reads/{sample}.R1.fastq.gz",
         R2 = "data/reads/{sample}.R2.fastq.gz",
         SE = "data/reads/{sample}.fastq.gz",
-        gsnap_db = gsnap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
         #index=gsnap_index
     output:
         outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/outmt.sam"
     params:
-        gsnap_db_dir = config["map"]["gsnap_db_dir"],
+        gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gsnap_db = lambda wildcards, input: os.path.split(input.gsnap_db)[1].split(".")[0],
+        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0],
         # gsnap_db_folder = config['map_exome']['gsnap_db_folder'],
         # gsnap_db = config['map_exome']['gsnap_mt_db'],
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample'
     log:
         log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/" + map_dir + "/logmt.txt"
     threads:
-        config["map"]["gsnap_threads"]
+        config["map"]["gmap_threads"]
     run:
         if seq_type == "pe":
             print("PE mode")
-            shell("gsnap -D {params.gsnap_db_folder} -d {params.gsnap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} > {output.outmt_sam} 2> {log}")
         if seq_type == "se":
             print("SE mode")
-            shell("gsnap -D {params.gsnap_db_folder} -d {params.gsnap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} > {output.outmt_sam} 2> {log}")
         elif seq_type == "both":
             print("PE + SE mode")
-            shell("gsnap -D {params.gsnap_db_folder} -d {params.gsnap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} > {output.outmt_sam} 2> {log}")
 
 rule sam2fastq:
     input:
@@ -218,16 +232,16 @@ rule sam2fastq:
 rule map_nuclear_MT_SE:
     input:
         outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
-        gsnap_db = gsnap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
     output:
         outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam"
     params:
-        gsnap_db_dir = config["map"]["gsnap_db_dir"],
+        gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gsnap_db = lambda wildcards, input: os.path.split(input.gsnap_db)[1].split(".")[0]
+        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0]
         #gsnap_db = config['map']['gsnap_n_mt_db']
     threads:
-        config["map"]["gsnap_threads"]
+        config["map"]["gmap_threads"]
     # version:
     #     subprocess.getoutput(
     #       gsnap --version
@@ -240,23 +254,23 @@ rule map_nuclear_MT_SE:
     shell:
         """
         touch {output}
-        #gsnap -D {params.gsnap_db_dir} -d {params.gsnap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}
+        #gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}
         """
 
 rule map_nuclear_MT_PE:
     input:
         outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
-        gsnap_db = gsnap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
     output:
         outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam"
     params:
-        gsnap_db_dir = config["map"]["gsnap_db_dir"],
+        gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gsnap_db = lambda wildcards, input: os.path.split(input.gsnap_db)[1].split(".")[0]
+        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0]
         #gsnap_db = config['map']['gsnap_n_mt_db']
     threads:
-        config["map"]["gsnap_threads"]
+        config["map"]["gmap_threads"]
     # version:
     #     subprocess.getoutput(
     #       gsnap --version
@@ -269,7 +283,7 @@ rule map_nuclear_MT_PE:
     shell:
         """
         touch {output}
-        #gsnap -D {params.gsnap_db_dir} -d {params.gsnap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
+        #gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
         """
 
 rule filtering_mt_alignments:

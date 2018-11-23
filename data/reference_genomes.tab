@@ -1,0 +1,4 @@
+ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file
+mt1	n1	mt1.fasta	n1.fasta
+mt2	n2	mt2.fasta	n2.fasta
+mt3	n3	mt3.fasta	n3.fasta
