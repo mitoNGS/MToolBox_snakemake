@@ -111,7 +111,7 @@ dependencies:
   - numpy=1.15.4=py36h1d66e8a_0
   - numpy-base=1.15.4=py36h81de0dd_0
   - openjdk=8.0.152=h46b5887_1
-  - openssl=1.1.1=h7b6447c_0
+  - openssl=1.1.1a
   - pandas=0.23.4=py36h04863e7_0
   - paramiko=2.4.2=py36_0
   - perl=5.26.2=h14c3975_0

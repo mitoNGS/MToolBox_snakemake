@@ -1,10 +1,9 @@
 import pandas as pd
-import os
+import os, re
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
 reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
-print(reference_tab.loc["mt1", "ref_genome_mt_file"])
 
 configfile: "config.yaml"
 res_dir = config["results"]
@@ -107,13 +106,32 @@ def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     print('Outfile saved on %s.' %(finalsam))
     print('Done.')
 
-def gsnap_inputs(wildcards):
-    if (seq_type == "pe"):
-        return expand("data/reads/{sample}.{strand}.fastq.gz", strand=["R1", "R2"], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
-    elif (seq_type == "se"):
-        return expand("data/reads/{sample}.fastq.gz", sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
-    elif (seq_type == "both"):
-        return expand("data/reads/{sample}{strand}.fastq.gz", strand=[".R1", ".R2", ""], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
+# def gsnap_inputs(wildcards):
+#     if (seq_type == "pe"):
+#         return expand("data/reads/{sample}.{strand}.fastq.gz", strand=["R1", "R2"], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
+#     elif (seq_type == "se"):
+#         return expand("data/reads/{sample}.fastq.gz", sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
+#     elif (seq_type == "both"):
+#         return expand("data/reads/{sample}{strand}.fastq.gz", strand=[".R1", ".R2", ""], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
+
+# def gsnap_inputs(wildcards, read_type):
+#     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
+#     read_file_regex = re.escape(wildcards.sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
+#     read_file = [f for f in os.listdir('./data/reads/') if re.match(read_file_regex, f)]
+#     if len(read_file) > 1:
+#         sys.exit("Ambiguous name in read files.")
+#     return read_file[0]
+
+#def gsnap_inputs(wildcards, read_type):
+def gsnap_inputs(sample, read_type):
+    # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
+    #print(wildcards.sample)
+    #read_file_regex = re.escape(wildcards.sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
+    read_file_regex = re.escape(sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
+    read_file = [f for f in os.listdir('./data/reads/') if re.match(read_file_regex, f)]
+    if len(read_file) > 1:
+        sys.exit("Ambiguous name in read files.")
+    return './data/reads/' + read_file[0]
 
 # def filtering_reads_input():
 #     if (seq_type == "pe"):
@@ -126,7 +144,7 @@ def gsnap_inputs(wildcards):
 #         return "outhumanP.sam", "outhumanS.sam"
 #         #return expand("{reads}{strand}.fastq", strand=["_R1", "_R2", ""], reads=wildcards.reads)
 
-seq_type = "both"
+seq_type = "pe"
 
 #outpaths = get_out_files(analysis_tab, res_dir = "results", map_dir = "map")
 outpaths = get_mt_genomes(analysis_tab)
@@ -158,9 +176,7 @@ rule make_mt_gmap_db:
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
     shell:
         """
-        if {input.mt_genome_fasta} 
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
-        # gmap_build command
         """
 
 rule make_mt_n_gmap_db:
@@ -171,16 +187,19 @@ rule make_mt_n_gmap_db:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
     shell:
         """
-        # gmap_build command
         gmap_build -D $gmap_db -d $database_name_nfasta_rcrs -g $nfasta_rcrs -s numeric-alpha -k $kmer
         """
 #
 rule map_MT_PE_SE:
     input:
         #gsnap_inputs,
-        R1 = "data/reads/{sample}.R1.fastq.gz",
-        R2 = "data/reads/{sample}.R2.fastq.gz",
-        SE = "data/reads/{sample}.fastq.gz",
+        #R1 = "data/reads/{sample}.R1.fastq.gz",
+        # R1 = gsnap_inputs(),
+        # R2 = gsnap_inputs(),
+        R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
+        R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
+        # R2 = "data/reads/{sample}.R2.fastq.gz",
+        # SE = "data/reads/{sample}.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
         #index=gsnap_index
     output:
