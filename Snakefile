@@ -204,6 +204,7 @@ rule make_mt_gmap_db:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
+    message: "Generating gmap db for mt genome: {input.mt_genome_fasta}"
     shell:
         """
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
@@ -217,9 +218,15 @@ rule make_mt_n_gmap_db:
                             ref_genome_n_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_n_file"))
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+    params:
+        gmap_db_dir = config["map"]["gmap_db_dir"],
+        #gsnap_db_folder = config['map']['gsnap_db_folder'],
+        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
+    message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     shell:
         """
-        gmap_build -D $gmap_db -d $database_name_nfasta_rcrs -g $nfasta_rcrs -s numeric-alpha -k $kmer
+        # cat {input.mt_genome_fasta} {input.n_genome_fasta} > {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta 
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
         """
 #
 rule map_MT_PE_SE:
@@ -249,6 +256,7 @@ rule map_MT_PE_SE:
         #log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/" + map_dir + "/logmt.txt"
     threads:
         config["map"]["gmap_threads"]
+    message: "Mapping reads for sample {wildcards.sample} to {wildcards.ref_genome_mt} mt genome"
     run:
         if seq_type == "pe":
             print("PE mode")
@@ -271,8 +279,8 @@ rule sam2fastq:
     #     subprocess.getoutput(
     #         "picard SamToFastq --version"
     #         )
-    # message:
-    #     "Converting SAM files to FASTQ with PicardTools v{version}"
+    message:
+        "Converting SAM files to FASTQ with PicardTools"
     shell:
         """
         picard SamToFastq \
@@ -349,6 +357,7 @@ rule filtering_mt_alignments:
         #sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
     params:
         outdir = lambda wildcards, output: os.path.split(output.sam)[0]
+    message: "Filtering alignments {input}"
     run:
         filter_alignments(input.outmt, \
                           input.outhumanS, \
@@ -365,6 +374,7 @@ rule make_single_VCF:
         #                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
+    message: "Processing {input.sam} to get VCF {output.single_vcf}\nWildcards: {wildcards}\n"
     shell:
         """
         # do something
@@ -384,10 +394,9 @@ rule make_VCF:
         #                 ref_genome_mt = wildcards.ref_genome_mt, \
         #                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
         # single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
-    # input:
-    #     "data/{ref_genome_mt}.ciao"
     output:
         "results/vcf/{ref_genome_mt}.vcf"
+    message: "Merging VCFs: {input.single_vcf} into file {output}"
     shell:
         """
         # do something
