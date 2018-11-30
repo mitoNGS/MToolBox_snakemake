@@ -3,7 +3,9 @@ import os, re
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+#print(analysis_tab)
 reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
+#print(reference_tab)
 
 configfile: "config.yaml"
 res_dir = config["results"]
@@ -12,6 +14,17 @@ log_dir = config["log_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 # res_dir = "results"
 # map_dir = "map"
+
+def get_single_vcf_files(df, ref_genome_mt = None):
+    ref_genome_mt = ref_genome_mt
+    # ref_genome_mt = ref_genome_mt
+    # ref_genome_n = ref_genome_n
+    outpaths = []
+    for row in df.itertuples():
+        if getattr(row, "ref_genome_mt") == ref_genome_mt:
+        # "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
+            outpaths.append("{}/OUT_{}_{}_{}/vcf.vcf".format(res_dir, getattr(row, "sample"), getattr(row, "ref_genome_mt"), getattr(row, "ref_genome_n")))
+    return outpaths
 
 def get_out_files(df, res_dir="results", map_dir="map"):
     outpaths = []
@@ -23,10 +36,10 @@ def get_genome_files(df, ref_genome_mt, field):
     return expand(df.loc[ref_genome_mt, field])
 
 def get_mt_genomes(df):
-    return list(set(analysis_tab['ref_genome_mt']))
+    return list(set(df['ref_genome_mt']))
 
 def get_other_fields(df, ref_genome_mt, field):
-    return list(df.loc[df['ref_genome_mt'] == ref_genome_mt, field])
+    return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
 
 def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     sig=1
@@ -125,12 +138,15 @@ def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
 #def gsnap_inputs(wildcards, read_type):
 def gsnap_inputs(sample, read_type):
     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
-    #print(wildcards.sample)
-    #read_file_regex = re.escape(wildcards.sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
-    read_file_regex = re.escape(sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
+    ### This regex matches typical names in illumina sequencing, eg 95191_TGACCA_L002_R2_001.fastq.gz
+    #read_file_regex = re.escape(sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
+    ### This is for more general cases, seems to work
+    read_file_regex = re.escape(sample) + r'[_.][\S]*R' + read_type + r'[\S]*fastq.gz'
     read_file = [f for f in os.listdir('./data/reads/') if re.match(read_file_regex, f)]
     if len(read_file) > 1:
         sys.exit("Ambiguous name in read files.")
+    elif len(read_file) == 0:
+        sys.exit("No read files found for sample: {}".format(sample))
     return 'data/reads/' + read_file[0]
 
 # def filtering_reads_input():
@@ -146,6 +162,19 @@ def gsnap_inputs(sample, read_type):
 
 seq_type = "pe"
 
+wildcard_constraints:
+    # test = ['ciao', 'ci/ao', 'ciao/', '/ciao', 'addio', 'diario']
+    # m = r'\S+[^/]\S+'
+    # [f for f in test if re.match(m, f)]
+    # # ['ciao', 'ci/ao', 'ciao/', '/ciao', 'addio', 'diario']
+    # m = r'^[^/]*$'
+    # [f for f in test if re.match(m, f)]
+    # # ['ciao', 'addio', 'diario']
+    sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
+    #sample = r"^[^/]*$",
+    ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
+    ref_genome_n = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_n']))]),
+
 #outpaths = get_out_files(analysis_tab, res_dir = "results", map_dir = "map")
 outpaths = get_mt_genomes(analysis_tab)
 
@@ -154,7 +183,8 @@ target_inputs = [
 
 rule all:
     input:
-        expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab))
+        mt_vcf = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab)),
+        #single_vcf = lambda wildcards: get_single_vcf_files(analysis_tab),
 
 
 #"results/vcf/{ref_genome_mt}.vcf"
@@ -181,8 +211,10 @@ rule make_mt_gmap_db:
 
 rule make_mt_n_gmap_db:
     input:
-        mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
-        n_genome_fasta = "data/genomes/{ref_genome_n}.fasta"
+        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}", \
+                            ref_genome_mt_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
+        n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}", \
+                            ref_genome_n_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_n_file"))
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
     shell:
@@ -203,16 +235,18 @@ rule map_MT_PE_SE:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
         #index=gsnap_index
     output:
-        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/outmt.sam"
+        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
+        gmap_db = lambda wildcards: wildcards.ref_genome_mt,
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0],
+        #gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0],
         # gsnap_db_folder = config['map_exome']['gsnap_db_folder'],
         # gsnap_db = config['map_exome']['gsnap_mt_db'],
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample'
     log:
-        log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/" + map_dir + "/logmt.txt"
+        log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
+        #log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/" + map_dir + "/logmt.txt"
     threads:
         config["map"]["gmap_threads"]
     run:
@@ -325,21 +359,37 @@ rule filtering_mt_alignments:
 rule make_single_VCF:
     input:
         sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
+        # sam = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam", \
+        #                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"), \
+        #                 ref_genome_mt = wildcards.ref_genome_mt, \
+        #                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
     shell:
         """
+        # do something
+        cmd {input} {output}
         """
 
 rule make_VCF:
     input:
-        single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf", \
-                        sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"), \
-                        ref_genome_mt = wildcards.ref_genome_mt, \
-                        ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
+        single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf",
+                                                sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
+                                                ref_genome_mt = wildcards.ref_genome_mt,
+                                                ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
+        # single_vcf = lambda wildcards: get_single_vcf_files(analysis_tab, wildcards.ref_genome_mt)
+        # single_vcf = lambda wildcards: get_single_vcf_files(analysis_tab, sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"))
+        # single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf", \
+        #                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"), \
+        #                 ref_genome_mt = wildcards.ref_genome_mt, \
+        #                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
+        # single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
+    # input:
+    #     "data/{ref_genome_mt}.ciao"
     output:
         "results/vcf/{ref_genome_mt}.vcf"
     shell:
         """
         # do something
+        cmd {input} {output}
         """

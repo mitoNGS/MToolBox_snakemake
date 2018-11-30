@@ -2,8 +2,8 @@ sample	ref_genome_mt	ref_genome_n
 #A  mt1 n1
 #B  mt1 n1
 #C  mt1 n1
-#D  mt2 n2
-#E  mt2 n2
-#F  mt3 n3
+D	mt_2	n2
+E	mt2	n2
+F	mt1	n1
 87074_1	mt1	n1
-#87074_1	self	n1
+87074_1	87074_1	pb_121-1
