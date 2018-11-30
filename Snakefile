@@ -131,7 +131,7 @@ def gsnap_inputs(sample, read_type):
     read_file = [f for f in os.listdir('./data/reads/') if re.match(read_file_regex, f)]
     if len(read_file) > 1:
         sys.exit("Ambiguous name in read files.")
-    return './data/reads/' + read_file[0]
+    return 'data/reads/' + read_file[0]
 
 # def filtering_reads_input():
 #     if (seq_type == "pe"):
