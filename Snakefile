@@ -175,7 +175,6 @@ wildcard_constraints:
     ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
     ref_genome_n = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_n']))]),
 
-#outpaths = get_out_files(analysis_tab, res_dir = "results", map_dir = "map")
 outpaths = get_mt_genomes(analysis_tab)
 
 target_inputs = [
@@ -184,14 +183,6 @@ target_inputs = [
 rule all:
     input:
         mt_vcf = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab)),
-        #single_vcf = lambda wildcards: get_single_vcf_files(analysis_tab),
-
-
-#"results/vcf/{ref_genome_mt}.vcf"
-# rule all:
-#     input:
-#         target_inputs,
-#         #all_VCF = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab))
 
 rule make_mt_gmap_db:
     input:
@@ -228,32 +219,20 @@ rule make_mt_n_gmap_db:
         # cat {input.mt_genome_fasta} {input.n_genome_fasta} > {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta 
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
         """
-#
+
 rule map_MT_PE_SE:
     input:
-        #gsnap_inputs,
-        #R1 = "data/reads/{sample}.R1.fastq.gz",
-        # R1 = gsnap_inputs(),
-        # R2 = gsnap_inputs(),
         R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
         R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
-        # R2 = "data/reads/{sample}.R2.fastq.gz",
-        # SE = "data/reads/{sample}.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
-        #index=gsnap_index
     output:
         outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         gmap_db = lambda wildcards: wildcards.ref_genome_mt,
-        #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        #gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0],
-        # gsnap_db_folder = config['map_exome']['gsnap_db_folder'],
-        # gsnap_db = config['map_exome']['gsnap_mt_db'],
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample'
     log:
         log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
-        #log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/" + map_dir + "/logmt.txt"
     threads:
         config["map"]["gmap_threads"]
     message: "Mapping reads for sample {wildcards.sample} to {wildcards.ref_genome_mt} mt genome"
@@ -368,10 +347,6 @@ rule filtering_mt_alignments:
 rule make_single_VCF:
     input:
         sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
-        # sam = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam", \
-        #                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"), \
-        #                 ref_genome_mt = wildcards.ref_genome_mt, \
-        #                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
     message: "Processing {input.sam} to get VCF {output.single_vcf}\nWildcards: {wildcards}\n"
@@ -387,13 +362,6 @@ rule make_VCF:
                                                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
                                                 ref_genome_mt = wildcards.ref_genome_mt,
                                                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
-        # single_vcf = lambda wildcards: get_single_vcf_files(analysis_tab, wildcards.ref_genome_mt)
-        # single_vcf = lambda wildcards: get_single_vcf_files(analysis_tab, sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"))
-        # single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf", \
-        #                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"), \
-        #                 ref_genome_mt = wildcards.ref_genome_mt, \
-        #                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
-        # single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
     output:
         "results/vcf/{ref_genome_mt}.vcf"
     message: "Merging VCFs: {input.single_vcf} into file {output}"
