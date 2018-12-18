@@ -1,0 +1,3 @@
+__default__:
+    time: 5:00:00
+    threads: 20
