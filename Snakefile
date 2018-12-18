@@ -119,23 +119,6 @@ def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     print('Outfile saved on %s.' %(finalsam))
     print('Done.')
 
-# def gsnap_inputs(wildcards):
-#     if (seq_type == "pe"):
-#         return expand("data/reads/{sample}.{strand}.fastq.gz", strand=["R1", "R2"], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
-#     elif (seq_type == "se"):
-#         return expand("data/reads/{sample}.fastq.gz", sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
-#     elif (seq_type == "both"):
-#         return expand("data/reads/{sample}{strand}.fastq.gz", strand=[".R1", ".R2", ""], sample=wildcards.sample)#, filtered_reads=config['proj_dirs']['filtered_reads'])
-
-# def gsnap_inputs(wildcards, read_type):
-#     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
-#     read_file_regex = re.escape(wildcards.sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
-#     read_file = [f for f in os.listdir('./data/reads/') if re.match(read_file_regex, f)]
-#     if len(read_file) > 1:
-#         sys.exit("Ambiguous name in read files.")
-#     return read_file[0]
-
-#def gsnap_inputs(wildcards, read_type):
 def gsnap_inputs(sample, read_type):
     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
     ### This regex matches typical names in illumina sequencing, eg 95191_TGACCA_L002_R2_001.fastq.gz
@@ -149,29 +132,10 @@ def gsnap_inputs(sample, read_type):
         sys.exit("No read files found for sample: {}".format(sample))
     return 'data/reads/' + read_file[0]
 
-# def filtering_reads_input():
-#     if (seq_type == "pe"):
-#         return "outhumanP.sam"
-#         #return expand("{reads}_{strand}.fastq", strand=["R1", "R2"], reads=wildcards.reads)
-#     elif (seq_type == "se"):
-#         return "outhumanS.sam"
-#         #return expand("{reads}.fastq", reads=wildcards.reads)
-#     elif (seq_type == "both"):
-#         return "outhumanP.sam", "outhumanS.sam"
-#         #return expand("{reads}{strand}.fastq", strand=["_R1", "_R2", ""], reads=wildcards.reads)
-
 seq_type = "pe"
 
 wildcard_constraints:
-    # test = ['ciao', 'ci/ao', 'ciao/', '/ciao', 'addio', 'diario']
-    # m = r'\S+[^/]\S+'
-    # [f for f in test if re.match(m, f)]
-    # # ['ciao', 'ci/ao', 'ciao/', '/ciao', 'addio', 'diario']
-    # m = r'^[^/]*$'
-    # [f for f in test if re.match(m, f)]
-    # # ['ciao', 'addio', 'diario']
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
-    #sample = r"^[^/]*$",
     ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
     ref_genome_n = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_n']))]),
 
@@ -186,7 +150,6 @@ rule all:
 
 rule make_mt_gmap_db:
     input:
-        #mt_genome_fasta = "data/genomes/{ref_genome_mt}.fasta",
         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}", \
                             ref_genome_mt_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     output:
@@ -198,7 +161,7 @@ rule make_mt_gmap_db:
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}"
     shell:
         """
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta}
         """
 
 rule make_mt_n_gmap_db:
@@ -216,8 +179,8 @@ rule make_mt_n_gmap_db:
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     shell:
         """
-        # cat {input.mt_genome_fasta} {input.n_genome_fasta} > {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta 
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g $nfasta_rcrs -s numeric-alpha -k $kmer
+        # cat {input.mt_genome_fasta} {input.n_genome_fasta} > {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
 rule map_MT_PE_SE:
