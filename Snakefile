@@ -272,7 +272,7 @@ rule sam2fastq:
         outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
         outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
-        log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
+        #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
     threads: 1
     # version:
     #     subprocess.getoutput(
@@ -281,7 +281,7 @@ rule sam2fastq:
     message:
         "Converting SAM files to FASTQ with PicardTools"
     run:
-        sam2fastq(input.outmt_sam)
+        sam2fastq(samfile = input.outmt_sam, outmt1 = output.outmt1, outmt2 = output.outmt2, outmt = output.outmt)
     # shell:
     #     """
     #     picard SamToFastq \
