@@ -273,7 +273,6 @@ rule sam2fastq:
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
         outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
         #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
-    threads: 1
     # version:
     #     subprocess.getoutput(
     #         "picard SamToFastq --version"
