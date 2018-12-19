@@ -41,11 +41,12 @@ def get_mt_genomes(df):
 def get_other_fields(df, ref_genome_mt, field):
     return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
 
-def sam2fastq():
-    print 'Extracting FASTQ from SAM...'
-    mtoutsam=os.path.join(folder,'outmt.sam')
+def sam2fastq(samfile = samfile, outmt1 = outmt1, outmt2 = outmt2, outmt = outmt):
+    print('Extracting FASTQ from SAM...')
+    #mtoutsam=os.path.join(folder,'samfile')
+    mtoutsam=samfile
     dics={}
-    f=open(mtoutsam)
+    f=open(mtoutsam, 'r')
     for i in f:
     	# original version
     	# if i.strip()=='': continue
@@ -76,21 +77,24 @@ def sam2fastq():
 
     sig,pai=0,0
     if len(single)!=0:
-    	mtoutfastq=os.path.join(folder,'outmt.fastq')
+        #mtoutfastq=os.path.join(folder,'outmt.fastq')
+    	mtoutfastq=outmt
     	out=open(mtoutfastq,'w')
     	out.writelines(single)
     	out.close()
     	sig=1
     if len(pair1)!=0:
-    	mtoutfastq1=os.path.join(folder,'outmt1.fastq')
+    	#mtoutfastq1=os.path.join(folder,'outmt1.fastq')
+        mtoutfastq1=outmt1
     	out=open(mtoutfastq1,'w')
     	out.writelines(pair1)
     	out.close()
-    	mtoutfastq2=os.path.join(folder,'outmt2.fastq')
+    	#mtoutfastq2=os.path.join(folder,'outmt2.fastq')
+        mtoutfastq2=outmt2
     	out=open(mtoutfastq2,'w')
     	out.writelines(pair2)
     	out.close()
-    pai=1
+        pai=1
 
 def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     sig=1
@@ -267,7 +271,8 @@ rule sam2fastq:
     output:
         outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq"
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
+        log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
     threads: 1
     # version:
     #     subprocess.getoutput(
@@ -275,14 +280,16 @@ rule sam2fastq:
     #         )
     message:
         "Converting SAM files to FASTQ with PicardTools"
-    shell:
-        """
-        picard SamToFastq \
-            I={input.outmt_sam} \
-            FASTQ={output.outmt1} \
-            SECOND_END_FASTQ={output.outmt2} \
-            UNPAIRED_FASTQ={output.outmt}
-        """
+    run:
+        sam2fastq(input.outmt_sam)
+    # shell:
+    #     """
+    #     picard SamToFastq \
+    #         I={input.outmt_sam} \
+    #         FASTQ={output.outmt1} \
+    #         SECOND_END_FASTQ={output.outmt2} \
+    #         UNPAIRED_FASTQ={output.outmt}
+    #     """
 
 rule map_nuclear_MT_SE:
     input:
