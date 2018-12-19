@@ -41,6 +41,57 @@ def get_mt_genomes(df):
 def get_other_fields(df, ref_genome_mt, field):
     return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
 
+def sam2fastq():
+    print 'Extracting FASTQ from SAM...'
+    mtoutsam=os.path.join(folder,'outmt.sam')
+    dics={}
+    f=open(mtoutsam)
+    for i in f:
+    	# original version
+    	# if i.strip()=='': continue
+    	if i.strip()=='' or i.startswith('@'): continue
+    	l=(i.strip()).split('\t')
+    	if l[2]=='*': continue
+    	if dics.has_key(l[0]): dics[l[0]].append(l)
+    	else: dics[l[0]]=[l]
+    f.close()
+    single,pair1,pair2=[],[],[]
+
+    for i in dics:
+    	ll=dics[i]
+    	if len(ll)==1:
+    		strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
+    		if strand==16: seq,qual=rev(seq),qual[::-1]
+    		entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
+    		single.append(entry)
+    	else:
+    		strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
+    		if strand==16: seq,qual=rev(seq),qual[::-1]
+    		entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
+    		pair1.append(entry)
+    		strand,seq,qual=int(ll[1][1]) & 16,ll[1][9],ll[1][10]
+    		if strand==16: seq,qual=rev(seq),qual[::-1]
+    		entry='\n'.join(['@'+ll[1][0],seq,'+',qual])+'\n'
+    		pair2.append(entry)
+
+    sig,pai=0,0
+    if len(single)!=0:
+    	mtoutfastq=os.path.join(folder,'outmt.fastq')
+    	out=open(mtoutfastq,'w')
+    	out.writelines(single)
+    	out.close()
+    	sig=1
+    if len(pair1)!=0:
+    	mtoutfastq1=os.path.join(folder,'outmt1.fastq')
+    	out=open(mtoutfastq1,'w')
+    	out.writelines(pair1)
+    	out.close()
+    	mtoutfastq2=os.path.join(folder,'outmt2.fastq')
+    	out=open(mtoutfastq2,'w')
+    	out.writelines(pair2)
+    	out.close()
+    pai=1
+
 def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     sig=1
     pai=1
@@ -217,6 +268,7 @@ rule sam2fastq:
         outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
         outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq"
+    threads: 1
     # version:
     #     subprocess.getoutput(
     #         "picard SamToFastq --version"
