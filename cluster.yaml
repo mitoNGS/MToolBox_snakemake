@@ -1,3 +1,7 @@
 __default__:
     time: 5:00:00
     threads: 10
+
+sam2fastq:
+    time: 1:00:00
+    threads: 1
