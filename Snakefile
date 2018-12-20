@@ -1,6 +1,7 @@
 import pandas as pd
 import os, re
 
+
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
 #print(analysis_tab)
@@ -41,7 +42,7 @@ def get_mt_genomes(df):
 def get_other_fields(df, ref_genome_mt, field):
     return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
 
-def sam2fastq(samfile = samfile, outmt1 = outmt1, outmt2 = outmt2, outmt = outmt):
+def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')
     #mtoutsam=os.path.join(folder,'samfile')
     mtoutsam=samfile
@@ -53,7 +54,7 @@ def sam2fastq(samfile = samfile, outmt1 = outmt1, outmt2 = outmt2, outmt = outmt
     	if i.strip()=='' or i.startswith('@'): continue
     	l=(i.strip()).split('\t')
     	if l[2]=='*': continue
-    	if dics.has_key(l[0]): dics[l[0]].append(l)
+    	if l[0] in dics: dics[l[0]].append(l)
     	else: dics[l[0]]=[l]
     f.close()
     single,pair1,pair2=[],[],[]
@@ -278,7 +279,7 @@ rule sam2fastq:
     #         "picard SamToFastq --version"
     #         )
     message:
-        "Converting SAM files to FASTQ with PicardTools"
+        "Converting SAM files to FASTQ"
     run:
         sam2fastq(samfile = input.outmt_sam, outmt1 = output.outmt1, outmt2 = output.outmt2, outmt = output.outmt)
     # shell:
