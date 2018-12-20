@@ -1,6 +1,5 @@
 import pandas as pd
-import os, re
-
+import os, re, sys
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
@@ -42,60 +41,70 @@ def get_mt_genomes(df):
 def get_other_fields(df, ref_genome_mt, field):
     return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
 
+def rev(seq):
+	d={'A':'T','T':'A','C':'G','G':'C','N':'N'}
+	s=''.join([d[x] for x in seq])
+	return s[::-1]
+
 def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')
     #mtoutsam=os.path.join(folder,'samfile')
     mtoutsam=samfile
-    dics={}
+    mtoutfastq=open(outmt, 'w')
+    mtoutfastq1=open(outmt1, 'w')
+    mtoutfastq2=open(outmt2, 'w')
     f=open(mtoutsam, 'r')
+    dics = {}
+    c = 0
     for i in f:
-    	# original version
-    	# if i.strip()=='': continue
-    	if i.strip()=='' or i.startswith('@'): continue
-    	l=(i.strip()).split('\t')
-    	if l[2]=='*': continue
-    	if l[0] in dics: dics[l[0]].append(l)
-    	else: dics[l[0]]=[l]
-    f.close()
-    single,pair1,pair2=[],[],[]
-
-    for i in dics:
-    	ll=dics[i]
-    	if len(ll)==1:
-    		strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
-    		if strand==16: seq,qual=rev(seq),qual[::-1]
-    		entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
-    		single.append(entry)
-    	else:
-    		strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
-    		if strand==16: seq,qual=rev(seq),qual[::-1]
-    		entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
-    		pair1.append(entry)
-    		strand,seq,qual=int(ll[1][1]) & 16,ll[1][9],ll[1][10]
-    		if strand==16: seq,qual=rev(seq),qual[::-1]
-    		entry='\n'.join(['@'+ll[1][0],seq,'+',qual])+'\n'
-    		pair2.append(entry)
-
-    sig,pai=0,0
-    if len(single)!=0:
-        #mtoutfastq=os.path.join(folder,'outmt.fastq')
-    	mtoutfastq=outmt
-    	out=open(mtoutfastq,'w')
-    	out.writelines(single)
-    	out.close()
-    	sig=1
-    if len(pair1)!=0:
-    	#mtoutfastq1=os.path.join(folder,'outmt1.fastq')
-        mtoutfastq1=outmt1
-    	out=open(mtoutfastq1,'w')
-    	out.writelines(pair1)
-    	out.close()
-    	#mtoutfastq2=os.path.join(folder,'outmt2.fastq')
-        mtoutfastq2=outmt2
-    	out=open(mtoutfastq2,'w')
-    	out.writelines(pair2)
-    	out.close()
-        pai=1
+        c += 1
+        if c % 100000 == 0:
+            print("{} SAM entries processed.".format(c))
+        # original version
+        # if i.strip()=='': continue
+        if i.strip()=='' or i.startswith('@'):
+            continue
+        l=(i.strip()).split('\t')
+        #print(l[0])
+        if l[2]=='*': continue
+        if len(dics) == 0:
+            dics[l[0]]=[l]
+            #print(dics)
+        else:
+            if l[0] in dics:
+                dics[l[0]].append(l)
+                #print(dics)
+            else:
+                # check if reads go to single or paired end file
+                # check if each read in a pair goes to R1 or R2
+                if len(dics) != 1:
+                    sys.exit("read data not valid: {}".format(dics))
+                k = [key for key in dics][0]
+                ll=dics[k]
+                #print(ll)
+                if len(ll)==1:
+                    strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
+                    if strand==16: seq,qual=rev(seq),qual[::-1]
+                    entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
+                    mtoutfastq.write(entry)
+                    #single.append(entry)
+                else:
+                    strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
+                    if strand==16: seq,qual=rev(seq),qual[::-1]
+                    entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
+                    mtoutfastq1.write(entry)
+                    #pair1.append(entry)
+                    strand,seq,qual=int(ll[1][1]) & 16,ll[1][9],ll[1][10]
+                    if strand==16: seq,qual=rev(seq),qual[::-1]
+                    entry='\n'.join(['@'+ll[1][0],seq,'+',qual])+'\n'
+                    mtoutfastq2.write(entry)
+                    #pair2.append(entry)
+                # create new dics with new read ID
+                dics = {l[0] : [l]}
+                #print(dics)
+    mtoutfastq.close()
+    mtoutfastq1.close()
+    mtoutfastq2.close()
 
 def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
     sig=1
