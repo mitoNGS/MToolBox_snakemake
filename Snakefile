@@ -10,6 +10,7 @@ reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment=
 #print(reference_tab)
 
 configfile: "config.yaml"
+#clusterfile: "cluster."
 res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
@@ -317,20 +318,24 @@ rule map_nuclear_MT_SE:
         gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0]
         #gsnap_db = config['map']['gsnap_n_mt_db']
     threads:
-        config["map"]["gmap_threads"]
+        config["map"]["gmap_remap_threads"]
     # version:
     #     subprocess.getoutput(
     #       gsnap --version
     #       )
     #     """
     log:
-        logS = log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/logS.sam"
+        logS = log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/logS.sam"
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     shell:
         """
-        touch {output}
-        #gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}
+        if [[ -s {input.outmt} ]]
+        then
+            gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} -o {output.outS} {input.outmt} &> {log.logS}
+        else
+            touch {output.outS}
+        fi
         """
 
 rule map_nuclear_MT_PE:
@@ -346,20 +351,24 @@ rule map_nuclear_MT_PE:
         gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0]
         #gsnap_db = config['map']['gsnap_n_mt_db']
     threads:
-        config["map"]["gmap_threads"]
+        config["map"]["gmap_remap_threads"]
     # version:
     #     subprocess.getoutput(
     #       gsnap --version
     #       )
     #     """
     log:
-        logP = log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/logP.sam"
+        logP = log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/logP.sam"
     message:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
     shell:
         """
-        touch {output}
-        #gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
+        if [[ -s {input.outmt1} ]]
+        then
+            gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
+        else
+            touch {output}
+        fi
         """
 
 rule filtering_mt_alignments:

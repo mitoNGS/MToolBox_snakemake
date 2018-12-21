@@ -5,3 +5,7 @@ __default__:
 make_mt_n_gmap_db:
     time: 3:00:00
     threads: 1
+
+map_nuclear_MT_SE:
+    time: 3:00:00
+    threads: 4
