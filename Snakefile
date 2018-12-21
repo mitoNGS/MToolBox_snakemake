@@ -1,6 +1,8 @@
 import pandas as pd
 import os, re, sys
 
+localrules: sam2fastq
+
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
 #print(analysis_tab)
@@ -238,14 +240,17 @@ rule make_mt_n_gmap_db:
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
     params:
+        mt_n_fasta = lambda wildcards: "data/genomes/{}_{}.fasta".format(wildcards.ref_genome_mt, wildcards.ref_genome_n),
+        #mt_n_fasta = lambda wildcards, input: "{}_{}.fasta".format(wildcards.ref_genome_mt, os.path.split(input.n_genome_fasta)[1].split(".")[0]),
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     shell:
         """
-        # cat {input.mt_genome_fasta} {input.n_genome_fasta} > {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
+        cat {input.mt_genome_fasta} {input.n_genome_fasta} > {params.mt_n_fasta}
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {params.mt_n_fasta}
+        # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
 rule map_MT_PE_SE:
