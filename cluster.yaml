@@ -18,3 +18,7 @@ map_nuclear_MT_SE:
 sam2fastq:
     time: 3:00:00
     threads: 1
+
+filter_alignments:
+    time: 3:00:00
+    threads: 1
