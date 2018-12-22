@@ -1,6 +1,11 @@
 __default__:
     time: 5:00:00
-    threads: 10
+    threads: 5
+    vmem: 10G
+
+make_mt_gmap_db:
+    time: 3:00:00
+    threads: 1
 
 make_mt_n_gmap_db:
     time: 3:00:00
@@ -9,3 +14,7 @@ make_mt_n_gmap_db:
 map_nuclear_MT_SE:
     time: 3:00:00
     threads: 4
+
+sam2fastq:
+    time: 3:00:00
+    threads: 1
