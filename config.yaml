@@ -3,5 +3,5 @@ map_dir:    "map"
 log_dir:    "logs"
 map:
     gmap_db_dir:        "gmap_db"
-    gmap_threads:       10
+    gmap_threads:       5
     gmap_remap_threads: 4
