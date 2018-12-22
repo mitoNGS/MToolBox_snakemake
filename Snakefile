@@ -1,7 +1,7 @@
 import pandas as pd
 import os, re, sys
 
-localrules: sam2fastq
+#localrules: sam2fastq
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
@@ -221,7 +221,7 @@ rule make_mt_gmap_db:
         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}", \
                             ref_genome_mt_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -229,6 +229,7 @@ rule make_mt_gmap_db:
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}"
     shell:
         """
+        module load gsnap
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta}
         """
 
@@ -239,7 +240,7 @@ rule make_mt_n_gmap_db:
         n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}", \
                             ref_genome_n_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_n_file"))
     output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     params:
         mt_n_fasta = lambda wildcards: "data/genomes/{}_{}.fasta".format(wildcards.ref_genome_mt, wildcards.ref_genome_n),
         #mt_n_fasta = lambda wildcards, input: "{}_{}.fasta".format(wildcards.ref_genome_mt, os.path.split(input.n_genome_fasta)[1].split(".")[0]),
@@ -249,6 +250,7 @@ rule make_mt_n_gmap_db:
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     shell:
         """
+        module load gsnap
         cat {input.mt_genome_fasta} {input.n_genome_fasta} > {params.mt_n_fasta}
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {params.mt_n_fasta}
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
@@ -258,7 +260,7 @@ rule map_MT_PE_SE:
     input:
         R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
         R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
         outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam"
     params:
@@ -273,12 +275,15 @@ rule map_MT_PE_SE:
     run:
         if seq_type == "pe":
             print("PE mode")
+            shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} > {output.outmt_sam} 2> {log}")
         if seq_type == "se":
             print("SE mode")
+            shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} > {output.outmt_sam} 2> {log}")
         elif seq_type == "both":
             print("PE + SE mode")
+            shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} > {output.outmt_sam} 2> {log}")
 
 rule sam2fastq:
@@ -309,7 +314,7 @@ rule sam2fastq:
 rule map_nuclear_MT_SE:
     input:
         outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
         outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam"
     params:
@@ -332,6 +337,7 @@ rule map_nuclear_MT_SE:
         """
         if [[ -s {input.outmt} ]]
         then
+            module load gsnap
             gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} -o {output.outS} {input.outmt} &> {log.logS}
         else
             touch {output.outS}
@@ -342,7 +348,7 @@ rule map_nuclear_MT_PE:
     input:
         outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.ref081locoffsets64strm"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
         outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam"
     params:
@@ -365,6 +371,7 @@ rule map_nuclear_MT_PE:
         """
         if [[ -s {input.outmt1} ]]
         then
+            module load gsnap
             gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
         else
             touch {output}
