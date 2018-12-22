@@ -1,8 +1,10 @@
 import pandas as pd
 import os, re, sys
+from Bio import SeqIO
 
 #localrules: sam2fastq
 
+#shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
 #print(analysis_tab)
@@ -40,6 +42,9 @@ def get_genome_files(df, ref_genome_mt, field):
 
 def get_mt_genomes(df):
     return list(set(df['ref_genome_mt']))
+
+def get_mt_fasta(df, ref_genome_mt, field):
+    return df.loc[df['ref_genome_mt'] == ref_genome_mt, field][0]
 
 def get_other_fields(df, ref_genome_mt, field):
     return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
@@ -109,7 +114,8 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq1.close()
     mtoutfastq2.close()
 
-def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
+def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
+    ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
     sig=1
     pai=1
     print('Reading Results...')
@@ -155,7 +161,9 @@ def filter_alignments(outmt, outS, outP, OUT, gsnap_db = None):
 
     finalsam = OUT
     out=open(finalsam,'w')
-    out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
+    for entry in ref_mt_fasta:
+        out.write("@SQ	SN:{}	LN:{}\n".format(entry.id, len(entry)))
+    #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
     out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
 
     print('Filtering reads...')
@@ -333,16 +341,20 @@ rule map_nuclear_MT_SE:
         logS = log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/logS.sam"
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
-    shell:
-        """
-        if [[ -s {input.outmt} ]]
-        then
-            module load gsnap
-            gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} -o {output.outS} {input.outmt} &> {log.logS}
-        else
-            touch {output.outS}
-        fi
-        """
+    run:
+        shell("module load gsnap")
+        #shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}")
+        shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
+    # shell:
+    #     """
+    #     #module load gsnap
+    #     if [[ -s {input.outmt} ]]
+    #     then
+    #         gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} -o {output.outS} {input.outmt} &> {log.logS}
+    #     else
+    #         touch {output.outS}
+    #     fi
+    #     """
 
 rule map_nuclear_MT_PE:
     input:
@@ -369,9 +381,9 @@ rule map_nuclear_MT_PE:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
     shell:
         """
+        #module load gsnap
         if [[ -s {input.outmt1} ]]
         then
-            module load gsnap
             gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
         else
             touch {output}
@@ -387,14 +399,17 @@ rule filtering_mt_alignments:
         sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
         #sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
     params:
-        outdir = lambda wildcards, output: os.path.split(output.sam)[0]
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+        #outdir = lambda wildcards, output: os.path.split(output.sam)[0]
+    threads: 1
     message: "Filtering alignments {input}"
     run:
-        filter_alignments(input.outmt, \
-                          input.outhumanS, \
-                          input.outhumanP, \
-                          output.sam, \
-                          gsnap_db = {params.gsnap_db})
+        # (outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None)
+        filter_alignments(outmt = input.outmt, \
+                          outS = input.outS, \
+                          outP = input.outP, \
+                          OUT = output.sam, \
+                          ref_mt_fasta = {params.ref_mt_fasta})
 
 rule make_single_VCF:
     input:
