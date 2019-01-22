@@ -402,7 +402,7 @@ rule filtering_mt_alignments:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
         #outdir = lambda wildcards, output: os.path.split(output.sam)[0]
     threads: 1
-    message: "Filtering alignments {input}"
+    message: "Filtering alignments in file {input.outmt} checking alignments in {input.outS} and {input.outP}"
     run:
         # (outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None)
         filter_alignments(outmt = input.outmt, \
