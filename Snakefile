@@ -1,7 +1,7 @@
 import pandas as pd
 import os, re, sys
 from Bio import SeqIO
-
+import resource
 #localrules: sam2fastq
 
 #shell.prefix("module load gsnap; ")
@@ -19,6 +19,15 @@ log_dir = config["log_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 # res_dir = "results"
 # map_dir = "map"
+
+def memory_usage_resource():
+    import resource
+    rusage_denom = 1024.
+    if sys.platform == 'darwin':
+        # ... it seems that in OSX the output is different units ...
+        rusage_denom = rusage_denom * rusage_denom
+    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
+    return mem
 
 def get_single_vcf_files(df, ref_genome_mt = None):
     ref_genome_mt = ref_genome_mt
@@ -115,6 +124,7 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq2.close()
 
 def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
+    print("Memory usage at the beginning of the function: {} MB".format(memory_usage_resource()))
     ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
     sig=1
     pai=1
@@ -123,6 +133,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
         hgoutsam = outS
         dicsingle={}
         f = open(hgoutsam, 'r')
+        x = 0
         for i in f:
             if i.strip()=='': continue
             l=(i.strip()).split('\t')
@@ -132,11 +143,15 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
                 dicsingle[l[0]].append(l)
             else:
                 dicsingle[l[0]]=[l]
+            x += 1
+            if x%100000 == 0:
+                print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
         f.close()
     if pai:
         hgoutsam2 = outP
         dicpair={}
         f=open(hgoutsam2)
+        x = 0
         for i in f:
             if i.strip()=='': continue
             l=(i.strip()).split('\t')
@@ -145,9 +160,12 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
                 dicpair[l[0]].append(l)
             else:
                 dicpair[l[0]]=[l]
+            x += 1
+            if x%100000 == 0:
+                print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))            
         f.close()
 
-    print('Extracting FASTQ from SAM...')
+    #print('Extracting FASTQ from SAM...')
     mtoutsam = outmt
     dics={}
     f=open(mtoutsam)
