@@ -2,6 +2,8 @@ __default__:
     time: 5:00:00
     threads: 5
     vmem: 10G
+    #stderr: logs/snakejob.{rule}.{wildcards.sample}.{jobid}.err
+    stdout: logs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
 
 make_mt_gmap_db:
     time: 3:00:00
@@ -19,6 +21,6 @@ sam2fastq:
     time: 3:00:00
     threads: 1
 
-filter_alignments:
+filtering_mt_alignments:
     time: 3:00:00
     threads: 1
