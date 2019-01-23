@@ -123,7 +123,49 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq1.close()
     mtoutfastq2.close()
 
+def read_sam_file(samfile):
+    # function that reads a samfile and skips rows with unaligned reads
+    t = pd.read_table(samfile, sep = '\t', comment='@', usecols=[0,2,3], names = ['readID', 'RNAME', 'POS'])
+    t = t.loc[t['RNAME'] != '*']
+    return t
+
 def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
+    samfile = outmt
+    nu_pe_samfile = outP
+    nu_se_samfile = outS
+    ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
+    sig=1
+    pai=1
+    print('Memory usage resource before processing alignments: {} MB'.format(memory_usage_resource()))
+    print('Reading Results...')
+    s = read_sam_file(samfile)
+    se = read_sam_file(nu_se_samfile)
+    print('Memory usage resource after reading SE file: {} MB'.format(memory_usage_resource()))
+    pe = read_sam_file(nu_pe_samfile)
+    print('Memory usage resource after reading PE file: {} MB'.format(memory_usage_resource()))
+    s_SE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 1]
+    s_PE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 2]
+    #s_SE = s.loc[s['readID'].isin(s_SE_id)]
+    #print(len(s_SE_id))
+    #print(len(s_SE))
+    #print(s_SE)
+    s_PE = s.loc[s['readID'].isin(s_PE_id)]
+    se = se.loc[se['readID'].isin([key for key in se.groupby('readID').groups if len(se.groupby('readID').groups[key]) == 1])]
+    pe = pe.loc[pe['readID'].isin([key for key in pe.groupby('readID').groups if len(pe.groupby('readID').groups[key]) == 2])]
+    final_PE = pd.merge(s_PE, pe, how='left', on=['readID', 'RNAME', 'POS']) # maybe we don't need this step
+    print('Memory usage before writing outfile: {} MB'.format(memory_usage_resource()))
+    out = open("OUT.sam", 'w')
+    samhandle = open('outmt.sam', 'r')
+    for i in samhandle:
+        #print(i)
+        if i.startswith('@') == False:
+            l = i.split()
+            if l[0] in final_PE['readID'].values or l[0] in se['readID'].values:
+                print(l[0])
+                out.write(i)
+    out.close()
+
+def filter_alignments_old(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
     print("Memory usage at the beginning of the function: {} MB".format(memory_usage_resource()))
     ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
     sig=1
@@ -162,7 +204,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
                 dicpair[l[0]]=[l]
             x += 1
             if x%100000 == 0:
-                print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))            
+                print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
         f.close()
 
     #print('Extracting FASTQ from SAM...')
