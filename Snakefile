@@ -139,23 +139,34 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     print('Memory usage resource before processing alignments: {} MB'.format(memory_usage_resource()))
     print('Reading Results...')
     s = read_sam_file(samfile)
+    print('Memory usage resource after reading outmt file: {} MB'.format(memory_usage_resource()))
+    #s_SE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 1]
+    #s_PE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 2]
+    #s_PE = s.loc[s['readID'].isin(s_PE_id)]
+    s = s.loc[s['readID'].isin([key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 2])]
+    print('Memory usage resource after collecting PE reads with 2 occurrences from outmt file and overwriting sam file variable: {} MB'.format(memory_usage_resource()))
+    #del s_PE_id
+    #del s
+    print('Memory usage resource after deleting variable for getting PE reads with 2 occurrences: {} MB'.format(memory_usage_resource()))
     se = read_sam_file(nu_se_samfile)
     print('Memory usage resource after reading SE file: {} MB'.format(memory_usage_resource()))
     pe = read_sam_file(nu_pe_samfile)
     print('Memory usage resource after reading PE file: {} MB'.format(memory_usage_resource()))
-    s_SE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 1]
-    s_PE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 2]
     #s_SE = s.loc[s['readID'].isin(s_SE_id)]
     #print(len(s_SE_id))
     #print(len(s_SE))
     #print(s_SE)
-    s_PE = s.loc[s['readID'].isin(s_PE_id)]
     se = se.loc[se['readID'].isin([key for key in se.groupby('readID').groups if len(se.groupby('readID').groups[key]) == 1])]
+    print('Memory usage resource after getting SE reads with 1 occurrence: {} MB'.format(memory_usage_resource()))
     pe = pe.loc[pe['readID'].isin([key for key in pe.groupby('readID').groups if len(pe.groupby('readID').groups[key]) == 2])]
-    final_PE = pd.merge(s_PE, pe, how='left', on=['readID', 'RNAME', 'POS']) # maybe we don't need this step
+    final_PE = pd.merge(s, pe, how='left', on=['readID', 'RNAME', 'POS']) # maybe we don't need this step
     print('Memory usage before writing outfile: {} MB'.format(memory_usage_resource()))
     out = open("OUT.sam", 'w')
     samhandle = open('outmt.sam', 'r')
+    for entry in ref_mt_fasta:
+        out.write("@SQ	SN:{}	LN:{}\n".format(entry.id, len(entry)))
+    #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
+    out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
     for i in samhandle:
         #print(i)
         if i.startswith('@') == False:
