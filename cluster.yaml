@@ -22,5 +22,7 @@ sam2fastq:
     threads: 1
 
 filtering_mt_alignments:
-    time: 3:00:00
+    time: 1:00:00
     threads: 1
+    vmem: 4G
+
