@@ -239,7 +239,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
         #print(len(c))
         n_extracted_alignments += len(OUT_chunk)
         # Append alignments to OUT.sam
-        OUT_chunk.to_csv('OUT.sam', mode="a", header=False, sep="\t", index=False)
+        OUT_chunk.to_csv(OUT, mode="a", header=False, sep="\t", index=False)
         #n_extracted_reads += len(c_se)
         #n_extracted_reads += len(c_pe)
         #D = pd.concat([D, OUT_chunk])
