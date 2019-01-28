@@ -1,7 +1,10 @@
 import pandas as pd
-import os, re, sys
+import os, re, sys, time, gzip, bz2
 from Bio import SeqIO
 import resource
+import numpy as np
+#import sqlite3
+from sqlalchemy import create_engine
 #localrules: sam2fastq
 
 #shell.prefix("module load gsnap; ")
@@ -21,6 +24,10 @@ gmap_db_dir = config["map"]["gmap_db_dir"]
 # map_dir = "map"
 
 def memory_usage_resource():
+    """
+    Function to get memory usage (in MB)
+    Source: http://fa.bianp.net/blog/2013/different-ways-to-get-memory-consumption-or-lessons-learned-from-memory_profiler/
+    """
     import resource
     rusage_denom = 1024.
     if sys.platform == 'darwin':
@@ -28,6 +35,58 @@ def memory_usage_resource():
         rusage_denom = rusage_denom * rusage_denom
     mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
     return mem
+
+def get_SAM_header(samfile):
+    # is the file compressed?
+    if samfile.endswith("gz"):
+        samhandle = gzip.open(samfile, 'rt')
+    elif samfile.endswith("bz2"):
+        samhandle = bz2.open(samfile, 'rt')
+    else:
+        samhandle = open(samfile, 'r')
+    comment_count = 0
+    header_lines = []
+    l = samhandle.readline()
+    while l[0] == "@":
+        header_lines.append(l)
+        comment_count += 1
+        l = samhandle.readline()
+    return header_lines, comment_count
+
+def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000):
+    """
+    Read a SAM file, then keep a list of IDs of reads occurring <n_occurrences> times.
+    In the specific case of outS.sam and outP.sam files, these are the IDs of the reads we want
+    to keep in the OUT.sam file.
+    Load the entries in a SQL db
+    """
+    n = n_occurrences
+
+    # Create in-memory SQLite db
+    engine = create_engine('sqlite://', echo=False)
+    # samfile = path/to/out.sam --> db_name = out 
+    db_name = samfile.split('/')[-1].split('.')[0]
+    
+    # Read the SAM file in chunks 
+    header_lines, comment_count = get_SAM_header(samfile)
+    # function that reads a samfile and skips rows with unaligned reads
+    t = pd.read_table(samfile, \
+                      sep = '\t', \
+                      skiprows=comment_count, \
+                      chunksize=chunksize, \
+                      usecols=[0,2], \
+                      names = ['readID', 'RNAME'], \
+                      compression="infer")
+     
+    for chunk in t:
+        elapsed = time.time()
+        #print("chunk")
+        chunk = chunk.query('RNAME != "*"')
+        chunk = chunk.drop(columns=['RNAME'])
+        chunk.to_sql(db_name, con=engine, if_exists="append")
+        print("{} seconds, memory: {} MB".format(time.time()-elapsed, memory_usage_resource()))
+
+    return engine
 
 def get_single_vcf_files(df, ref_genome_mt = None):
     ref_genome_mt = ref_genome_mt
@@ -123,58 +182,69 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq1.close()
     mtoutfastq2.close()
 
-def read_sam_file(samfile):
+def read_sam_file_extended(samfile):
     # function that reads a samfile and skips rows with unaligned reads
     t = pd.read_table(samfile, sep = '\t', comment='@', usecols=[0,2,3], names = ['readID', 'RNAME', 'POS'])
     t = t.loc[t['RNAME'] != '*']
     return t
 
+def read_sam_file(samfile):
+    # function that reads a samfile and skips rows with unaligned reads
+    t = pd.read_table(samfile, sep = '\t', comment='@', usecols=[0,2], names = ['readID', 'RNAME'])
+    t = t.loc[t['RNAME'] != '*']
+    return t
+
 def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
+    print("Processing outS.sam")
+    outS_sql = read_sam_file_only_readID_chunks_intoSQL(outS)
+    print("Processing outP.sam")
+    outP_sql = read_sam_file_only_readID_chunks_intoSQL(outP)
+
+    #print(outS_sql.table_names())
+    #print(outP_sql.table_names())
+    #outS_sql.execute("SELECT readID from outS GROUP BY readID")
+    #pd.read_sql_query("SELECT readID, COUNT(readID) FROM outS HAVING COUNT(readID) == 1 GROUP BY readID", outS_sql)
+    good_reads = pd.concat([pd.read_sql_query("SELECT readID FROM outS GROUP BY readID HAVING COUNT(*) == 1", outS_sql), \
+                            pd.read_sql_query("SELECT readID FROM outP GROUP BY readID HAVING COUNT(*) == 2", outP_sql)])
+    print("Total reads to extract alignments of: {}".format(len(good_reads)))
+
     samfile = outmt
-    nu_pe_samfile = outP
-    nu_se_samfile = outS
-    ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
-    sig=1
-    pai=1
-    print('Memory usage resource before processing alignments: {} MB'.format(memory_usage_resource()))
-    print('Reading Results...')
-    s = read_sam_file(samfile)
-    print('Memory usage resource after reading outmt file: {} MB'.format(memory_usage_resource()))
-    #s_SE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 1]
-    #s_PE_id = [key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 2]
-    #s_PE = s.loc[s['readID'].isin(s_PE_id)]
-    s = s.loc[s['readID'].isin([key for key in s.groupby('readID').groups if len(s.groupby('readID').groups[key]) == 2])]
-    print('Memory usage resource after collecting PE reads with 2 occurrences from outmt file and overwriting sam file variable: {} MB'.format(memory_usage_resource()))
-    #del s_PE_id
-    #del s
-    print('Memory usage resource after deleting variable for getting PE reads with 2 occurrences: {} MB'.format(memory_usage_resource()))
-    se = read_sam_file(nu_se_samfile)
-    print('Memory usage resource after reading SE file: {} MB'.format(memory_usage_resource()))
-    pe = read_sam_file(nu_pe_samfile)
-    print('Memory usage resource after reading PE file: {} MB'.format(memory_usage_resource()))
-    #s_SE = s.loc[s['readID'].isin(s_SE_id)]
-    #print(len(s_SE_id))
-    #print(len(s_SE))
-    #print(s_SE)
-    se = se.loc[se['readID'].isin([key for key in se.groupby('readID').groups if len(se.groupby('readID').groups[key]) == 1])]
-    print('Memory usage resource after getting SE reads with 1 occurrence: {} MB'.format(memory_usage_resource()))
-    pe = pe.loc[pe['readID'].isin([key for key in pe.groupby('readID').groups if len(pe.groupby('readID').groups[key]) == 2])]
-    final_PE = pd.merge(s, pe, how='left', on=['readID', 'RNAME', 'POS']) # maybe we don't need this step
-    print('Memory usage before writing outfile: {} MB'.format(memory_usage_resource()))
-    out = open("OUT.sam", 'w')
-    samhandle = open('outmt.sam', 'r')
-    for entry in ref_mt_fasta:
-        out.write("@SQ	SN:{}	LN:{}\n".format(entry.id, len(entry)))
-    #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
-    out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
-    for i in samhandle:
-        #print(i)
-        if i.startswith('@') == False:
-            l = i.split()
-            if l[0] in final_PE['readID'].values or l[0] in se['readID'].values:
-                print(l[0])
-                out.write(i)
-    out.close()
+    tc = pd.read_table(samfile, \
+                       sep = '\t', \
+                       skiprows=get_SAM_header(samfile)[1], \
+                       chunksize=100000, \
+                       header=None, \
+                       engine="python", \
+                       names=["readID", "FLAG", "RNAME"] + list("QWERTYUIOPASDFGHJK"), \
+                       compression="infer")
+
+    # open OUT.sam file and write SAM header from outS.sam (outP would be the same).
+    f = open(OUT, 'w')
+    sss = open(outS, 'r')
+    l = sss.readline()
+    while l[0] == "@":
+        if l.startswith("@PG") == False:
+            f.write(l)
+        l = sss.readline()
+
+    f.close()
+
+    n_extracted_alignments = 0
+    #D = pd.DataFrame()
+    for chunk in tc:
+        chunk = chunk.query('RNAME != "*"')
+        OUT_chunk = pd.merge(chunk, good_reads, how="inner", on="readID")
+        #c_se = pd.merge(chunk, se, how="inner", on="readID")
+        #c_pe = pd.merge(chunk, pe, how="inner", on="readID")
+        #print(len(c))
+        n_extracted_alignments += len(OUT_chunk)
+        # Append alignments to OUT.sam
+        OUT_chunk.to_csv('OUT.sam', mode="a", header=False, sep="\t", index=False)
+        #n_extracted_reads += len(c_se)
+        #n_extracted_reads += len(c_pe)
+        #D = pd.concat([D, OUT_chunk])
+
+    print("Total alignments extracted: {}".format(n_extracted_alignments))
 
 def filter_alignments_old(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
     print("Memory usage at the beginning of the function: {} MB".format(memory_usage_resource()))
@@ -480,7 +550,7 @@ rule filtering_mt_alignments:
                           outS = input.outS, \
                           outP = input.outP, \
                           OUT = output.sam, \
-                          ref_mt_fasta = {params.ref_mt_fasta})
+                          ref_mt_fasta = params.ref_mt_fasta)
 
 rule make_single_VCF:
     input:
