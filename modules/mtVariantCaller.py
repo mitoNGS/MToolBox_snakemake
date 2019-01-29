@@ -40,7 +40,7 @@ def varnames2(b,i):
 #Heteroplasmic fraction quantification
 def heteroplasmy(cov, Covbase):
 	try:
-		if Covbase >= cov: 
+		if Covbase >= cov:
 			Heteroplasmy=float(cov)/float(Covbase)
 			het=round(Heteroplasmy, 3)
 			return het
@@ -60,10 +60,10 @@ def sum(left):
 def median(l):
 	try:
 		if len(l)%2 != 0:
-			median= sorted(l)[((len(l)+1)/2)-1]
+			median= sorted(l)[int(((len(l)+1)/2)-1)]
 		else:
-			m1 = sorted(l)[(len(l)/2)+1-1]
-			m2 = sorted(l)[(len(l)/2)-1]
+			m1 = sorted(l)[int((len(l)/2)+1-1)]
+			m2 = sorted(l)[int((len(l)/2)-1)]
 			median= (float(m1)+float(m2))/2
 		return median
 	except ZeroDivisionError:
@@ -83,7 +83,7 @@ def error(list):
 		list.remove('')
 	except ValueError:
 		pass
-#defines the function searching for and filtering indels within the read sequence	
+#defines the function searching for and filtering indels within the read sequence
 def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 	m=re.compile(r'[a-z]', re.I)
 	if 'I' in CIGAR:
@@ -97,7 +97,7 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rscnt=m.split(softclippingright)
 			if len(rscnt)>2:  #if  there are other options on the right end
 				softclippingright=int(rscnt[-2])
-			else:  #if there is only S option 
+			else:  #if there is only S option
 				softclippingright=int(rscnt[0])
 		else:
 			softclippingright=0 # no softclipped bases right
@@ -110,8 +110,8 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rhcnt=m.split(hardclippingright)
 			if len(rhcnt)>2:  #if  there are other options on the right end
 				hardclippingright=int(rhcnt[-2])
-			else:  #if there is only H option 
-				hardclippingright=int(rhcnt[0])			
+			else:  #if there is only H option
+				hardclippingright=int(rhcnt[0])
 		else:
 			hardclippingright=0 # no hardclipped bases right
 		left=m.split(pcigar[0])
@@ -160,7 +160,7 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rscnt=m.split(softclippingright)
 			if len(rscnt)>2:  #if  there are other options on the right end
 				softclippingright=int(rscnt[-2])
-			else:  #if there is only S option 
+			else:  #if there is only S option
 				softclippingright=int(rscnt[0])
 		else:
 			softclippingright=0 # no softclipped bases right
@@ -173,8 +173,8 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rhcnt=m.split(hardclippingright)
 			if len(rhcnt)>2:  #if  there are other options on the right end
 				hardclippingright=int(rhcnt[-2])
-			else:  #if there is only H option 
-				hardclippingright=int(rhcnt[0])			
+			else:  #if there is only H option
+				hardclippingright=int(rhcnt[0])
 		else:
 			hardclippingright=0 # no hardclipped bases right
 		left=m.split(pcigar[0])
@@ -189,7 +189,7 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 		rLeft=(refposleft+lflank)
 		lowlimit=rLeft+1
 		rRight=lowlimit+nDel
-		Del=range(lowlimit,rRight)
+		Del=list(range(lowlimit,rRight))
 		type='Del'
 		qsDel=[]
 		if lflank>=tail and sr>=tail:
@@ -222,9 +222,9 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 		res.append(qsDel)
 		return res
 	else:
-		pass 
+		pass
 
-#defines function searching for point mutations. It produces both the consensus base and variant(s) as output 
+#defines function searching for point mutations. It produces both the consensus base and variant(s) as output
 def findmutations(A,C,G,T,Position, Ref, Cov):
 	oo = []
 	var=[]
@@ -251,14 +251,14 @@ def findmutations(A,C,G,T,Position, Ref, Cov):
 	elif len(var)==1 and Ref not in bases:
 		o=[Position, Ref, Cov, bases, var]
 		return o
-	else:	
+	else:
 		return oo
 
 #Wilson confidence interval lower bound
 def CIW_LOW(het, Covbase):
 	'''The function calculates the heteroplasmic fraction and the related
 	confidence interval with 95% of coverage probability,
-	considering a Wilson score interval when n<=40 
+	considering a Wilson score interval when n<=40
 	CIw= [1/(1+(1/n)*z^2)] * [p + (1/2n)*z^2 +- z(1/n *(p*q) + ((1/(4n^2))*z^2))^1/2]
 	'''
 	p=het
@@ -273,12 +273,12 @@ def CIW_LOW(het, Covbase):
 		return 0.0
 	else:
 		return wilsonci_low
-		
+
 #Wilson confidence interval upper bound
 def CIW_UP(het, Covbase):
 	'''The function calculates the heteroplasmic fraction and the related
 	confidence interval with 95% of coverage probability,
-	considering a Wilson score interval when n<=40 
+	considering a Wilson score interval when n<=40
 	CIw= [1/(1+(1/n)*z^2)] * [p + (1/2n)*z^2 +- z(1/n *(p*q) + ((1/(4n^2))*z^2))^1/2]
 	'''
 	p=het
@@ -294,10 +294,10 @@ def CIW_UP(het, Covbase):
 	else:
 		return wilsonci_up
 
-#Agresti-Coull confidence interval lower bound		
+#Agresti-Coull confidence interval lower bound
 def CIAC_LOW(cov,Covbase):
-	'''The function calculates the heteroplasmic fraction and the related confidence interval 
-	for heteroplasmic fraction with 95% of coverage probability,considering the 
+	'''The function calculates the heteroplasmic fraction and the related confidence interval
+	for heteroplasmic fraction with 95% of coverage probability,considering the
 	Agresti-Coull interval when n>40'''
 	z=1.96
 	n=Covbase
@@ -311,10 +311,10 @@ def CIAC_LOW(cov,Covbase):
 	else:
 		return agresticoull_low
 
-#Agresti-Coull confidence interval upper bound	
+#Agresti-Coull confidence interval upper bound
 def CIAC_UP(cov,Covbase):
-	'''The function calculates the heteroplasmic fraction and the related confidence interval 
-	for heteroplasmic fraction with 95% of coverage probability,considering the 
+	'''The function calculates the heteroplasmic fraction and the related confidence interval
+	for heteroplasmic fraction with 95% of coverage probability,considering the
 	Agresti-Coull interval when n>40'''
 	z=1.96
 	n=Covbase
@@ -325,7 +325,7 @@ def CIAC_UP(cov,Covbase):
 	agresticoull_up=round(P+(z*(math.sqrt(P*Q/N))),3)
 	if agresticoull_up>1.0:
 		return 1.0
-	else:	
+	else:
 		return agresticoull_up
 
 #IUPAC dictionary
@@ -339,21 +339,23 @@ def getIUPAC(ref_var, dIUPAC):
 		if ref_var == i[1]:
 			iupac_code= [i[0]]
 	return iupac_code
-			
 
-def mtvcf_main_analysis(mtable, sam, name2, tail=5):
-	mtable=[i.split('\t') for i in mtable]
-	mtable.remove(mtable[0])
-	sam=sam.readlines()
-	sam=[i.split('\t') for i in sam]
-	for i in sam:
-		i.remove(i[1])
-		i.remove(i[3])
+
+def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5):
+	mtable = open(mtable_file, 'r')
+	sam = open(sam_file, 'r')
+	#mtable=[i.split('\t') for i in mtable]
+	#mtable.remove(mtable[0])
+	# sam=sam.readlines()
+	# sam=[i.split('\t') for i in sam]
+	# for i in sam:
+	# 	i.remove(i[1])
+	# 	i.remove(i[3])
 	#includes only values used for parsing
-	c=0
-	while c<len(sam):
-		sam[c]=sam[c][0:9]
-		c+=1
+	# c=0
+	# while c<len(sam):
+	# 	sam[c]=sam[c][0:9]
+	# 	c+=1
 	#assigns a null value to fields. NB: refpos is the leftmost position of the subject seq minus 1.
 	CIGAR=''
 	readNAME=''
@@ -363,23 +365,43 @@ def mtvcf_main_analysis(mtable, sam, name2, tail=5):
 	mate=''
 	#assembly mtDNA ref sequence from MT-table
 	mtDNA=[]
-	for i in mtable:
-		mtDNA.append((i[1]).strip())
-	mtDNAseq="".join(mtDNA)
-	#create list of the total depth per position across the mtDNA
 	Coverage=[]
 	for i in mtable:
-		Coverage.append((i[3]).strip())
+		if i[0].isdigit() == True:
+			mtDNA.append((i.split('\t')[1]).strip())
+			Coverage.append((i.split('\t')[3]).strip())
+	mtDNAseq="".join(mtDNA)
+	#create list of the total depth per position across the mtDNA
+	# j = 0
+	# for i in mtable:
+	# 	if j < 10:
+	# 		print(i.split('\t'))
+	# 	j += 1
+	# 	try:
+	# 		Coverage.append((i.split('\t')[3]).strip())
+	# 	except:
+	# 		print(i)
 	#-----------------------------------------------------------------------------------------
 	#apply functions to sam file and write outputs into a dictionary
 	dic={}
 	dic['Ins']=[]
 	dic['Del']=[]
-	print "\n\nsearching for indels in {0}.. please wait...\n\n".format(name2)
+	print("\nsearching for indels in {0}.. please wait...\n".format(name2))
+	#mm = 0
 	for i in sam:
+		if i.startswith("@"):
+			#print(i)
+			continue
+		i = i.split('\t')
+		i.remove(i[1])
+		i.remove(i[3])
+		i = i[:9]
+		#if mm < 10:
+		#	print(varnames(i))
 		[CIGAR, readNAME, seq, qs, refposleft, mate] = varnames(i)
 		#print "CIGAR", CIGAR
 		# varnames()
+		mm = 0
 		if 'I' in CIGAR or 'D' in CIGAR:
 			r=SearchINDELsintoSAM(readNAME,mate,CIGAR,seq, qs,refposleft,tail=tail)
 			dic[r[0]].append(r[1:])
@@ -404,7 +426,7 @@ def mtvcf_main_analysis(mtable, sam, name2, tail=5):
 			if i[-1]=='delete':
 				pass
 			else:
-				rposDel[i[2]]=[]			
+				rposDel[i[2]]=[]
 				rposDel[i[2]].append(i[3:])
 		else:
 			if i[-1]=='delete':
@@ -533,9 +555,13 @@ def mtvcf_main_analysis(mtable, sam, name2, tail=5):
 			depth=[]
 			if l>0:
 				for x in a:
+					#print(x)
 					bases2.append(str(x[0]))
+				#print("bases2: {}".format(bases2))
 				b=set(bases2)
+				#print("b: {}".format(b))
 				for z in b:
+					#print(z)
 					if z != '':
 						n=bases2.count(z)
 						if n>=5:
@@ -546,7 +572,9 @@ def mtvcf_main_analysis(mtable, sam, name2, tail=5):
 							bases1.append(z)
 							qs1.append(median(qs2))
 							depth.append(n)
+				#print(bases1)
 				r=['del', bases1, qs1, depth]
+				#print(r)
 				Final[i].append(r)
 	ref=sorted(Final)
 	Indels={}
@@ -559,46 +587,48 @@ def mtvcf_main_analysis(mtable, sam, name2, tail=5):
 					qs=x[2]
 					cov=x[3]
 					Refbase=mtDNAseq[int(i)-1]
-					Variant=map(lambda x:Refbase+x,bases)
-					InsCov=map(lambda x:int(x),cov)
+					Variant=list(map(lambda x:Refbase+x,bases))
+					InsCov=list(map(lambda x:int(x),cov))
 					Covbase=int(Coverage[int(i)-1])
 					Covbase=Covbase+sum(InsCov)
-					QS=map(lambda x:round(float(x),2),qs)
-					hetfreq=map(lambda x:heteroplasmy(x,Covbase),InsCov)
+					QS=list(map(lambda x:round(float(x),2),qs))
+					hetfreq=list(map(lambda x:heteroplasmy(x,Covbase),InsCov))
 					if Covbase <=40:
-						het_ci_low=map(lambda x: CIW_LOW(x, Covbase), hetfreq)
-						het_ci_up=map(lambda x: CIW_UP(x, Covbase), hetfreq)					
+						het_ci_low=list(map(lambda x: CIW_LOW(x, Covbase), hetfreq))
+						het_ci_up=list(map(lambda x: CIW_UP(x, Covbase), hetfreq))
 					else:
-						het_ci_low=map(lambda x: CIAC_LOW(x,Covbase), InsCov)
-						het_ci_up=map(lambda x: CIAC_UP(x,Covbase), InsCov)
+						het_ci_low=list(map(lambda x: CIAC_LOW(x,Covbase), InsCov))
+						het_ci_up=list(map(lambda x: CIAC_UP(x,Covbase), InsCov))
 					ins=[i, Refbase, Covbase, Variant, InsCov, QS, hetfreq, het_ci_low, het_ci_up,'ins']
 					Indels[name2].append(ins)
 				else:
+					#print(x)
 					if x[1] != [] :#is not empty
 						Refbase=[]
 						cov=x[3]
-						DelCov=map(lambda x:int(x),cov)
+						DelCov=list(map(lambda x:int(x),cov))
 						qs=x[2]
 						deletions=[]
 						Covbase=[]
-						for j in xrange(len(x[1])):
-							dels=ast.literal_eval(x[1][j])
+						for j in range(len(x[1])):
+							#print(x[1])
+							dels=eval(str(x[1][j]))
 							delflank=dels[0]-2
 							delfinal=dels[-1]
 							covlist=Coverage[delflank:delfinal]
-							convert=map(lambda x:int(x), covlist)
+							convert=list(map(lambda x:int(x), covlist))
 							Covbase.append(median(convert))
 						maxcovbase=max(Covbase)
 						Covbase=int(maxcovbase)+sum(DelCov)
-						hetfreq=map(lambda x:heteroplasmy(x,Covbase),DelCov)
+						hetfreq=list(map(lambda x:heteroplasmy(x,Covbase),DelCov))
 						if Covbase <=40:
-							het_ci_low=map(lambda x: CIW_LOW(x, Covbase), hetfreq)
-							het_ci_up=map(lambda x: CIW_UP(x, Covbase), hetfreq)	
+							het_ci_low=list(map(lambda x: CIW_LOW(x, Covbase), hetfreq))
+							het_ci_up=list(map(lambda x: CIW_UP(x, Covbase), hetfreq))
 						else:
-							het_ci_low=map(lambda x: CIAC_LOW(x,Covbase), DelCov)
-							het_ci_up=map(lambda x: CIAC_UP(x,Covbase), DelCov)
-						for j in xrange(len(x[1])):
-							dels=ast.literal_eval(x[1][j])
+							het_ci_low=list(map(lambda x: CIAC_LOW(x,Covbase), DelCov))
+							het_ci_up=list(map(lambda x: CIAC_UP(x,Covbase), DelCov))
+						for j in range(len(x[1])):
+							dels=eval(x[1][j])
 							delflank=dels[0]-2
 							delfinal=dels[-1]
 							deletions.append(mtDNAseq[delflank])
@@ -607,19 +637,19 @@ def mtvcf_main_analysis(mtable, sam, name2, tail=5):
 						Indels[name2].append(dele)
 	Subst={}
 	Subst[name2] = []
-	print "\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2)
+	print("\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2))
 	for i in mtable:
-		b=ast.literal_eval((i[-1]).strip())
+		b=eval((i[-1]).strip())
 		varnames2(b,i)
 		a=findmutations(A,C,G,T,Position,Ref,Cov)
 		if len(a) > 0:
-			hetfreq=map(lambda x:heteroplasmy(x,Cov),a[-1])		
+			hetfreq=list(map(lambda x:heteroplasmy(x,Cov),a[-1]))
 			if Cov<=40:
-				het_ci_low=map(lambda x: CIW_LOW(x,Cov),hetfreq)
-				het_ci_up=map(lambda x: CIW_UP(x,Cov),hetfreq)
+				het_ci_low=list(map(lambda x: CIW_LOW(x,Cov),hetfreq))
+				het_ci_up=list(map(lambda x: CIW_UP(x,Cov),hetfreq))
 			else:
-				het_ci_low=map(lambda x: CIAC_LOW(x,Cov), a[-1])
-				het_ci_up=map(lambda x: CIAC_UP(x,Cov), a[-1])
+				het_ci_low=list(map(lambda x: CIAC_LOW(x,Cov), a[-1]))
+				het_ci_up=list(map(lambda x: CIAC_UP(x,Cov), a[-1]))
 			a.append('PASS')
 			a.append(hetfreq)
 			a.append(het_ci_low)
@@ -674,8 +704,10 @@ def get_consensus(dict_of_dicts):
 		Consensus[i] = get_consensus_single(dict_of_dicts[i])
 	return Consensus
 
-def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
-    print "Reference sequence used for VCF: %s" % reference
+def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_name = 'seq'):
+    print("Reference sequence used for VCF: {}".format(reference))
+    print("Seq_name is {}".format(seq_name))
+    print(dict_of_dicts)
     VCF_RECORDS = []
     present_pos = set()
     # for each sample in dict_of_dicts
@@ -683,11 +715,12 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
         #gets variants found per sample
         val = dict_of_dicts[sample]
         for variant in val:
+            print(variant)
             # if the v. position was never encountered before, is heteroplasmic and is a deletion
             if variant[0] not in present_pos and max(variant[6])<1 and variant[-1]=='del':
                 allelecount=[1]*len(variant[1])
-                aplotypes=map(lambda x: x+1, range(len(allelecount)))
-                r = vcf.parser._Record(CHROM='chrMT', POS=variant[0], ID='.', REF=variant[1], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN', len(variant[1])+1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''},samples=[])
+                aplotypes=list(map(lambda x: x+1, range(len(allelecount))))
+                r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=variant[1], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN', len(variant[1])+1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''},samples=[])
                 #print variant[7], variant[6]
                 r._sample_indexes[sample]=[[0]+aplotypes, variant[2],variant[6], variant[7], variant[8]]
                 #print r._sample_indexes
@@ -700,13 +733,13 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
             # if the v. position was never encountered before, is heteroplasmic and is not a deletion
             elif variant[0] not in present_pos and max(variant[6])<1 and variant[-1]!='del':
                 allelecount=[1]*len(variant[3])
-                aplotypes=map(lambda x: x+1, range(len(allelecount)))
-                r = vcf.parser._Record(CHROM='chrMT', POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN', len(variant[3])+1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''},samples=[])
+                aplotypes=list(map(lambda x: x+1, range(len(allelecount))))
+                r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN', len(variant[3])+1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''},samples=[])
                 #print variant[6], variant[7]
                 r._sample_indexes[sample]=[[0]+aplotypes, variant[2],variant[6], variant[7], variant[8]]
                 r.samples.append(sample)
                 if len(variant[3])>1:
-                    r.REF=r.REF*len(variant[3])                
+                    r.REF=r.REF*len(variant[3])
                 VCF_RECORDS.append(r)
                 present_pos.add(r.POS)
                 r.TYPEVAR=[variant[-1]]*len(variant[3])
@@ -714,18 +747,18 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
             # if the v. position was never encountered before,is homoplasmic and is a deletion
             elif variant[0] not in present_pos and max(variant[6])>=1 and variant[-1]=='del':
                 allelecount=[1]*len(variant[1])
-                r = vcf.parser._Record(CHROM='chrMT', POS=variant[0], ID='.', REF=variant[1], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''}, samples=[])
+                r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=variant[1], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''}, samples=[])
                 r._sample_indexes[sample]=[1,variant[2], variant[6], variant[7], variant[8]]
                 r.samples.append(sample)
                 if len(variant[3])>1:
-                    r.REF=r.REF*len(variant[3])                
+                    r.REF=r.REF*len(variant[3])
                 VCF_RECORDS.append(r)
                 present_pos.add(r.POS)
                 r.TYPEVAR=[variant[-1]]*len(variant[3])
             # if the v. position was never encountered before,is homoplasmic and is not a deletion
             elif variant[0] not in present_pos and max(variant[6])>=1 and variant[-1]!='del':
                 allelecount=[1]*len(variant[3])
-                r = vcf.parser._Record(CHROM='chrMT', POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''}, samples=[])
+                r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''}, samples=[])
                 r._sample_indexes[sample]=[1,variant[2], variant[6], variant[7],variant[8]]
                 r.samples.append(sample)
                 if len(variant[3])>1:
@@ -741,7 +774,7 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                         #print i
                         #when there are multiple variants for a position of the same individual
                         if sample in i.samples and type(variant[1]) == type(list()):
-                            for x in xrange(len(variant[3])):
+                            for x in range(len(variant[3])):
                                 if variant[3][x] in i.ALT and variant[1][x] in i.REF:
                                     index=i.ALT.index(variant[3][x])
                                     i.INFO['AC'][index]+=1
@@ -762,7 +795,7 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                                     i._sample_indexes[sample][0].append(aplotype)
                                     i._sample_indexes[sample][2].append(variant[6][x])
                                     i._sample_indexes[sample][3].append(variant[7][x])
-                                    i._sample_indexes[sample][4].append(variant[8][x])									
+                                    i._sample_indexes[sample][4].append(variant[8][x])
                                 else:
                                     i.REF.append(variant[1][x])
                                     #print i.REF, variant[1], i.ALT
@@ -775,13 +808,13 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                                     i._sample_indexes[sample][0].append(aplotype)
                                     i._sample_indexes[sample][2].append(variant[6][x])
                                     i._sample_indexes[sample][3].append(variant[7][x])
-                                    i._sample_indexes[sample][4].append(variant[8][x])	
+                                    i._sample_indexes[sample][4].append(variant[8][x])
                                     #print i
                         #for multiple variants of a position in different individuals
                         elif sample not in i.samples and type(variant[1]) == type(list()):
                             i.INFO['AN'] += 1
                             i.samples.append(sample)
-                            for x in xrange(len(variant[3])):
+                            for x in range(len(variant[3])):
                                 if variant[3][x] in i.ALT and variant[1][x] in i.REF:
                                     index=i.REF.index(variant[1][x])
                                     i.INFO['AC'][index] += 1
@@ -879,9 +912,9 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                                     i._sample_indexes[sample][0].append(genotype)
                                     i._sample_indexes[sample][2].append(variant[6][0])
                                     i._sample_indexes[sample][3].append(variant[7][0])
-                                    i._sample_indexes[sample][4].append(variant[8][0])																										
+                                    i._sample_indexes[sample][4].append(variant[8][0])
                                 else:
-                                    i._sample_indexes.setdefault(sample,[genotype, variant[2], variant[6], variant[7], variant[8]]) 
+                                    i._sample_indexes.setdefault(sample,[genotype, variant[2], variant[6], variant[7], variant[8]])
                                 #if a deletion, add a further reference base
                                 #print i
                                 if type(variant[1])== type(list()):
@@ -900,14 +933,14 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                                     i._sample_indexes[sample][0].append(genotype)
                                     i._sample_indexes[sample][2].append(variant[6][0])
                                     i._sample_indexes[sample][3].append(variant[7][0])
-                                    i._sample_indexes[sample][4].append(variant[8][0])			
-                                else:                                
+                                    i._sample_indexes[sample][4].append(variant[8][0])
+                                else:
                                     i._sample_indexes.setdefault(sample,[genotype, variant[2], variant[6], variant[7], variant[8]])
     for r in VCF_RECORDS:
         if len(r.REF)>1:
             setref=set(r.REF)
             if len(setref)>1:
-                for x in xrange(len(r.TYPEVAR)):
+                for x in range(len(r.TYPEVAR)):
                     ord=sorted(r.REF, key=lambda x:len(x))
                     if r.TYPEVAR[x] == 'ins':
                         r.ALT[x] = ord[-1]+r.ALT[x][1:]
@@ -920,16 +953,16 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                 r.REF=[ord[-1]]
             else:
                 r.REF=[r.REF[0]]
-    #gets the index of each sample and assign the definitive genotype to each individual        
+    #gets the index of each sample and assign the definitive genotype to each individual
     for index, sample in enumerate(dict_of_dicts.keys()):
         for r in VCF_RECORDS:
             if sample in r.samples:
                 r._sample_indexes[sample].append(index)
                 if type(r._sample_indexes[sample][0])==type(list()):
-                    genotype=map(lambda x:str(x), r._sample_indexes[sample][0])
+                    genotype=list(map(lambda x:str(x), r._sample_indexes[sample][0]))
                     aplotypes="/".join(genotype)
                     r._sample_indexes[sample][0]=aplotypes
-                    
+
 
     #counts also alleles identical to the reference base
     INDEX=OrderedDict()
@@ -952,25 +985,22 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
 
     #writes variant call in the VCF file
     #out=open("VCF_file.vcf","w")
-    out = open(name+'.vcf','w')
-    out.write('##fileformat=VCFv4.0\n##reference=chr%s\n' % reference)
+    out = open(vcffile, 'w')
+    out.write('##fileformat=VCFv4.0\n##reference={}\n'.format(reference))
     out.write('##FORMAT=<ID=GT,Number=.,Type=String,Description="Genotype">\n')
     out.write('##FORMAT=<ID=DP,Number=.,Type=Integer,Description="Reads covering the REF position">\n')
     out.write('##FORMAT=<ID=HF,Number=.,Type=Float,Description="Heteroplasmy Frequency of variant allele">\n')
     out.write('##FORMAT=<ID=CILOW,Number=.,Type=Float,Description="Value defining the lower limit of the confidence interval of the heteroplasmy fraction">\n')
-    out.write('##FORMAT=<ID=CIUP,Number=.,Type=Float,Description="Value defining the upper limit of the confidence interval of the heteroplasmy fraction">\n')	
+    out.write('##FORMAT=<ID=CIUP,Number=.,Type=Float,Description="Value defining the upper limit of the confidence interval of the heteroplasmy fraction">\n')
     out.write('##INFO=<ID=AC,Number=.,Type=Integer,Description="Allele count in genotypes">\n')
     out.write('##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">\n')
-        
-
-
     out.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t'+header+'\n')
 
     for position in sorted(present_pos):
         for r in VCF_RECORDS:
             if position == r.POS:
                 if len(r.INFO['AC'])>1:
-                    alleles=map(lambda x: str(x), r.INFO['AC'])
+                    alleles=list(map(lambda x: str(x), r.INFO['AC']))
                     alleles=",".join(alleles)
                     AC='AC='+alleles
                     AN='AN='+str(r.INFO['AN'])
@@ -984,16 +1014,16 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                     #print items
                     if len(items[1])>2:
                         if len(items[1][2])>1:
-                            het=map(lambda x:str(x), items[1][2])
+                            het=list(map(lambda x:str(x), items[1][2]))
                             heteroplasmy=",".join(het)
-                            CILOW=map(lambda x:str(x), items[1][3])
-                            CIUP=map(lambda x:str(x), items[1][4])
+                            CILOW=list(map(lambda x:str(x), items[1][3]))
+                            CIUP=list(map(lambda x:str(x), items[1][4]))
                             #print CILOW,CIUP
                             confidence_interval_low=",".join(CILOW)
-                            confidence_interval_up=",".join(CIUP)							
+                            confidence_interval_up=",".join(CIUP)
                             individual=str(items[1][0])+':'+str(items[1][1])+':'+heteroplasmy+':'+confidence_interval_low+':'+confidence_interval_up
                         else:
-                            heteroplasmy=str(items[1][2][0])                        
+                            heteroplasmy=str(items[1][2][0])
                             confidence_interval_low=str(items[1][3][0])
                             confidence_interval_up=str(items[1][4][0])
                             individual=str(items[1][0])+':'+str(items[1][1])+':'+heteroplasmy+':'+confidence_interval_low+':'+confidence_interval_up
@@ -1007,7 +1037,7 @@ def VCFoutput(dict_of_dicts, reference='RSRS', name='sample'):
                     out.write(r.CHROM+'\t'+str(r.POS)+'\t'+r.ID+'\t'+r.REF[0]+'\t'+var+'\t'+r.QUAL+'\t'+r.FILTER+'\t'+AC+';'+AN+'\t'+r.FORMAT+'\t'+samples+'\n')
                 else:
                     out.write(r.CHROM+'\t'+str(r.POS)+'\t'+r.ID+'\t'+r.REF[0]+'\t'+r.ALT[0]+'\t'+r.QUAL+'\t'+r.FILTER+'\t'+AC+';'+AN+'\t'+r.FORMAT+'\t'+samples+'\n')
-                    
+
     out.close()
 
 
@@ -1017,7 +1047,7 @@ def FASTAoutput(Consensus, mtDNAseq, names):
     for name2 in names:
         fasta_dict2[name2]=[]
     for name2 in fasta_dict2:
-        for i in xrange(len(mtDNAseq)):
+        for i in range(len(mtDNAseq)):
             index=i
             val=(index, mtDNAseq[i])
             fasta_dict2[name2].append(val)
@@ -1041,7 +1071,7 @@ def FASTAoutput(Consensus, mtDNAseq, names):
         for dirname, dirnames, filenames in os.walk('.'):
             for subdirname in dirnames:
                 if subdirname.startswith('OUT') and subdirname == names[name2]:
-                    fasta_dir=glob.glob(os.path.join(path+'/'+subdirname))[0]				
+                    fasta_dir=glob.glob(os.path.join(path+'/'+subdirname))[0]
                     fasta_out=open(fasta_dir+'/'+name2+'.fasta', "w")
                     fasta_out.write('>'+name2+'_complete_mitochondrial_sequence\n')
                     seq=[]
@@ -1053,6 +1083,5 @@ def FASTAoutput(Consensus, mtDNAseq, names):
                     fasta_out.close()
 
 if __name__ == '__main__':
-	print "This script is used only when called by assembleMTgenome.py."
+	print("This script is used only when called by assembleMTgenome.py.")
 	pass
-
