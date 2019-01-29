@@ -5,8 +5,9 @@ import resource
 import numpy as np
 #import sqlite3
 from sqlalchemy import create_engine
+from modules.mtVariantCaller import *
 
-localrules: bam2pileup
+localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -65,10 +66,10 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
 
     # Create in-memory SQLite db
     engine = create_engine('sqlite://', echo=False)
-    # samfile = path/to/out.sam --> db_name = out 
+    # samfile = path/to/out.sam --> db_name = out
     db_name = samfile.split('/')[-1].split('.')[0]
-    
-    # Read the SAM file in chunks 
+
+    # Read the SAM file in chunks
     header_lines, comment_count = get_SAM_header(samfile)
     # function that reads a samfile and skips rows with unaligned reads
     t = pd.read_table(samfile, \
@@ -78,7 +79,7 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
                       usecols=[0,2], \
                       names = ['readID', 'RNAME'], \
                       compression="infer")
-     
+
     for chunk in t:
         elapsed = time.time()
         #print("chunk")
@@ -88,6 +89,169 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
         print("{} seconds, memory: {} MB".format(time.time()-elapsed, memory_usage_resource()))
 
     return engine
+
+### Functions taken or adapted from assembleMTgenome.py
+r=re.compile("#+")
+r1=re.compile("""\^.{1}""")
+rr=re.compile("[\+\-]{1}[0-9]+")
+
+# variables which should be customisable
+mqual=25
+clev=0.80
+cov=5
+glen=10
+basename='mtDNAassembly'
+sexe='samtools'
+sversion=0
+crf=0
+crc=0
+cru=0
+pout=0
+normb=0
+addv=''
+addd=''
+hf=float(0.8)
+tail=5
+#
+
+def normS(s,ref):
+    c=re.finditer(rr,s)
+    sl=list(s)
+    cc=[(x.start(),x.end()) for x in c]
+    for i in cc:
+        n=int(''.join(sl[i[0]+1:i[1]]))
+        sl[i[0]:i[1]+n]=['#' for xx in range(len(sl[i[0]:i[1]+n]))]
+    ns=''.join(sl)
+    ns=ns.replace('#','')
+    ss=''
+    for i in ns:
+        if i in '.,ACGTNacgtN<>*': ss+=i
+    return (ss.replace('.',ref)).replace(',',ref)
+
+def nuc(seq):
+    d={'A':0,'C':0,'G':0,'T':0,'N':0}
+    for i in seq:
+        if i in d: d[i]+=1
+        else: d['N']+=1
+    return d
+
+dn={'A':'T','T':'A','C':'G','G':'C'}
+def comp(s):
+    ss=''
+    for i in s:
+        if dn.has_key(i): ss+=dn[i]
+        else: ss+='N'
+    return ss
+
+def ff(v,l):
+    for i in l:
+        x=0
+        for j in i:
+            if j in v: x+=1
+        if x==len(v): return i
+    return 0
+
+dIUPAC={'AG':'R','CT':'Y','GC':'S','AT':'W','GT':'K','AC':'M','CGT':'B','AGT':'D','ACT':'H','ACG':'V'}
+def getIUPAC(f):
+    vv=''.join([i[1] for i in f if i[0]>0])
+    k=ff(vv,dIUPAC.keys())
+    if k!=0: return dIUPAC[k]
+    else: return '#'
+
+def freq(d):
+    f=[]
+    for i in d:
+        try: v=float(d[i])/sum(d.values())
+        except: v=0.0
+        f.append((v,i))
+    f.sort()
+    f.reverse()
+    maxv=[f[0]]
+    for i in f[1:]:
+        if i[0]==maxv[0][0]: maxv.append(i)
+    if len(maxv)==1:
+        if maxv[0][0]>=clev: return maxv[0][1]
+        else: return getIUPAC(f)
+    elif len(maxv)>1: return getIUPAC(f)
+
+def get_seq_name(fasta):
+    mt_genome = SeqIO.index(fasta, 'fasta')
+    if len(mt_genome) != 1:
+        sys.exit("Sorry, but MToolBox at the moment only accepts single-contig reference mt genomes.")
+    for contig, contig_seq in mt_genome.items():
+        seq_name = contig
+    return seq_name
+
+def pileup2mt_table(pileup=None, fasta=None, mt_table=None):
+    # generate mt_table backbone
+    # get mt sequence data from genome fasta file
+    mtdna = {}
+    mt_genome = SeqIO.index(fasta, 'fasta')
+    if len(mt_genome) != 1:
+        sys.exit("Sorry, but MToolBox at the moment only accepts single-contig reference mt genomes.")
+    for contig, contig_seq in mt_genome.items():
+        for pos, nt in enumerate(contig_seq.seq):
+            mtdna[pos+1] = (nt, ['#',(0,0,0,0),0,0.0])
+
+    # open input and output files
+    f = open(pileup, 'r')
+    mt_table_handle = open(mt_table, 'w')
+
+    # iterate over pileup
+    for i in f:
+        if i.strip()=='': continue
+        l=(i.strip()).split('\t')
+        #if l[0]!=mtdna_fasta.split('.')[0]: continue
+        pos=int(l[1])
+        if len(l) == 6:
+            ref,seq,qual=l[2],normS(re.sub(r1,"",l[4]),l[2]),l[5]
+            s,q='',0
+            for j in range(len(seq)):
+                if seq[j] not in '<>*' and ord(qual[j])-33 >= mqual:
+                    s+=seq[j].upper()
+                    q+=(ord(qual[j])-33)
+            try: mq=float(q)/len(s)
+            except: mq=0.0
+            dnuc=nuc(s)
+            mfreq=freq(dnuc)
+            lnuc=(dnuc['A'],dnuc['C'],dnuc['G'],dnuc['T'])
+            cnuc='#'
+            if len(s) >= cov: cnuc=mfreq
+            #print pos,cnuc,s,dnuc
+            mtdna[pos][1][0]=cnuc
+            mtdna[pos][1][1]=lnuc
+            mtdna[pos][1][2]=len(s)
+            mtdna[pos][1][3]=mq
+        else:
+            mtdna[pos][1][0]='#'
+    f.close()
+
+    # write to mt_table
+    aseq = ''
+    mt_table_handle.write('Position\tRefNuc\tConsNuc\tCov\tMeanQ\tBaseCount(A,C,G,T)\n')
+    assb,totb=0,0
+    cop=0
+    maxCval=1
+    for i in range(len(mtdna)):
+        #print i+1, mtdna[i+1]
+        line=[str(i+1),mtdna[i+1][0],mtdna[i+1][1][0],str(mtdna[i+1][1][2]),"%.2f" %(mtdna[i+1][1][3]),str(mtdna[i+1][1][1])]
+        mt_table_handle.write('\t'.join(line)+'\n')
+        #aseq+=mtdna[i+1][1][0]
+        # if variant is not #, contigs will have reference, otherwise the # that will be subsequently substituted with N
+        if mtdna[i+1][1][0] !='#':
+            aseq+=mtdna[i+1][0]
+        else:
+            aseq+=mtdna[i+1][1][0]
+        totb+=1
+        if mtdna[i+1][1][0] !='#':
+            assb+=1
+            cop+=mtdna[i+1][1][2]
+            # track.append('chrRSRS %i %i %i\n' %(i,i+1,mtdna[i+1][1][2]))
+            if mtdna[i+1][1][2] > maxCval: maxCval=mtdna[i+1][1][2]
+
+    mt_table_handle.close()
+
+### End of functions taken from assembleMTgenome
 
 def get_single_vcf_files(df, ref_genome_mt = None):
     ref_genome_mt = ref_genome_mt
@@ -119,9 +283,9 @@ def get_other_fields(df, ref_genome_mt, field):
     return list(set(df.loc[df['ref_genome_mt'] == ref_genome_mt, field]))
 
 def rev(seq):
-	d={'A':'T','T':'A','C':'G','G':'C','N':'N'}
-	s=''.join([d[x] for x in seq])
-	return s[::-1]
+    d={'A':'T','T':'A','C':'G','G':'C','N':'N'}
+    s=''.join([d[x] for x in seq])
+    return s[::-1]
 
 def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')
@@ -304,7 +468,7 @@ def filter_alignments_old(outmt = None, outS = None, outP = None, OUT = None, re
     finalsam = OUT
     out=open(finalsam,'w')
     for entry in ref_mt_fasta:
-        out.write("@SQ	SN:{}	LN:{}\n".format(entry.id, len(entry)))
+        out.write("@SQ    SN:{}	LN:{}\n".format(entry.id, len(entry)))
     #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
     out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
 
@@ -575,30 +739,58 @@ rule sort_bam:
         samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
         """
 
+rule index_genome:
+    input:
+        genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+    output:
+        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+    message: "Indexing {input.genome_fasta} with samtools faidx"
+    shell:
+        """
+        samtools faidx {input.genome_fasta}
+        """
+
 rule bam2pileup:
     input:
-        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.bam"
+        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.bam",
+        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
-        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.pileup"
+        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-sorted.pileup"
+    params:
+        genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.sorted_bam}"
     shell:
         """
-        samtools mpileup -B -o {output.pileup} {input.sorted_bam}
+        samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.sorted_bam}
         """
 
-#rule pileup2mt_table:
+rule pileup2mt_table:
+    input:
+        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-sorted.pileup"
+    output:
+        mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-mt_table.txt"
+    params:
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+    message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
+    run:
+        pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=output.mt_table)
 
 rule make_single_VCF:
     input:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.pileup"
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam",
+        mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-mt_table.txt"
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
-    message: "Processing {input.sam} to get VCF {output.single_vcf}\nWildcards: {wildcards}\n"
-    shell:
-        """
-        # do something
-        cmd {input} {output}
-        """
+    params:
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+    message: "Processing {input.sam} to get VCF {output.single_vcf}"
+    run:
+        # function (and related ones) from mtVariantCaller
+        vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
+        # ref_genome_mt will be used in the VCF descriptive field
+        # seq_name in the VCF data
+        seq_name = get_seq_name(params.ref_mt_fasta)
+        VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
 
 rule make_VCF:
     input:
