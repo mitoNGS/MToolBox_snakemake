@@ -26,3 +26,13 @@ filtering_mt_alignments:
     threads: 1
     vmem: 10G
 
+sam2bam:
+    time: 30:00
+    threads: 1
+    vmem: 3G
+
+sort_bam:
+    time: 30:00
+    threads: 1
+    vmem: 3G
+

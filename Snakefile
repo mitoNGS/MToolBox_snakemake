@@ -5,7 +5,8 @@ import resource
 import numpy as np
 #import sqlite3
 from sqlalchemy import create_engine
-#localrules: sam2fastq
+
+localrules: bam2pileup
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -545,16 +546,51 @@ rule filtering_mt_alignments:
     threads: 1
     message: "Filtering alignments in file {input.outmt} checking alignments in {input.outS} and {input.outP}"
     run:
-        # (outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None)
         filter_alignments(outmt = input.outmt, \
                           outS = input.outS, \
                           outP = input.outP, \
                           OUT = output.sam, \
                           ref_mt_fasta = params.ref_mt_fasta)
 
+rule sam2bam:
+    input:
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam",
+        #n_genome_fasta = "data/genomes/{ref_genome_n_file}"
+    output:
+        "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.bam"
+    message: "Converting {input.sam} to {output}"
+    shell:
+        """
+        samtools view -b -o {output} {input.sam}
+        """
+
+rule sort_bam:
+    input:
+        bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.bam"
+    output:
+        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.bam"
+    message: "Sorting {input.bam} to {output.sorted_bam}"
+    shell:
+        """
+        samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
+        """
+
+rule bam2pileup:
+    input:
+        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.bam"
+    output:
+        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.pileup"
+    message: "Generating pileup {output.pileup} from {input.sorted_bam}"
+    shell:
+        """
+        samtools mpileup -B -o {output.pileup} {input.sorted_bam}
+        """
+
+#rule pileup2mt_table:
+
 rule make_single_VCF:
     input:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.pileup"
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
     message: "Processing {input.sam} to get VCF {output.single_vcf}\nWildcards: {wildcards}\n"
