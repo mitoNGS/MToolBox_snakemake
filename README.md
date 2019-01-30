@@ -2,7 +2,7 @@
 
 ## Installation
 
-### Installation of Anaconda 
+### Installation of Anaconda
 
 The grid implementation of the Mykopat pipeline is deployed in a conda environment, i.e. a virtual environment with all the needed tools/modules (including hmmer and clustal-omega). Installing conda is therefore essential, before installing the pipeline.
 
@@ -21,6 +21,26 @@ git clone https://github.com/domenico-simone/heterobasidion_mt.git
 conda env create \
 -n heterobasidion_mt \
 -f envs/environment.yaml
+
+# create folders needed by the workflow
+mkdir -p data/reads
+mkdir -p data/genomes
+```
+
+### Copy/symlink data
+
+```bash
+export projfolder="/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen"
+
+# reads
+ln -s \
+${projfolder}/hpar_raw_seq_data/*/*.fastq.gz \
+data/reads
+
+# genomes
+ln -s \
+${projfolder}/NOVOPlasty_assemblys/*/*.fasta \
+data/genomes
 ```
 
 ## Running the pipeline
@@ -35,6 +55,11 @@ source activate heterobasidion_mt
 module load samtools/1.8
 module load gsnap
 ```
+
+### Compile configuration files
+
+- `data/analysis.tab`
+- `data/reference_genomes.tab`
 
 ### Run the whole pipeline
 
