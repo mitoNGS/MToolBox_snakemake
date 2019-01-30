@@ -5,7 +5,7 @@ Written by Claudia Calabrese - claudia.calabrese23@gmail.com
 	and Domenico Simone - dome.simone@gmail.com
 """
 
-import sys, os, glob, math
+import sys, os, glob, math, gzip
 #print sys.version
 import re
 import ast
@@ -340,10 +340,21 @@ def getIUPAC(ref_var, dIUPAC):
 			iupac_code= [i[0]]
 	return iupac_code
 
+# function copied from Snakefile
+def s_encoding(s):
+    if type(s) == bytes:
+        return s.decode("utf-8")
+    elif type(s) == str:
+        return s
 
 def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5):
 	mtable = open(mtable_file, 'r')
-	sam = open(sam_file, 'r')
+	if sam_file.endswith("gz"):
+		sam = gzip.GzipFile(sam_file, mode = 'r')
+	else:
+		sam = open(sam_file, 'r')
+
+	#sam = open(sam_file, 'r')
 	#mtable=[i.split('\t') for i in mtable]
 	#mtable.remove(mtable[0])
 	# sam=sam.readlines()
@@ -389,6 +400,7 @@ def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5):
 	print("\nsearching for indels in {0}.. please wait...\n".format(name2))
 	#mm = 0
 	for i in sam:
+		i = s_encoding(i)
 		if i.startswith("@"):
 			#print(i)
 			continue
@@ -707,7 +719,7 @@ def get_consensus(dict_of_dicts):
 def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_name = 'seq'):
     print("Reference sequence used for VCF: {}".format(reference))
     print("Seq_name is {}".format(seq_name))
-    print(dict_of_dicts)
+    #print(dict_of_dicts)
     VCF_RECORDS = []
     present_pos = set()
     # for each sample in dict_of_dicts
@@ -715,7 +727,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
         #gets variants found per sample
         val = dict_of_dicts[sample]
         for variant in val:
-            print(variant)
+            #print(variant)
             # if the v. position was never encountered before, is heteroplasmic and is a deletion
             if variant[0] not in present_pos and max(variant[6])<1 and variant[-1]=='del':
                 allelecount=[1]*len(variant[1])
