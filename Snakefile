@@ -270,6 +270,12 @@ def get_out_files(df, res_dir="results", map_dir="map"):
         outpaths.append("{}/OUT_{}_{}_{}/{}/OUT.sam".format(res_dir, getattr(row, "sample"), getattr(row, "ref_genome_mt"), getattr(row, "ref_genome_n"), map_dir))
     return outpaths
 
+def get_vcf_files(df, res_dir="results"):
+    outpaths = []
+    for row in df.itertuples():
+        outpaths.append("{}/OUT_{}_{}_{}/vcf.vcf".format(res_dir, getattr(row, "sample"), getattr(row, "ref_genome_mt"), getattr(row, "ref_genome_n")))
+    return outpaths
+
 def get_genome_files(df, ref_genome_mt, field):
     return expand(df.loc[ref_genome_mt, field])
 
@@ -526,9 +532,18 @@ outpaths = get_mt_genomes(analysis_tab)
 target_inputs = [
     outpaths ]
 
+# rule all:
+#     input:
+#         mt_vcf = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab)),
+
 rule all:
     input:
-        mt_vcf = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab)),
+        get_vcf_files(analysis_tab)
+        # single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf",
+        #                                         sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
+        #                                         ref_genome_mt = get_mt_genomes(analysis_tab),
+        #                                         #ref_genome_mt = wildcards.ref_genome_mt,
+        #                                         ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
 
 rule make_mt_gmap_db:
     input:
@@ -792,17 +807,17 @@ rule make_single_VCF:
         seq_name = get_seq_name(params.ref_mt_fasta)
         VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
 
-rule make_VCF:
-    input:
-        single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf",
-                                                sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
-                                                ref_genome_mt = wildcards.ref_genome_mt,
-                                                ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
-    output:
-        "results/vcf/{ref_genome_mt}.vcf"
-    message: "Merging VCFs: {input.single_vcf} into file {output}"
-    shell:
-        """
-        # do something
-        cmd {input} {output}
-        """
+# rule make_VCF:
+#     input:
+#         single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf",
+#                                                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
+#                                                 ref_genome_mt = wildcards.ref_genome_mt,
+#                                                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
+#     output:
+#         "results/vcf/{ref_genome_mt}.vcf"
+#     message: "Merging VCFs: {input.single_vcf} into file {output}"
+#     shell:
+#         """
+#         # do something
+#         cmd {input} {output}
+#         """
