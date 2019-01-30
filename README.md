@@ -12,6 +12,7 @@
 		- [Run the whole pipeline](#run-the-whole-pipeline)
 	- [Notes](#notes)
 		- [Deactivation of the environment](#deactivation-of-the-environment)
+	- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
 
 <!-- TOC END -->
 
@@ -98,5 +99,7 @@ conda deactivate
 ```
 
 - if the same cluster job is runned again, its log will be appended to the existing file [need to change this behaviour]
+
+## Graphical representation of the workflow
 
 ![workflow](workflow.png)
