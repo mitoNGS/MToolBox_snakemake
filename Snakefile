@@ -520,8 +520,6 @@ def gsnap_inputs(sample, read_type):
         sys.exit("No read files found for sample: {}".format(sample))
     return 'data/reads/' + read_file[0]
 
-seq_type = "pe"
-
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
     ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
@@ -585,13 +583,15 @@ rule make_mt_n_gmap_db:
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
+seq_type = "pe"
+
 rule map_MT_PE_SE:
     input:
         R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
         R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
-        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam"
+        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         gmap_db = lambda wildcards: wildcards.ref_genome_mt,
@@ -605,19 +605,19 @@ rule map_MT_PE_SE:
         if seq_type == "pe":
             print("PE mode")
             shell("module load gsnap")
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} | gzip -c - > {output.outmt_sam} 2> {log}")
         if seq_type == "se":
             print("SE mode")
             shell("module load gsnap")
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} | gzip -c - > {output.outmt_sam} 2> {log}")
         elif seq_type == "both":
             print("PE + SE mode")
             shell("module load gsnap")
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} | gzip -c - > {output.outmt_sam} 2> {log}")
 
 rule sam2fastq:
     input:
-        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam"
+        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz"
     output:
         outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
         outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
@@ -713,7 +713,7 @@ rule map_nuclear_MT_PE:
 
 rule filtering_mt_alignments:
     input:
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam",
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz",
         outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam",
         outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam"
     output:
