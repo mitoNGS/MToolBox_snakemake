@@ -1,5 +1,21 @@
 # MToolBox on non-human genomes: Heterobasidion
 
+<!-- TOC START min:1 max:3 link:true update:true -->
+- [MToolBox on non-human genomes: Heterobasidion](#mtoolbox-on-non-human-genomes-heterobasidion)
+	- [Installation](#installation)
+		- [Installation of Anaconda](#installation-of-anaconda)
+		- [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
+		- [Copy/symlink data](#copysymlink-data)
+	- [Running the pipeline](#running-the-pipeline)
+		- [Activation of the conda environment](#activation-of-the-conda-environment)
+		- [Compile configuration files](#compile-configuration-files)
+		- [Run the whole pipeline](#run-the-whole-pipeline)
+	- [Notes](#notes)
+		- [Deactivation of the environment](#deactivation-of-the-environment)
+
+<!-- TOC END -->
+
+
 ## Installation
 
 ### Installation of Anaconda
