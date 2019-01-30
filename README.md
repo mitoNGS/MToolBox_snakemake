@@ -98,3 +98,5 @@ conda deactivate
 ```
 
 - if the same cluster job is runned again, its log will be appended to the existing file [need to change this behaviour]
+
+![workflow](workflow.png)
