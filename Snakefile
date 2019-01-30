@@ -38,21 +38,28 @@ def memory_usage_resource():
     mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
     return mem
 
+def s_encoding(s):
+    if type(s) == bytes:
+        return s.decode("utf-8")
+    elif type(s) == str:
+        return s
+
 def get_SAM_header(samfile):
     # is the file compressed?
     if samfile.endswith("gz"):
-        samhandle = gzip.open(samfile, 'rt')
+        samhandle = gzip.GzipFile(samfile, mode = 'r')
     elif samfile.endswith("bz2"):
-        samhandle = bz2.open(samfile, 'rt')
+        samhandle = bz2.BZ2File(samfile, mode = 'r')
     else:
         samhandle = open(samfile, 'r')
     comment_count = 0
     header_lines = []
-    l = samhandle.readline()
+    l = s_encoding(samhandle.readline())
+    print(l)
     while l[0] == "@":
         header_lines.append(l)
         comment_count += 1
-        l = samhandle.readline()
+        l = s_encoding(samhandle.readline())
     return header_lines, comment_count
 
 def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000):
@@ -297,10 +304,10 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')
     #mtoutsam=os.path.join(folder,'samfile')
     mtoutsam=samfile
-    mtoutfastq=open(outmt, 'w')
-    mtoutfastq1=open(outmt1, 'w')
-    mtoutfastq2=open(outmt2, 'w')
-    f=open(mtoutsam, 'r')
+    mtoutfastq=gzip.GzipFile(outmt, 'w')
+    mtoutfastq1=gzip.GzipFile(outmt1, 'w')
+    mtoutfastq2=gzip.GzipFile(outmt2, 'w')
+    f=gzip.GzipFile(mtoutsam, 'r')
     dics = {}
     c = 0
     for i in f:
@@ -366,9 +373,9 @@ def read_sam_file(samfile):
     return t
 
 def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
-    print("Processing outS.sam")
+    print("Processing {}".format(outS))
     outS_sql = read_sam_file_only_readID_chunks_intoSQL(outS)
-    print("Processing outP.sam")
+    print("Processing {}".format(outP))
     outP_sql = read_sam_file_only_readID_chunks_intoSQL(outP)
 
     #print(outS_sql.table_names())
@@ -390,13 +397,14 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
                        compression="infer")
 
     # open OUT.sam file and write SAM header from outS.sam (outP would be the same).
-    f = open(OUT, 'w')
-    sss = open(outS, 'r')
-    l = sss.readline()
+    OUT_uncompressed = OUT.replace(".gz", "")
+    f = open(OUT_uncompressed, 'w')
+    sss = gzip.open(outS, 'rb')
+    l = sss.readline().decode("utf-8")
     while l[0] == "@":
         if l.startswith("@PG") == False:
             f.write(l)
-        l = sss.readline()
+        l = sss.readline().decode("utf-8")
 
     f.close()
 
@@ -410,102 +418,104 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
         #print(len(c))
         n_extracted_alignments += len(OUT_chunk)
         # Append alignments to OUT.sam
-        OUT_chunk.to_csv(OUT, mode="a", header=False, sep="\t", index=False)
+        OUT_chunk.to_csv(OUT_uncompressed, mode="a", header=False, sep="\t", index=False)
         #n_extracted_reads += len(c_se)
         #n_extracted_reads += len(c_pe)
         #D = pd.concat([D, OUT_chunk])
-
+    
+    print("Compressing OUT.sam file")
+    os.system("gzip {}".format(OUT_uncompressed))
     print("Total alignments extracted: {}".format(n_extracted_alignments))
 
-def filter_alignments_old(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
-    print("Memory usage at the beginning of the function: {} MB".format(memory_usage_resource()))
-    ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
-    sig=1
-    pai=1
-    print('Reading Results...')
-    if sig:
-        hgoutsam = outS
-        dicsingle={}
-        f = open(hgoutsam, 'r')
-        x = 0
-        for i in f:
-            if i.strip()=='': continue
-            l=(i.strip()).split('\t')
-            if l[2]=='*': continue # the read is not mapped
-            # keeping multiple mappings
-            if l[0] in dicsingle:
-                dicsingle[l[0]].append(l)
-            else:
-                dicsingle[l[0]]=[l]
-            x += 1
-            if x%100000 == 0:
-                print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
-        f.close()
-    if pai:
-        hgoutsam2 = outP
-        dicpair={}
-        f=open(hgoutsam2)
-        x = 0
-        for i in f:
-            if i.strip()=='': continue
-            l=(i.strip()).split('\t')
-            if l[2]=='*': continue
-            if l[0] in dicpair:
-                dicpair[l[0]].append(l)
-            else:
-                dicpair[l[0]]=[l]
-            x += 1
-            if x%100000 == 0:
-                print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
-        f.close()
-
-    #print('Extracting FASTQ from SAM...')
-    mtoutsam = outmt
-    dics={}
-    f=open(mtoutsam)
-    for i in f:
-        if i.strip()=='' or i.startswith('@'): continue
-        l=(i.strip()).split('\t')
-        if l[2]=='*': continue
-        if l[0] in dics: dics[l[0]].append(l)
-        else: dics[l[0]]=[l]
-    f.close()
-
-    finalsam = OUT
-    out=open(finalsam,'w')
-    for entry in ref_mt_fasta:
-        out.write("@SQ    SN:{}	LN:{}\n".format(entry.id, len(entry)))
-    #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
-    out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
-
-    print('Filtering reads...')
-    for i in dics:
-        ll=dics[i]
-        if len(ll)==1: # if the read has one mapping I assume it's SE
-            if i in dicsingle:
-                r=dicsingle[i] # i is a list of lists (splitted sam lines)
-                if len(r)==1:
-                    # check if read aligned on MT when aligned against nuclear+MT
-                    # fields checked: RNAME, POS
-                    if r[0][2]==ll[0][2] and ll[0][3]==r[0][3]:
-                        #good.append('\t'.join(ll[0])+'\n')
-                        out.write('\t'.join(ll[0])+'\n')
-            else:
-                out.write('\t'.join(ll[0])+'\n')
-        else:
-            if i in dicpair:
-                r=dicpair[i]
-                if len(r) == 2:
-                    if r[0][2]==ll[0][2] and ll[0][3]==r[0][3] and r[1][2]==ll[1][2] and ll[1][3]==r[1][3]:
-                        out.write('\t'.join(ll[0])+'\n')
-                        out.write('\t'.join(ll[1])+'\n')
-            else:
-                out.write('\t'.join(ll[0])+'\n')
-                out.write('\t'.join(ll[1])+'\n')
-    out.close()
-
-    print('Outfile saved on %s.' %(finalsam))
-    print('Done.')
+# def filter_alignments_old(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
+#     print("Memory usage at the beginning of the function: {} MB".format(memory_usage_resource()))
+#     ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
+#     sig=1
+#     pai=1
+#     print('Reading Results...')
+#     if sig:
+#         hgoutsam = outS
+#         dicsingle={}
+#         f = open(hgoutsam, 'r')
+#         x = 0
+#         for i in f:
+#             if i.strip()=='': continue
+#             l=(i.strip()).split('\t')
+#             if l[2]=='*': continue # the read is not mapped
+#             # keeping multiple mappings
+#             if l[0] in dicsingle:
+#                 dicsingle[l[0]].append(l)
+#             else:
+#                 dicsingle[l[0]]=[l]
+#             x += 1
+#             if x%100000 == 0:
+#                 print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
+#         f.close()
+#     if pai:
+#         hgoutsam2 = outP
+#         dicpair={}
+#         f=open(hgoutsam2)
+#         x = 0
+#         for i in f:
+#             if i.strip()=='': continue
+#             l=(i.strip()).split('\t')
+#             if l[2]=='*': continue
+#             if l[0] in dicpair:
+#                 dicpair[l[0]].append(l)
+#             else:
+#                 dicpair[l[0]]=[l]
+#             x += 1
+#             if x%100000 == 0:
+#                 print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
+#         f.close()
+# 
+#     #print('Extracting FASTQ from SAM...')
+#     mtoutsam = outmt
+#     dics={}
+#     f=open(mtoutsam)
+#     for i in f:
+#         if i.strip()=='' or i.startswith('@'): continue
+#         l=(i.strip()).split('\t')
+#         if l[2]=='*': continue
+#         if l[0] in dics: dics[l[0]].append(l)
+#         else: dics[l[0]]=[l]
+#     f.close()
+# 
+#     finalsam = OUT
+#     out=open(finalsam,'w')
+#     for entry in ref_mt_fasta:
+#         out.write("@SQ    SN:{}	LN:{}\n".format(entry.id, len(entry)))
+#     #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
+#     out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
+# 
+#     print('Filtering reads...')
+#     for i in dics:
+#         ll=dics[i]
+#         if len(ll)==1: # if the read has one mapping I assume it's SE
+#             if i in dicsingle:
+#                 r=dicsingle[i] # i is a list of lists (splitted sam lines)
+#                 if len(r)==1:
+#                     # check if read aligned on MT when aligned against nuclear+MT
+#                     # fields checked: RNAME, POS
+#                     if r[0][2]==ll[0][2] and ll[0][3]==r[0][3]:
+#                         #good.append('\t'.join(ll[0])+'\n')
+#                         out.write('\t'.join(ll[0])+'\n')
+#             else:
+#                 out.write('\t'.join(ll[0])+'\n')
+#         else:
+#             if i in dicpair:
+#                 r=dicpair[i]
+#                 if len(r) == 2:
+#                     if r[0][2]==ll[0][2] and ll[0][3]==r[0][3] and r[1][2]==ll[1][2] and ll[1][3]==r[1][3]:
+#                         out.write('\t'.join(ll[0])+'\n')
+#                         out.write('\t'.join(ll[1])+'\n')
+#             else:
+#                 out.write('\t'.join(ll[0])+'\n')
+#                 out.write('\t'.join(ll[1])+'\n')
+#     out.close()
+# 
+#     print('Outfile saved on %s.' %(finalsam))
+#     print('Done.')
 
 def gsnap_inputs(sample, read_type):
     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
@@ -619,9 +629,9 @@ rule sam2fastq:
     input:
         outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz"
     output:
-        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
-        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
+        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq.gz",
+        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq.gz",
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq.gz",
         #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
     # version:
     #     subprocess.getoutput(
@@ -642,10 +652,10 @@ rule sam2fastq:
 
 rule map_nuclear_MT_SE:
     input:
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq",
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
-        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam"
+        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -665,7 +675,7 @@ rule map_nuclear_MT_SE:
     run:
         shell("module load gsnap")
         #shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}")
-        shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
+        shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
     # shell:
     #     """
     #     #module load gsnap
@@ -679,11 +689,11 @@ rule map_nuclear_MT_SE:
 
 rule map_nuclear_MT_PE:
     input:
-        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq",
-        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq",
+        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq.gz",
+        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
-        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam"
+        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -705,7 +715,7 @@ rule map_nuclear_MT_PE:
         #module load gsnap
         if [[ -s {input.outmt1} ]]
         then
-            gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} > {output.outP} 2> {log.logP}
+            gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} | gzip -c - > {output.outP} 2> {log.logP}
         else
             touch {output}
         fi
@@ -714,16 +724,16 @@ rule map_nuclear_MT_PE:
 rule filtering_mt_alignments:
     input:
         outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz",
-        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam",
-        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam"
+        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam.gz",
+        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam.gz"
     output:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam.gz"
         #sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
         #outdir = lambda wildcards, output: os.path.split(output.sam)[0]
     threads: 1
-    message: "Filtering alignments in file {input.outmt} checking alignments in {input.outS} and {input.outP}"
+    message: "Filtering alignments in file {input.outmt} by checking alignments in {input.outS} and {input.outP}"
     run:
         filter_alignments(outmt = input.outmt, \
                           outS = input.outS, \
@@ -733,14 +743,14 @@ rule filtering_mt_alignments:
 
 rule sam2bam:
     input:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam",
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam.gz",
         #n_genome_fasta = "data/genomes/{ref_genome_n_file}"
     output:
         "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.bam"
     message: "Converting {input.sam} to {output}"
     shell:
         """
-        samtools view -b -o {output} {input.sam}
+        zcat {input.sam} | samtools view -b -o {output} -
         """
 
 rule sort_bam:
@@ -792,7 +802,7 @@ rule pileup2mt_table:
 
 rule make_single_VCF:
     input:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam",
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam.gz",
         mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-mt_table.txt"
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
