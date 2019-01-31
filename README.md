@@ -28,6 +28,8 @@ The grid implementation of the MToolBox workflow is deployed in a conda environm
 
 To this purpose, please follow instructions at http://docs.anaconda.com/anaconda/install/linux/ (hint: download the Anaconda installer in your personal directory with  `wget https://repo.continuum.io/archive/Anaconda3-2018.12-Linux-x86_64.sh`).
 
+**Note on installation**: step 11 (verify installation by opening `anaconda-navigator`) is not compulsory. However, if you wish to do so, please make sure you have logged in the grid with either the `-X` or the `-Y` option, *e.g.* `ssh -Y username@my-mgrid.mykopat.slu.se`.
+
 ### Installation of the MToolBox workflow
 
 Since the workflow and the input/output data will be in the same folder, it is strongly recommended to install the workflow in some subfolder of `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/`. In this example this folder will be `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox`.
@@ -48,6 +50,7 @@ conda install git
 git clone https://github.com/domenico-simone/heterobasidion_mt.git
 
 # install environment
+cd heterobasidion_mt
 conda env create \
 -n heterobasidion_mt \
 -f envs/environment.yaml
@@ -99,7 +102,7 @@ Structure (strictly **tab-separated**):
 | 87075_2 | 87075_2       | pb_121-1     |
 | #A      | mt1           | n1           |
 
-The workflow will execute as many analyses as the number of non-commented (i.e. not starting with `#`) lines in this file. Hint: instead of removing lines, you can comment them by prepending a `#` so that they will be skipped
+The workflow will execute as many analyses as the number of non-commented (i.e. not starting with `#`) lines in this file. Hint: instead of removing lines, you can comment them by prepending a `#` so that they will be skipped.
 Every analysis is configured by one row in this table. Specifically:
 
 - **sample** is the sample for which the read datasets will be used;
