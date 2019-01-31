@@ -118,7 +118,7 @@ Structure (strictly **tab-separated**):
 |    87075_2    |   pb_121-1   | 87075_2-mtgenome-v270.fasta | pb_121-1_polished_assembly.fasta |
 |      mt1      |      n1      |          mt1.fasta          |             n1.fasta             |
 
-This table contains explicit names for reference genome files used in the workflow. They must be located in the `data/genomes` folder.
+This table contains explicit names for reference genome files used in the workflow. Names in the columns `ref_genome_mt` and `ref_genome_n` should be consistent with the ones in the same columns in the `data/analysis.tab` table. Genome files must be located in the `data/genomes` folder.
 
 ### Run the whole workflow
 
