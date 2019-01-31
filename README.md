@@ -21,7 +21,7 @@
 
 ### Installation of Anaconda
 
-The grid implementation of the Mykopat pipeline is deployed in a conda environment, i.e. a virtual environment with all the needed tools/modules (including hmmer and clustal-omega). Installing conda is therefore essential, before installing the pipeline.
+The grid implementation of the MToolBox pipeline is deployed in a conda environment, _i.e._ a virtual environment with all the needed tools/modules. Installing conda is therefore essential, before installing the pipeline.
 
 Follow instructions at http://docs.anaconda.com/anaconda/install/linux/
 
