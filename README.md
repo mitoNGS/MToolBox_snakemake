@@ -13,6 +13,7 @@
 			- [`data/reference_genomes.tab`](#datareference_genomestab)
 		- [Run the whole workflow](#run-the-whole-workflow)
 		- [Outputs](#outputs)
+			- [Notes on outputs](#notes-on-outputs)
 	- [Notes](#notes)
 		- [Deactivation of the environment](#deactivation-of-the-environment)
 	- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
@@ -24,7 +25,7 @@
 
 ### Installation of Anaconda
 
-The grid implementation of the MToolBox workflow is deployed in a conda environment, _i.e._ a virtual environment with all the needed tools/modules. Installing conda is therefore essential, before installing the pipeline.
+The grid implementation of the MToolBox snakemake workflow, a side project of the MToolBox pipeline (https://github.com/mitoNGS/MToolBox), is deployed in a conda environment, _i.e._ a virtual environment with all the needed tools/modules. Installing Anaconda is therefore essential, before installing the pipeline.
 
 To this purpose, please follow instructions at http://docs.anaconda.com/anaconda/install/linux/ (hint: download the Anaconda installer in your personal directory with  `wget https://repo.continuum.io/archive/Anaconda3-2018.12-Linux-x86_64.sh`).
 
@@ -58,6 +59,7 @@ conda env create \
 # create folders needed by the workflow
 mkdir -p data/reads
 mkdir -p data/genomes
+mkdir -p logs
 ```
 
 ### Copy/symlink data
@@ -70,7 +72,12 @@ ln -s \
 ${projfolder}/hpar_raw_seq_data/*/*.fastq.gz \
 data/reads
 
-# genomes
+# nuclear genome
+ln -s \
+/nfs4/my-gridfront/mykopat-proj3/mykopat-hpadist/raw_sequence_data/reference/pb_121-1_polished_assembly.fasta \
+data/genomes
+
+# mt genomes
 ln -s \
 ${projfolder}/NOVOPlasty_assemblys/*/*.fasta \
 data/genomes
@@ -174,6 +181,35 @@ results/
     └── vcf.vcf
 ```
 
+#### Notes on outputs
+
+For each sample:
+
+- `OUT-sorted.bam` contains filtered alignments (in binary format) used for variant calling, useful for displaying alignment data (reads overlapping a specific genome region, coverage depth at specific sites etc) in external tools, _e.g._ IGV.
+- `OUT-sorted.pileup` contains a text-format report of SNP calling. It can suggest the presence of indels, but it does not report them. More details at https://en.wikipedia.org/wiki/Pileup_format.
+- `vcf.vcf` contains genotype information for each sample. The genotype is reported following the structure reported in the FORMAT field GT:DP:HF:CILOW:CIUP, where each subfield is explained as follows:
+
+|  Subfield |                Description                |
+|:---------:|:-----------------------------------------:|
+|   **GT**  |                  genotype                 |
+|   **DP**  |      reads covering the REF position      |
+|   **HF**  |   heteroplasmy fraction of ALT allele(s)  |
+| **CILOW** | lower limit of the HF confidence interval |
+|  **CIUP** | upper limit of the HF confidence interval |
+
+For example, if sample A shows this genotype information:  
+
+| #CHROM  | POS   | ID | REF | ALT     | QUAL | FILTER | INFO        | FORMAT              | 87074_1                                     |
+|---------|-------|----|-----|---------|------|--------|-------------|---------------------|---------------------------------------------|
+| Contig1 | 26169 | .  | TT  | T       | .    | PASS   | AC=1;AN=2   | GT:DP:HF:CILOW:CIUP | 0/1:6895:0.01:0.008:0.013                   |
+| Contig1 | 26158 | .  | AT  | ATTTT,A | .    | PASS   | AC=1,1;AN=3 | GT:DP:HF:CILOW:CIUP | 0/1/2:5553:0.001,0.016:0.0,0.014:0.002,0.02 |
+
+- at site 26169, sample A has a 1T deletion with a heteroplasmy frequency of 0.01 (1%). That site is covered by 6895 reads. The heteroplasmy frequency is calculated with a confidence interval. In this case, the confidence interval ranges from 0.008 and 0.013 (0.8-0.13%).
+
+- at site 26158, sample A has two variants: an insertion of three Ts (with HF = 0.001) and a 1T deletion with HF of 0.016. That site is covered by 5553 reads. The HF confidence intervals for each variant are 0-0.002 and 0.014-0.02, respectively.
+
+Please find more info about the VCF format here: http://www.internationalgenome.org/wiki/Analysis/vcf4.0/ and more info about the calculation of HF and the related confidence interval in the original MToolBox paper: https://www.ncbi.nlm.nih.gov/pubmed/25028726.
+
 ## Notes
 
 ### Deactivation of the environment
@@ -186,5 +222,13 @@ conda deactivate
 - if the same cluster job is runned again, its log will be appended to the existing file [need to change this behaviour]
 
 ## Graphical representation of the workflow
+
+A graphical representation of the workflow can be obtained by running
+
+```bash
+snakemake --dag | dot -Tsvg > my_workflow.svg
+```
+
+The graph in file `my_workflow.svg` will report all the workflow steps (for each sample in the `analysis.tab` configuration file). Steps in dashed lines are to be run (because their outputs are not present), whereas outputs for steps in solid lines are already present. A graphical representation of the workflow as per the `analysis.tab` file in this repo is reported as follows.
 
 ![workflow](workflow.png)
