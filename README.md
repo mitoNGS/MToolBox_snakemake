@@ -17,6 +17,7 @@
 	- [Notes](#notes)
 		- [Deactivation of the environment](#deactivation-of-the-environment)
 	- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
+	- [Acknowledgements](#acknowledgements)
 
 <!-- TOC END -->
 
@@ -232,3 +233,7 @@ snakemake --dag | dot -Tsvg > my_workflow.svg
 The graph in file `my_workflow.svg` will report all the workflow steps (for each sample in the `analysis.tab` configuration file). Steps in dashed lines are to be run (because their outputs are not present), whereas outputs for steps in solid lines are already present. A graphical representation of the workflow as per the `analysis.tab` file in this repo is reported as follows.
 
 ![workflow](workflow.png)
+
+## Acknowledgements
+
+[Claudia Calabrese](https://github.com/clody23) for help in porting the code in the module `mtVariantCaller.py` from python2 to python3.
