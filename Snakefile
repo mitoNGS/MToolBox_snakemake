@@ -577,9 +577,10 @@ rule make_mt_n_gmap_db:
         n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}", \
                             ref_genome_n_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_n_file"))
     output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
-        mt_n_fasta = lambda wildcards: "data/genomes/{}_{}.fasta".format(wildcards.ref_genome_mt, wildcards.ref_genome_n),
+        #mt_n_fasta = lambda wildcards: "data/genomes/{}_{}.fasta".format(wildcards.ref_genome_mt, wildcards.ref_genome_n),
         #mt_n_fasta = lambda wildcards, input: "{}_{}.fasta".format(wildcards.ref_genome_mt, os.path.split(input.n_genome_fasta)[1].split(".")[0]),
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -588,8 +589,8 @@ rule make_mt_n_gmap_db:
     shell:
         """
         module load gsnap
-        cat {input.mt_genome_fasta} {input.n_genome_fasta} > {params.mt_n_fasta}
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {params.mt_n_fasta}
+        cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {output.mt_n_fasta}
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
@@ -766,13 +767,13 @@ rule sort_bam:
 
 rule index_genome:
     input:
-        genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     message: "Indexing {input.genome_fasta} with samtools faidx"
     shell:
         """
-        samtools faidx {input.genome_fasta}
+        samtools faidx {input.mt_n_fasta}
         """
 
 rule bam2pileup:
