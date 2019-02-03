@@ -567,7 +567,7 @@ rule make_mt_gmap_db:
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
     shell:
         """
-        module load gsnap
+        #module load gsnap
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta}
         """
 
@@ -589,7 +589,7 @@ rule make_mt_n_gmap_db:
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     shell:
         """
-        module load gsnap
+        #module load gsnap
         cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {output.mt_n_fasta}
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
@@ -616,15 +616,15 @@ rule map_MT_PE_SE:
     run:
         if seq_type == "pe":
             print("PE mode")
-            shell("module load gsnap")
+            #shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} | gzip -c - > {output.outmt_sam} 2> {log}")
         if seq_type == "se":
             print("SE mode")
-            shell("module load gsnap")
+            #shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} | gzip -c - > {output.outmt_sam} 2> {log}")
         elif seq_type == "both":
             print("PE + SE mode")
-            shell("module load gsnap")
+            #shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} | gzip -c - > {output.outmt_sam} 2> {log}")
 
 rule sam2fastq:
@@ -675,7 +675,7 @@ rule map_nuclear_MT_SE:
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
-        shell("module load gsnap")
+        #shell("module load gsnap")
         #shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}")
         shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
     # shell:
