@@ -304,9 +304,9 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')
     #mtoutsam=os.path.join(folder,'samfile')
     mtoutsam=samfile
-    mtoutfastq=gzip.GzipFile(outmt, 'w')
-    mtoutfastq1=gzip.GzipFile(outmt1, 'w')
-    mtoutfastq2=gzip.GzipFile(outmt2, 'w')
+    mtoutfastq=gzip.GzipFile(outmt, 'wb')
+    mtoutfastq1=gzip.GzipFile(outmt1, 'wb')
+    mtoutfastq2=gzip.GzipFile(outmt2, 'wb')
     f=gzip.GzipFile(mtoutsam, 'rb')
     dics = {}
     c = 0
@@ -341,18 +341,18 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
                     strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
-                    mtoutfastq.write(b'entry')
+                    mtoutfastq.write(entry.encode("utf-8"))
                     #single.append(entry)
                 else:
                     strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
-                    mtoutfastq1.write(b'entry')
+                    mtoutfastq1.write(entry.encode("utf-8"))
                     #pair1.append(entry)
                     strand,seq,qual=int(ll[1][1]) & 16,ll[1][9],ll[1][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[1][0],seq,'+',qual])+'\n'
-                    mtoutfastq2.write(b'entry')
+                    mtoutfastq2.write(entry.encode("utf-8"))
                     #pair2.append(entry)
                 # create new dics with new read ID
                 dics = {l[0] : [l]}
@@ -675,19 +675,12 @@ rule map_nuclear_MT_SE:
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
-        #shell("module load gsnap")
-        #shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} > {output.outS} 2> {log.logS}")
-        shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
-    # shell:
-    #     """
-    #     #module load gsnap
-    #     if [[ -s {input.outmt} ]]
-    #     then
-    #         gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --nofails --query-unk-mismatch=1 -O -t {threads} -o {output.outS} {input.outmt} &> {log.logS}
-    #     else
-    #         touch {output.outS}
-    #     fi
-    #     """
+        if os.path.isfile(input.outmt):
+            "gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} | gzip -c - > {output.outmt_sam} 2> {log}"
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}")
+        else:
+            open(output.outS, 'a').close()
+        #shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
 
 rule map_nuclear_MT_PE:
     input:
@@ -712,16 +705,21 @@ rule map_nuclear_MT_PE:
         logP = log_dir + "/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/logP.sam"
     message:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
-    shell:
-        """
-        #module load gsnap
-        if [[ -s {input.outmt1} ]]
-        then
-            gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} | gzip -c - > {output.outP} 2> {log.logP}
-        else
-            touch {output}
-        fi
-        """
+    run:
+        if os.path.isfile(input.outmt1):
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} | gzip -c - > {output.outP} 2> {log.logP}")
+        else:
+            open(output.outP, 'a').close()
+    # shell:
+    #     """
+    #     #module load gsnap
+    #     if [[ -s {input.outmt1} ]]
+    #     then
+    #         gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} | gzip -c - > {output.outP} 2> {log.logP}
+    #     else
+    #         touch {output}
+    #     fi
+    #     """
 
 rule filtering_mt_alignments:
     input:
