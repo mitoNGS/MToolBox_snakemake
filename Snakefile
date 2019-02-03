@@ -307,10 +307,11 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq=gzip.GzipFile(outmt, 'w')
     mtoutfastq1=gzip.GzipFile(outmt1, 'w')
     mtoutfastq2=gzip.GzipFile(outmt2, 'w')
-    f=gzip.GzipFile(mtoutsam, 'r')
+    f=gzip.GzipFile(mtoutsam, 'rb')
     dics = {}
     c = 0
     for i in f:
+        i = i.decode("utf-8")
         c += 1
         if c % 100000 == 0:
             print("{} SAM entries processed.".format(c))
@@ -340,18 +341,18 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
                     strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
-                    mtoutfastq.write(entry)
+                    mtoutfastq.write(b'entry')
                     #single.append(entry)
                 else:
                     strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
-                    mtoutfastq1.write(entry)
+                    mtoutfastq1.write(b'entry')
                     #pair1.append(entry)
                     strand,seq,qual=int(ll[1][1]) & 16,ll[1][9],ll[1][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[1][0],seq,'+',qual])+'\n'
-                    mtoutfastq2.write(entry)
+                    mtoutfastq2.write(b'entry')
                     #pair2.append(entry)
                 # create new dics with new read ID
                 dics = {l[0] : [l]}
@@ -422,7 +423,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
         #n_extracted_reads += len(c_se)
         #n_extracted_reads += len(c_pe)
         #D = pd.concat([D, OUT_chunk])
-    
+
     print("Compressing OUT.sam file")
     os.system("gzip {}".format(OUT_uncompressed))
     print("Total alignments extracted: {}".format(n_extracted_alignments))
@@ -468,7 +469,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
 #             if x%100000 == 0:
 #                 print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
 #         f.close()
-# 
+#
 #     #print('Extracting FASTQ from SAM...')
 #     mtoutsam = outmt
 #     dics={}
@@ -480,14 +481,14 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
 #         if l[0] in dics: dics[l[0]].append(l)
 #         else: dics[l[0]]=[l]
 #     f.close()
-# 
+#
 #     finalsam = OUT
 #     out=open(finalsam,'w')
 #     for entry in ref_mt_fasta:
 #         out.write("@SQ    SN:{}	LN:{}\n".format(entry.id, len(entry)))
 #     #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
 #     out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
-# 
+#
 #     print('Filtering reads...')
 #     for i in dics:
 #         ll=dics[i]
@@ -513,7 +514,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
 #                 out.write('\t'.join(ll[0])+'\n')
 #                 out.write('\t'.join(ll[1])+'\n')
 #     out.close()
-# 
+#
 #     print('Outfile saved on %s.' %(finalsam))
 #     print('Done.')
 
@@ -563,7 +564,7 @@ rule make_mt_gmap_db:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
-    message: "Generating gmap db for mt genome: {input.mt_genome_fasta}"
+    message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
     shell:
         """
         module load gsnap
@@ -770,7 +771,7 @@ rule index_genome:
         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
-    message: "Indexing {input.genome_fasta} with samtools faidx"
+    message: "Indexing {input.mt_n_fasta} with samtools faidx"
     shell:
         """
         samtools faidx {input.mt_n_fasta}

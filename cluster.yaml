@@ -8,10 +8,16 @@ __default__:
 make_mt_gmap_db:
     time: 3:00:00
     threads: 1
+    stdout: logs/snakejob.{rule}.{wildcards.ref_genome_mt}.out
 
 make_mt_n_gmap_db:
     time: 3:00:00
     threads: 1
+    stdout: logs/snakejob.{rule}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
+
+map_nuclear_MT_PE:
+    time: 3:00:00
+    threads: 4
 
 map_nuclear_MT_SE:
     time: 3:00:00
@@ -35,4 +41,3 @@ sort_bam:
     time: 30:00
     threads: 1
     vmem: 3G
-
