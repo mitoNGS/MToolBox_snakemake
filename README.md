@@ -2,22 +2,22 @@
 
 <!-- TOC START min:1 max:4 link:true update:true -->
 - [MToolBox on non-human genomes: Heterobasidion](#mtoolbox-on-non-human-genomes-heterobasidion)
-	- [Installation](#installation)
-		- [Installation of Anaconda](#installation-of-anaconda)
-		- [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
-		- [Copy/symlink data](#copysymlink-data)
-	- [Running the pipeline](#running-the-pipeline)
-		- [Activation of the conda environment](#activation-of-the-conda-environment)
-		- [Compile configuration files](#compile-configuration-files)
-			- [`data/analysis.tab`](#dataanalysistab)
-			- [`data/reference_genomes.tab`](#datareference_genomestab)
-		- [Run the whole workflow](#run-the-whole-workflow)
-		- [Outputs](#outputs)
-			- [Notes on outputs](#notes-on-outputs)
-	- [Notes](#notes)
-		- [Deactivation of the environment](#deactivation-of-the-environment)
-	- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
-	- [Acknowledgements](#acknowledgements)
+    - [Installation](#installation)
+        - [Installation of Anaconda](#installation-of-anaconda)
+        - [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
+        - [Copy/symlink data](#copysymlink-data)
+    - [Running the pipeline](#running-the-pipeline)
+        - [Activation of the conda environment](#activation-of-the-conda-environment)
+        - [Compile configuration files](#compile-configuration-files)
+            - [`data/analysis.tab`](#dataanalysistab)
+            - [`data/reference_genomes.tab`](#datareference_genomestab)
+        - [Run the whole workflow](#run-the-whole-workflow)
+        - [Outputs](#outputs)
+            - [Notes on outputs](#notes-on-outputs)
+    - [Notes](#notes)
+        - [Deactivation of the environment](#deactivation-of-the-environment)
+    - [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
+    - [Acknowledgements](#acknowledgements)
 
 <!-- TOC END -->
 
@@ -135,8 +135,8 @@ This table contains explicit names for reference genome files used in the workfl
 
 ```bash
 nohup \
-snakemake -rp \
--j 100 --cluster-config cluster.yaml \
+snakemake -rpk \
+-j 100 --cluster-config cluster.yaml --latency-wait 60 \
 --cluster 'qsub -V -l h_rt={cluster.time} -l h_vmem={cluster.vmem} -pe smp {cluster.threads} -cwd -j y -o {cluster.stdout}' &> logs/nohup_MToolBox.log &
 ```
 
