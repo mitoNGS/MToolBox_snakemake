@@ -262,8 +262,6 @@ def pileup2mt_table(pileup=None, fasta=None, mt_table=None):
 
 def get_single_vcf_files(df, ref_genome_mt = None):
     ref_genome_mt = ref_genome_mt
-    # ref_genome_mt = ref_genome_mt
-    # ref_genome_n = ref_genome_n
     outpaths = []
     for row in df.itertuples():
         if getattr(row, "ref_genome_mt") == ref_genome_mt:
@@ -302,7 +300,6 @@ def rev(seq):
 
 def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')
-    #mtoutsam=os.path.join(folder,'samfile')
     mtoutsam=samfile
     mtoutfastq=gzip.GzipFile(outmt, 'wb')
     mtoutfastq1=gzip.GzipFile(outmt1, 'wb')
@@ -315,20 +312,15 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
         c += 1
         if c % 100000 == 0:
             print("{} SAM entries processed.".format(c))
-        # original version
-        # if i.strip()=='': continue
         if i.strip()=='' or i.startswith('@'):
             continue
         l=(i.strip()).split('\t')
-        #print(l[0])
         if l[2]=='*': continue
         if len(dics) == 0:
             dics[l[0]]=[l]
-            #print(dics)
         else:
             if l[0] in dics:
                 dics[l[0]].append(l)
-                #print(dics)
             else:
                 # check if reads go to single or paired end file
                 # check if each read in a pair goes to R1 or R2
@@ -336,42 +328,25 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
                     sys.exit("read data not valid: {}".format(dics))
                 k = [key for key in dics][0]
                 ll=dics[k]
-                #print(ll)
                 if len(ll)==1:
                     strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
                     mtoutfastq.write(entry.encode("utf-8"))
-                    #single.append(entry)
                 else:
                     strand,seq,qual=int(ll[0][1]) & 16,ll[0][9],ll[0][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[0][0],seq,'+',qual])+'\n'
                     mtoutfastq1.write(entry.encode("utf-8"))
-                    #pair1.append(entry)
                     strand,seq,qual=int(ll[1][1]) & 16,ll[1][9],ll[1][10]
                     if strand==16: seq,qual=rev(seq),qual[::-1]
                     entry='\n'.join(['@'+ll[1][0],seq,'+',qual])+'\n'
                     mtoutfastq2.write(entry.encode("utf-8"))
-                    #pair2.append(entry)
                 # create new dics with new read ID
                 dics = {l[0] : [l]}
-                #print(dics)
     mtoutfastq.close()
     mtoutfastq1.close()
     mtoutfastq2.close()
-
-def read_sam_file_extended(samfile):
-    # function that reads a samfile and skips rows with unaligned reads
-    t = pd.read_table(samfile, sep = '\t', comment='@', usecols=[0,2,3], names = ['readID', 'RNAME', 'POS'])
-    t = t.loc[t['RNAME'] != '*']
-    return t
-
-def read_sam_file(samfile):
-    # function that reads a samfile and skips rows with unaligned reads
-    t = pd.read_table(samfile, sep = '\t', comment='@', usecols=[0,2], names = ['readID', 'RNAME'])
-    t = t.loc[t['RNAME'] != '*']
-    return t
 
 def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
     print("Processing {}".format(outS))
@@ -379,10 +354,6 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     print("Processing {}".format(outP))
     outP_sql = read_sam_file_only_readID_chunks_intoSQL(outP)
 
-    #print(outS_sql.table_names())
-    #print(outP_sql.table_names())
-    #outS_sql.execute("SELECT readID from outS GROUP BY readID")
-    #pd.read_sql_query("SELECT readID, COUNT(readID) FROM outS HAVING COUNT(readID) == 1 GROUP BY readID", outS_sql)
     good_reads = pd.concat([pd.read_sql_query("SELECT readID FROM outS GROUP BY readID HAVING COUNT(*) == 1", outS_sql), \
                             pd.read_sql_query("SELECT readID FROM outP GROUP BY readID HAVING COUNT(*) == 2", outP_sql)])
     print("Total reads to extract alignments of: {}".format(len(good_reads)))
@@ -410,113 +381,16 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     f.close()
 
     n_extracted_alignments = 0
-    #D = pd.DataFrame()
     for chunk in tc:
         chunk = chunk.query('RNAME != "*"')
         OUT_chunk = pd.merge(chunk, good_reads, how="inner", on="readID")
-        #c_se = pd.merge(chunk, se, how="inner", on="readID")
-        #c_pe = pd.merge(chunk, pe, how="inner", on="readID")
-        #print(len(c))
         n_extracted_alignments += len(OUT_chunk)
         # Append alignments to OUT.sam
         OUT_chunk.to_csv(OUT_uncompressed, mode="a", header=False, sep="\t", index=False)
-        #n_extracted_reads += len(c_se)
-        #n_extracted_reads += len(c_pe)
-        #D = pd.concat([D, OUT_chunk])
 
     print("Compressing OUT.sam file")
     os.system("gzip {}".format(OUT_uncompressed))
     print("Total alignments extracted: {}".format(n_extracted_alignments))
-
-# def filter_alignments_old(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
-#     print("Memory usage at the beginning of the function: {} MB".format(memory_usage_resource()))
-#     ref_mt_fasta = SeqIO.parse(ref_mt_fasta, 'fasta')
-#     sig=1
-#     pai=1
-#     print('Reading Results...')
-#     if sig:
-#         hgoutsam = outS
-#         dicsingle={}
-#         f = open(hgoutsam, 'r')
-#         x = 0
-#         for i in f:
-#             if i.strip()=='': continue
-#             l=(i.strip()).split('\t')
-#             if l[2]=='*': continue # the read is not mapped
-#             # keeping multiple mappings
-#             if l[0] in dicsingle:
-#                 dicsingle[l[0]].append(l)
-#             else:
-#                 dicsingle[l[0]]=[l]
-#             x += 1
-#             if x%100000 == 0:
-#                 print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
-#         f.close()
-#     if pai:
-#         hgoutsam2 = outP
-#         dicpair={}
-#         f=open(hgoutsam2)
-#         x = 0
-#         for i in f:
-#             if i.strip()=='': continue
-#             l=(i.strip()).split('\t')
-#             if l[2]=='*': continue
-#             if l[0] in dicpair:
-#                 dicpair[l[0]].append(l)
-#             else:
-#                 dicpair[l[0]]=[l]
-#             x += 1
-#             if x%100000 == 0:
-#                 print("Memory usage after {} reads: {} MB".format(x, memory_usage_resource()))
-#         f.close()
-#
-#     #print('Extracting FASTQ from SAM...')
-#     mtoutsam = outmt
-#     dics={}
-#     f=open(mtoutsam)
-#     for i in f:
-#         if i.strip()=='' or i.startswith('@'): continue
-#         l=(i.strip()).split('\t')
-#         if l[2]=='*': continue
-#         if l[0] in dics: dics[l[0]].append(l)
-#         else: dics[l[0]]=[l]
-#     f.close()
-#
-#     finalsam = OUT
-#     out=open(finalsam,'w')
-#     for entry in ref_mt_fasta:
-#         out.write("@SQ    SN:{}	LN:{}\n".format(entry.id, len(entry)))
-#     #out.write("@SQ	SN:%s	LN:16569\n" % gsnap_db)
-#     out.write("@RG	ID:sample	PL:sample	PU:sample	LB:sample	SM:sample\n")
-#
-#     print('Filtering reads...')
-#     for i in dics:
-#         ll=dics[i]
-#         if len(ll)==1: # if the read has one mapping I assume it's SE
-#             if i in dicsingle:
-#                 r=dicsingle[i] # i is a list of lists (splitted sam lines)
-#                 if len(r)==1:
-#                     # check if read aligned on MT when aligned against nuclear+MT
-#                     # fields checked: RNAME, POS
-#                     if r[0][2]==ll[0][2] and ll[0][3]==r[0][3]:
-#                         #good.append('\t'.join(ll[0])+'\n')
-#                         out.write('\t'.join(ll[0])+'\n')
-#             else:
-#                 out.write('\t'.join(ll[0])+'\n')
-#         else:
-#             if i in dicpair:
-#                 r=dicpair[i]
-#                 if len(r) == 2:
-#                     if r[0][2]==ll[0][2] and ll[0][3]==r[0][3] and r[1][2]==ll[1][2] and ll[1][3]==r[1][3]:
-#                         out.write('\t'.join(ll[0])+'\n')
-#                         out.write('\t'.join(ll[1])+'\n')
-#             else:
-#                 out.write('\t'.join(ll[0])+'\n')
-#                 out.write('\t'.join(ll[1])+'\n')
-#     out.close()
-#
-#     print('Outfile saved on %s.' %(finalsam))
-#     print('Done.')
 
 def gsnap_inputs(sample, read_type):
     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
@@ -540,10 +414,6 @@ outpaths = get_mt_genomes(analysis_tab)
 
 target_inputs = [
     outpaths ]
-
-# rule all:
-#     input:
-#         mt_vcf = expand("results/vcf/{ref_genome_mt}.vcf", ref_genome_mt = get_mt_genomes(analysis_tab)),
 
 rule all:
     input:
@@ -581,10 +451,7 @@ rule make_mt_n_gmap_db:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
-        #mt_n_fasta = lambda wildcards: "data/genomes/{}_{}.fasta".format(wildcards.ref_genome_mt, wildcards.ref_genome_n),
-        #mt_n_fasta = lambda wildcards, input: "{}_{}.fasta".format(wildcards.ref_genome_mt, os.path.split(input.n_genome_fasta)[1].split(".")[0]),
         gmap_db_dir = config["map"]["gmap_db_dir"],
-        #gsnap_db_folder = config['map']['gsnap_db_folder'],
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     shell:
@@ -603,7 +470,7 @@ rule map_MT_PE_SE:
         R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
-        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz"
+        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         gmap_db = lambda wildcards: wildcards.ref_genome_mt,
@@ -616,24 +483,21 @@ rule map_MT_PE_SE:
     run:
         if seq_type == "pe":
             print("PE mode")
-            #shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} | gzip -c - > {output.outmt_sam} 2> {log}")
         if seq_type == "se":
             print("SE mode")
-            #shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} | gzip -c - > {output.outmt_sam} 2> {log}")
         elif seq_type == "both":
             print("PE + SE mode")
-            #shell("module load gsnap")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} | gzip -c - > {output.outmt_sam} 2> {log}")
 
 rule sam2fastq:
     input:
-        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz"
+        outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
     output:
-        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq.gz",
-        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq.gz",
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq.gz",
+        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt1.fastq.gz",
+        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt2.fastq.gz",
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.fastq.gz",
         #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
     # version:
     #     subprocess.getoutput(
@@ -643,21 +507,13 @@ rule sam2fastq:
         "Converting SAM files to FASTQ"
     run:
         sam2fastq(samfile = input.outmt_sam, outmt1 = output.outmt1, outmt2 = output.outmt2, outmt = output.outmt)
-    # shell:
-    #     """
-    #     picard SamToFastq \
-    #         I={input.outmt_sam} \
-    #         FASTQ={output.outmt1} \
-    #         SECOND_END_FASTQ={output.outmt2} \
-    #         UNPAIRED_FASTQ={output.outmt}
-    #     """
 
 rule map_nuclear_MT_SE:
     input:
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.fastq.gz",
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
-        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam.gz"
+        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -680,15 +536,14 @@ rule map_nuclear_MT_SE:
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}")
         else:
             open(output.outS, 'a').close()
-        #shell("if [[ -s {input.outmt} ]]; then gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} | gzip -c - > {output.outS} 2> {log.logS}; else touch {output.outS}; fi")
 
 rule map_nuclear_MT_PE:
     input:
-        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt1.fastq.gz",
-        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt2.fastq.gz",
+        outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt1.fastq.gz",
+        outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt2.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
-        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam.gz"
+        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -710,24 +565,14 @@ rule map_nuclear_MT_PE:
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} | gzip -c - > {output.outP} 2> {log.logP}")
         else:
             open(output.outP, 'a').close()
-    # shell:
-    #     """
-    #     #module load gsnap
-    #     if [[ -s {input.outmt1} ]]
-    #     then
-    #         gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} | gzip -c - > {output.outP} 2> {log.logP}
-    #     else
-    #         touch {output}
-    #     fi
-    #     """
 
 rule filtering_mt_alignments:
     input:
-        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outmt.sam.gz",
-        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outS.sam.gz",
-        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/outP.sam.gz"
+        outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz",
+        outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz",
+        outP = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
     output:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam.gz"
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
         #sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
@@ -743,10 +588,9 @@ rule filtering_mt_alignments:
 
 rule sam2bam:
     input:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam.gz",
-        #n_genome_fasta = "data/genomes/{ref_genome_n_file}"
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
     output:
-        "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.bam"
+        "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
     message: "Converting {input.sam} to {output}"
     shell:
         """
@@ -755,9 +599,9 @@ rule sam2bam:
 
 rule sort_bam:
     input:
-        bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.bam"
+        bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
     output:
-        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.bam"
+        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
     shell:
         """
@@ -777,10 +621,10 @@ rule index_genome:
 
 rule bam2pileup:
     input:
-        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT-sorted.bam",
+        sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
-        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-sorted.pileup"
+        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
     params:
         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.sorted_bam}"
@@ -791,9 +635,9 @@ rule bam2pileup:
 
 rule pileup2mt_table:
     input:
-        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-sorted.pileup"
+        pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
     output:
-        mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-mt_table.txt"
+        mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
@@ -802,8 +646,8 @@ rule pileup2mt_table:
 
 rule make_single_VCF:
     input:
-        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam.gz",
-        mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/OUT-mt_table.txt"
+        sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
+        mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     output:
         single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
     params:
@@ -817,17 +661,3 @@ rule make_single_VCF:
         seq_name = get_seq_name(params.ref_mt_fasta)
         VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
 
-# rule make_VCF:
-#     input:
-#         single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf",
-#                                                 sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
-#                                                 ref_genome_mt = wildcards.ref_genome_mt,
-#                                                 ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
-#     output:
-#         "results/vcf/{ref_genome_mt}.vcf"
-#     message: "Merging VCFs: {input.single_vcf} into file {output}"
-#     shell:
-#         """
-#         # do something
-#         cmd {input} {output}
-#         """
