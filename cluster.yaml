@@ -3,18 +3,24 @@ __default__:
     threads: 5
     vmem: 10G
     #stderr: logs/snakejob.{rule}.{wildcards.sample}.{jobid}.err
-    stdout: logs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
 
 make_mt_gmap_db:
     time: 3:00:00
     threads: 1
-    stdout: logs/snakejob.{rule}.{wildcards.ref_genome_mt}.out
+    stdout: logs/cluster_jobs/nakejob.{rule}.{wildcards.ref_genome_mt}.out
 
 make_mt_n_gmap_db:
     time: 3:00:00
     threads: 1
-    stdout: logs/snakejob.{rule}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
 
+trimmomatic:
+    time: 2:00:00
+    threads: 4
+    vmem: 4G
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.out
+    
 map_nuclear_MT_PE:
     time: 3:00:00
     threads: 4

@@ -1,5 +1,5 @@
 import pandas as pd
-import os, re, sys, time, gzip, bz2
+import os, re, sys, time, gzip, bz2, subprocess
 from Bio import SeqIO
 import resource
 import numpy as np
@@ -462,12 +462,86 @@ rule make_mt_n_gmap_db:
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
-seq_type = "pe"
+rule fastqc:
+    input:
+        [ os.path.join(config["proj_dirs"]["raw_data"], i) for i in ALL_FASTQ_FILES ]
+    output:
+        logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
+    params:
+        outDir = config["proj_dirs"]["qc_res"]
+    threads:
+        config['general']['threads']
+    version:
+        subprocess.check_output("fastqc -V", shell=True)
+    message:
+        "QC of read files {input} with {version}"
+    shell:
+        """
+        
+        mkdir -p {params.outDir}
+        fastqc -t {threads} -o {params.outDir} {input} > {output.logFile}
 
-rule map_MT_PE_SE:
+        """
+
+rule trimmomatic:
+    """ QCing and cleaning reads """
+    params:
+        java_cmd = config['read_processing']['trimmomatic']['java_cmd'],
+        jar_file = config['read_processing']['trimmomatic']['jar_file'],
+        mem = config['read_processing']['trimmomatic']['java_vm_mem'],
+        options = config['read_processing']['trimmomatic']['options'],
+        processing_options = config['read_processing']['trimmomatic']['processing_options'],
+        out1P = "data/filtered_reads/{sample}.R1.fastq.gz",
+        out2P = "data/filtered_reads/{sample}.R2.fastq.gz",
+        out1U = "data/filtered_reads/{sample}.1U.fastq.gz",
+        out2U = "data/filtered_reads/{sample}.2U.fastq.gz"
     input:
         R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
         R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
+    output:
+        out1P = "data/filtered_reads/{sample}.R1.fastq.gz",
+        out2P = "data/filtered_reads/{sample}.R2.fastq.gz",
+        out1U = "data/filtered_reads/{sample}.fastq.gz",
+        # out1P = config['proj_dirs']['filtered_reads'] + "/{sample}.R1.fastq.gz",
+        # out2P = config['proj_dirs']['filtered_reads'] + "/{sample}.R2.fastq.gz",
+        # out1U = config['proj_dirs']['filtered_reads'] + "/{sample}.fastq.gz",
+    threads:
+        config['read_processing']['trimmomatic']['threads']
+    # version:
+    #     subprocess.check_output("trimmomatic -version", shell=True)
+    message:
+        "Filtering read datasets for sample {wildcards.sample} with Trimmomatic" # v{version}"
+    log:
+        log_dir + "/trimmomatic/{sample}_trimmomatic.log"
+    shell:
+        """
+        {params.java_cmd} -Xmx{params.mem} -jar {params.jar_file} \
+            PE \
+            {params.options} \
+            -threads {threads} \
+            {input.R1} {input.R2} \
+            {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
+            {params.processing_options} 2> {log}
+
+        # trimmomatic PE \
+        #     {params.options} \
+        #     -threads {threads} \
+        #     {input.R1} {input.R2} \
+        #     {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
+        #     {params.processing_options} 2> {log}
+        
+        zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}
+        """
+
+seq_type = "both"
+
+rule map_MT_PE_SE:
+    input:
+        R1 = "data/filtered_reads/{sample}.R1.fastq.gz",
+        R2 = "data/filtered_reads/{sample}.R2.fastq.gz",
+        U = "data/filtered_reads/{sample}.fastq.gz",
+        # R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
+        # R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
         outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
