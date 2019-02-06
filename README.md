@@ -60,7 +60,7 @@ conda env create \
 # create folders needed by the workflow
 mkdir -p data/reads
 mkdir -p data/genomes
-mkdir -p logs
+mkdir -p logs/cluster_jobs
 ```
 
 ### Copy/symlink data
