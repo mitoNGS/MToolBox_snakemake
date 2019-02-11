@@ -1049,9 +1049,8 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                     out.write(r.CHROM+'\t'+str(r.POS)+'\t'+r.ID+'\t'+r.REF[0]+'\t'+var+'\t'+r.QUAL+'\t'+r.FILTER+'\t'+AC+';'+AN+'\t'+r.FORMAT+'\t'+samples+'\n')
                 else:
                     out.write(r.CHROM+'\t'+str(r.POS)+'\t'+r.ID+'\t'+r.REF[0]+'\t'+r.ALT[0]+'\t'+r.QUAL+'\t'+r.FILTER+'\t'+AC+';'+AN+'\t'+r.FORMAT+'\t'+samples+'\n')
-
     out.close()
-
+    return VCF_RECORDS
 
 def FASTAoutput(Consensus, mtDNAseq, names):
     path = os.getcwd()
