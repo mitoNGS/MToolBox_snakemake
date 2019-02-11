@@ -74,9 +74,8 @@ ${projfolder}/hpar_raw_seq_data/*/*.fastq.gz \
 data/reads
 
 # nuclear genome
-ln -s \
-/nfs4/my-gridfront/mykopat-proj3/mykopat-hpadist/raw_sequence_data/reference/pb_121-1_polished_assembly_nucl.fasta \
-data/genomes
+ln -sf /nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/nuclear_contigs_121-1/pb_121-1_polished_assembly_nucl.fasta \
+data/genomes/pb_121-1_polished_assembly.fasta
 
 # mt genomes
 ln -s \
