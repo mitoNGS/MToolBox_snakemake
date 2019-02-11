@@ -75,7 +75,7 @@ data/reads
 
 # nuclear genome
 ln -s \
-/nfs4/my-gridfront/mykopat-proj3/mykopat-hpadist/raw_sequence_data/reference/pb_121-1_polished_assembly.fasta \
+/nfs4/my-gridfront/mykopat-proj3/mykopat-hpadist/raw_sequence_data/reference/pb_121-1_polished_assembly_nucl.fasta \
 data/genomes
 
 # mt genomes
@@ -149,37 +149,91 @@ Folders created during the workflow execution: `results`, `gmap_db`, `logs`.
 - `results` folder tree
 
 ```
-results/
-├── OUT_87074_1_87074_1_pb_121-1
-│   ├── map
-│   │   ├── OUT.bam
-│   │   ├── outmt1.fastq.gz
-│   │   ├── outmt2.fastq.gz
-│   │   ├── outmt.fastq.gz
-│   │   ├── outmt.sam.gz
-│   │   ├── outP.sam.gz
-│   │   ├── OUT.sam.gz
-│   │   ├── OUT-sorted.bam
-│   │   └── outS.sam.gz
-│   ├── variant_calling
-│   │   ├── OUT-mt_table.txt
-│   │   └── OUT-sorted.pileup
-│   └── vcf.vcf
-└── OUT_87075_2_87075_2_pb_121-1
-    ├── map
-    │   ├── OUT.bam
-    │   ├── outmt1.fastq.gz
-    │   ├── outmt2.fastq.gz
-    │   ├── outmt.fastq.gz
-    │   ├── outmt.sam.gz
-    │   ├── outP.sam.gz
-    │   ├── OUT.sam.gz
-    │   ├── OUT-sorted.bam
-    │   └── outS.sam.gz
-    ├── variant_calling
-    │   ├── OUT-mt_table.txt
-    │   └── OUT-sorted.pileup
-    └── vcf.vcf
+results
+├── [Feb  8  9:01]  fastqc_filtered
+│   ├── [Feb  8  8:50]  87_124_2.R1_fastqc.html
+│   ├── [Feb  8  8:49]  87_124_2.R1_fastqc.zip
+│   ├── [Feb  8  8:50]  87_124_2.R2_fastqc.html
+│   ├── [Feb  8  8:49]  87_124_2.R2_fastqc.zip
+│   ├── [Feb  8  8:50]  87_124_2.U_fastqc.html
+│   ├── [Feb  8  8:45]  87_124_2.U_fastqc.zip
+│   ├── [Feb  8  8:57]  90166_2.R1_fastqc.html
+│   ├── [Feb  8  8:56]  90166_2.R1_fastqc.zip
+│   ├── [Feb  8  8:57]  90166_2.R2_fastqc.html
+│   ├── [Feb  8  8:56]  90166_2.R2_fastqc.zip
+│   ├── [Feb  8  8:57]  90166_2.U_fastqc.html
+│   ├── [Feb  8  8:51]  90166_2.U_fastqc.zip
+│   ├── [Feb  8  8:50]  Br518_c2.R1_fastqc.html
+│   ├── [Feb  8  8:50]  Br518_c2.R1_fastqc.zip
+│   ├── [Feb  8  8:50]  Br518_c2.R2_fastqc.html
+│   ├── [Feb  8  8:50]  Br518_c2.R2_fastqc.zip
+│   ├── [Feb  8  8:50]  Br518_c2.U_fastqc.html
+│   ├── [Feb  8  8:45]  Br518_c2.U_fastqc.zip
+│   ├── [Feb  8  8:55]  OH2_3c5.R1_fastqc.html
+│   ├── [Feb  8  8:54]  OH2_3c5.R1_fastqc.zip
+│   ├── [Feb  8  8:55]  OH2_3c5.R2_fastqc.html
+│   ├── [Feb  8  8:54]  OH2_3c5.R2_fastqc.zip
+│   ├── [Feb  8  8:55]  OH2_3c5.U_fastqc.html
+│   ├── [Feb  8  8:48]  OH2_3c5.U_fastqc.zip
+│   ├── [Feb  8  9:01]  Sa_159-5.R1_fastqc.html
+│   ├── [Feb  8  9:01]  Sa_159-5.R1_fastqc.zip
+│   ├── [Feb  8  9:01]  Sa_159-5.R2_fastqc.html
+│   ├── [Feb  8  9:01]  Sa_159-5.R2_fastqc.zip
+│   ├── [Feb  8  9:01]  Sa_159-5.U_fastqc.html
+│   └── [Feb  8  8:55]  Sa_159-5.U_fastqc.zip
+├── [Feb  8  8:14]  fastqc_raw
+│   ├── [Feb  8  8:10]  87_124_2_R1_fastqc.html
+│   ├── [Feb  8  8:09]  87_124_2_R1_fastqc.zip
+│   ├── [Feb  8  8:10]  87_124_2_R2_fastqc.html
+│   ├── [Feb  8  8:09]  87_124_2_R2_fastqc.zip
+│   ├── [Feb  8  8:10]  90166_2_R1_fastqc.html
+│   ├── [Feb  8  8:10]  90166_2_R1_fastqc.zip
+│   ├── [Feb  8  8:10]  90166_2_R2_fastqc.html
+│   ├── [Feb  8  8:10]  90166_2_R2_fastqc.zip
+│   ├── [Feb  8  8:10]  Br518_c2_R1_fastqc.html
+│   ├── [Feb  8  8:10]  Br518_c2_R1_fastqc.zip
+│   ├── [Feb  8  8:10]  Br518_c2_R2_fastqc.html
+│   ├── [Feb  8  8:10]  Br518_c2_R2_fastqc.zip
+│   ├── [Feb  8  8:14]  OH2_3c5_R1_fastqc.html
+│   ├── [Feb  8  8:14]  OH2_3c5_R1_fastqc.zip
+│   ├── [Feb  8  8:14]  OH2_3c5_R2_fastqc.html
+│   ├── [Feb  8  8:14]  OH2_3c5_R2_fastqc.zip
+│   ├── [Feb  8  8:11]  Sa_159-5_R1_fastqc.html
+│   ├── [Feb  8  8:11]  Sa_159-5_R1_fastqc.zip
+│   ├── [Feb  8  8:11]  Sa_159-5_R2_fastqc.html
+│   └── [Feb  8  8:10]  Sa_159-5_R2_fastqc.zip
+├── [Feb  8 17:56]  OUT_87_124_2_87_124_2_pb_121-1
+│   ├── [Feb  8 17:57]  87_124_2_87_124_2_pb_121-1.bed
+│   ├── [Feb  8 17:57]  87_124_2_87_124_2_pb_121-1.vcf
+│   ├── [Feb  8 16:15]  map
+│   │   ├── [Feb  8  9:59]  87_124_2_87_124_2_outmt1.fastq.gz
+│   │   ├── [Feb  8  9:59]  87_124_2_87_124_2_outmt2.fastq.gz
+│   │   ├── [Feb  8  9:59]  87_124_2_87_124_2_outmt.fastq.gz
+│   │   ├── [Feb  8  9:39]  87_124_2_87_124_2_outmt.sam.gz
+│   │   ├── [Feb  8 16:14]  87_124_2_87_124_2_pb_121-1_OUT.bam
+│   │   ├── [Feb  8 10:12]  87_124_2_87_124_2_pb_121-1_outP.sam.gz
+│   │   ├── [Feb  8 16:00]  87_124_2_87_124_2_pb_121-1_OUT.sam.gz
+│   │   ├── [Feb 11  8:23]  87_124_2_87_124_2_pb_121-1_OUT-sorted.bam
+│   │   └── [Feb  8 10:06]  87_124_2_87_124_2_pb_121-1_outS.sam.gz
+│   └── [Feb  8 16:19]  variant_calling
+│       ├── [Feb  8 16:33]  87_124_2_87_124_2_pb_121-1_OUT-mt_table.txt
+│       └── [Feb  8 16:19]  87_124_2_87_124_2_pb_121-1_OUT-sorted.pileup
+└── [Feb  8 17:55]  OUT_90166_2_90166_2_pb_121-1
+    ├── [Feb  8 17:56]  90166_2_90166_2_pb_121-1.bed
+    ├── [Feb  8 17:56]  90166_2_90166_2_pb_121-1.vcf
+    ├── [Feb  8 16:18]  map
+    │   ├── [Feb  8 10:57]  90166_2_90166_2_outmt1.fastq.gz
+    │   ├── [Feb  8 10:57]  90166_2_90166_2_outmt2.fastq.gz
+    │   ├── [Feb  8 10:57]  90166_2_90166_2_outmt.fastq.gz
+    │   ├── [Feb  8 10:29]  90166_2_90166_2_outmt.sam.gz
+    │   ├── [Feb  8 16:16]  90166_2_90166_2_pb_121-1_OUT.bam
+    │   ├── [Feb  8 11:06]  90166_2_90166_2_pb_121-1_outP.sam.gz
+    │   ├── [Feb  8 15:58]  90166_2_90166_2_pb_121-1_OUT.sam.gz
+    │   ├── [Feb  8 16:21]  90166_2_90166_2_pb_121-1_OUT-sorted.bam
+    │   └── [Feb  8 10:59]  90166_2_90166_2_pb_121-1_outS.sam.gz
+    └── [Feb  8 16:25]  variant_calling
+        ├── [Feb  8 16:40]  90166_2_90166_2_pb_121-1_OUT-mt_table.txt
+        └── [Feb  8 16:25]  90166_2_90166_2_pb_121-1_OUT-sorted.pileup
 ```
 
 #### Notes on outputs
