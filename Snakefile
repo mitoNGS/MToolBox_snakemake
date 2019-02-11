@@ -6,8 +6,10 @@ import numpy as np
 #import sqlite3
 from sqlalchemy import create_engine
 from modules.mtVariantCaller import *
+from modules.BEDoutput import *
 
-localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
+#localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
+localrules: index_genome
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -62,7 +64,7 @@ def get_SAM_header(samfile):
         l = s_encoding(samhandle.readline())
     return header_lines, comment_count
 
-def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000):
+def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000, table_name = "outS", ext = ".sam.gz"):
     """
     Read a SAM file, then keep a list of IDs of reads occurring <n_occurrences> times.
     In the specific case of outS.sam and outP.sam files, these are the IDs of the reads we want
@@ -73,8 +75,9 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
 
     # Create in-memory SQLite db
     engine = create_engine('sqlite://', echo=False)
-    # samfile = path/to/out.sam --> db_name = out
-    db_name = samfile.split('/')[-1].split('.')[0]
+    # samfile = path/to/out.sam --> table_name = out
+    table_name = table_name
+    #table_name = samfile.split('/')[-1].replace(ext, "").upper().replace("-", "_")
 
     # Read the SAM file in chunks
     header_lines, comment_count = get_SAM_header(samfile)
@@ -92,10 +95,10 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
         #print("chunk")
         chunk = chunk.query('RNAME != "*"')
         chunk = chunk.drop(columns=['RNAME'])
-        chunk.to_sql(db_name, con=engine, if_exists="append")
+        chunk.to_sql(table_name, con=engine, if_exists="append")
         print("{} seconds, memory: {} MB".format(time.time()-elapsed, memory_usage_resource()))
 
-    return engine
+    return engine, table_name
 
 ### Functions taken or adapted from assembleMTgenome.py
 r=re.compile("#+")
@@ -278,7 +281,19 @@ def get_out_files(df, res_dir="results", map_dir="map"):
 def get_vcf_files(df, res_dir="results"):
     outpaths = []
     for row in df.itertuples():
-        outpaths.append("{}/OUT_{}_{}_{}/vcf.vcf".format(res_dir, getattr(row, "sample"), getattr(row, "ref_genome_mt"), getattr(row, "ref_genome_n")))
+        outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf".format(results = res_dir, \
+                                                                                                                    sample = getattr(row, "sample"), \
+                                                                                                                    ref_genome_mt = getattr(row, "ref_genome_mt"), \
+                                                                                                                    ref_genome_n = getattr(row, "ref_genome_n")))
+    return outpaths
+
+def get_bed_files(df, res_dir="results"):
+    outpaths = []
+    for row in df.itertuples():
+        outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed".format(results = res_dir, \
+                                                                                                                    sample = getattr(row, "sample"), \
+                                                                                                                    ref_genome_mt = getattr(row, "ref_genome_mt"), \
+                                                                                                                    ref_genome_n = getattr(row, "ref_genome_n")))
     return outpaths
 
 def get_genome_files(df, ref_genome_mt, field):
@@ -350,12 +365,12 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
 
 def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
     print("Processing {}".format(outS))
-    outS_sql = read_sam_file_only_readID_chunks_intoSQL(outS)
+    outS_sql, table_name_S = read_sam_file_only_readID_chunks_intoSQL(outS, table_name = "outS")
     print("Processing {}".format(outP))
-    outP_sql = read_sam_file_only_readID_chunks_intoSQL(outP)
+    outP_sql, table_name_P = read_sam_file_only_readID_chunks_intoSQL(outP, table_name = "outP")
 
-    good_reads = pd.concat([pd.read_sql_query("SELECT readID FROM outS GROUP BY readID HAVING COUNT(*) == 1", outS_sql), \
-                            pd.read_sql_query("SELECT readID FROM outP GROUP BY readID HAVING COUNT(*) == 2", outP_sql)])
+    good_reads = pd.concat([pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 1".format(table_name=table_name_S), outS_sql), \
+                            pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 2".format(table_name=table_name_P), outP_sql)])
     print("Total reads to extract alignments of: {}".format(len(good_reads)))
 
     samfile = outmt
@@ -392,18 +407,69 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     os.system("gzip {}".format(OUT_uncompressed))
     print("Total alignments extracted: {}".format(n_extracted_alignments))
 
-def gsnap_inputs(sample, read_type):
+def read_datasets_inputs(sample = None, read_type = "1", input_folder="data/reads"):
     # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
     ### This regex matches typical names in illumina sequencing, eg 95191_TGACCA_L002_R2_001.fastq.gz
     #read_file_regex = re.escape(sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
     ### This is for more general cases, seems to work
     read_file_regex = re.escape(sample) + r'[_.][\S]*R' + read_type + r'[\S]*fastq.gz'
-    read_file = [f for f in os.listdir('./data/reads/') if re.match(read_file_regex, f)]
-    if len(read_file) > 1:
+    #print(os.listdir(input_folder))
+    read_files = [f for f in os.listdir(input_folder) if re.match(read_file_regex, f)]
+    #print(read_files)
+    if len(read_files) > 1:
         sys.exit("Ambiguous name in read files.")
-    elif len(read_file) == 0:
+    elif len(read_files) == 0:
         sys.exit("No read files found for sample: {}".format(sample))
-    return 'data/reads/' + read_file[0]
+    return [os.path.join(input_folder, r) for r in read_files]
+
+# def fastqc_raw_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
+#     # analysis_tab is a pandas df with a column "sample"
+#     fastqc_out = []
+#     for s in analysis_tab["sample"]:
+#         # fastqc_html_1 and fastqc_html_2 could be strings, but
+#         # keep them as lists in case one sample has multiple datasets
+#         fastqc_html_1 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "1", input_folder = infolder)]
+#         fastqc_out.extend(fastq_files_1)
+#         fastqc_html_2 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "2", input_folder = infolder)]
+#         fastqc_out.extend(fastq_files_2)
+#     return fastqc_out
+#
+def fastqc_filtered_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_filtered", ext=".fastq.gz"):
+    fastqc_out = []
+    for s in analysis_tab["sample"]:
+        # fastqc_html_1 and fastqc_html_2 could be strings, but
+        # keep them as lists in case one sample has multiple datasets
+        #L = set(os.path.join(infolder))
+        #glob.glob("{in}/{}*R1{}.format()")
+        # expand("results/fastqc_filtered/{sample}")
+        # fastqc_html_1 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "1", input_folder = infolder)]
+        # fastqc_out.extend(fastq_html_1)
+        #######
+        for read_type in ["R1", "R2", "U"]:
+            fastqc_out.append(os.path.join(outfolder, "{sample}.{read_type}_fastqc.html".format(sample=s, read_type=read_type)))
+    return fastqc_out
+
+def fastqc_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz", read_types = ["1", "2"]):
+    # keyword default values are for raw reads
+    fastqc_out = []
+    for s in analysis_tab["sample"]:
+        # fastqc_html_1 and fastqc_html_2 could be strings, but
+        # keep them as lists in case one sample has multiple datasets
+        for read_type in read_types:
+            for i in read_datasets_inputs(sample = s, read_type = read_type, input_folder = infolder):
+                print(i)
+                print(os.path.split(i)[1])
+                fastqc_html = [os.path.join(outfolder, os.path.split(i)[1].replace(ext, "_fastqc.html"))]
+            fastqc_out.extend(fastqc_html)
+        # fastqc_html_1 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "1", input_folder = infolder)]
+        # fastqc_out.extend(fastq_html_1)
+        # fastqc_html_2 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "2", input_folder = infolder)]
+        # fastqc_out.extend(fastq_html_2)
+        # fastqc_html_U = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "U", input_folder = infolder)]
+        # fastqc_out.extend(fastq_html_U)
+    print("fastqc_outputs: {}".format(fastqc_out))
+    return fastqc_out
+
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
@@ -417,12 +483,15 @@ target_inputs = [
 
 rule all:
     input:
-        get_vcf_files(analysis_tab)
-        # single_vcf = lambda wildcards: expand("results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf",
-        #                                         sample = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "sample"),
-        #                                         ref_genome_mt = get_mt_genomes(analysis_tab),
-        #                                         #ref_genome_mt = wildcards.ref_genome_mt,
-        #                                         ref_genome_n = get_other_fields(analysis_tab, wildcards.ref_genome_mt, "ref_genome_n"))
+        get_vcf_files(analysis_tab),
+        get_bed_files(analysis_tab),
+        fastqc_raw_outputs = expand("results/fastqc_raw/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2"]),
+        #fastqc_filtered_outputs = expand("results/fastqc_filtered/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2", "U"]),        #fastqc_raw_outputs = fastqc_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_raw", ext = ".fastq.gz", read_types = ["1", "2"]),
+        #fastqc_filtered_outputs = expand("results/fastqc_filtered/{outfile}", outfile = [os.path.split(i)[1].replace(".fastq.gz", "_fastqc.html") for i in read_datasets_inputs(sample = , read_type = "1", input_folder="data/reads"))
+        fastqc_filtered_outputs = fastqc_filtered_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_filtered", ext = ".fastq.gz"),
+        #fastqc_filtered_outputs = fastqc_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_filtered", ext = ".fastq.gz", read_types = ["1", "2", "U"]),
+        #expand("results/fastqc_filtered/{outR1}".format(outR1 = os.path.split(input.R1)[1].replace(".fastq.gz", "_fastqc.html")))
+        #expand("results/fastqc_filtered/{sample}")
 
 rule make_mt_gmap_db:
     input:
@@ -462,24 +531,69 @@ rule make_mt_n_gmap_db:
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
-rule fastqc:
+rule fastqc_raw:
     input:
-        [ os.path.join(config["proj_dirs"]["raw_data"], i) for i in ALL_FASTQ_FILES ]
+        R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads"),
+        R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads"),
     output:
-        logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
+        html_report_R1 = "results/fastqc_raw/{sample}_R1_fastqc.html",
+        html_report_R2 = "results/fastqc_raw/{sample}_R2_fastqc.html",
+        # html_report_R1 = lambda wildcards: "results/fastqc_raw/{outR1}".format(outR1 = os.path.split({input.R1})[1].replace(".fastq.gz", "_fastqc.html")),
+        # html_report_R2 = lambda wildcards: "results/fastqc_raw/{outR2}".format(outR2 = os.path.split({input.R2})[1].replace(".fastq.gz", "_fastqc.html"))
+        #logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
     params:
-        outDir = config["proj_dirs"]["qc_res"]
+        outDir = "results/fastqc_raw/",
     threads:
-        config['general']['threads']
+        2
     version:
         subprocess.check_output("fastqc -V", shell=True)
     message:
-        "QC of read files {input} with {version}"
+        "QC of raw read files {input} with {version}, {wildcards}"
+    log:
+        "logs/fastqc_raw/{sample}.log"
     shell:
         """
-        
+        cd $(dirname {input.R1})
+        ln -s $(basename {input.R1}) {wildcards.sample}_R1.fastq.gz
+        ln -s $(basename {input.R2}) {wildcards.sample}_R2.fastq.gz
+        cd -
         mkdir -p {params.outDir}
-        fastqc -t {threads} -o {params.outDir} {input} > {output.logFile}
+        fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}_R2.fastq.gz > {log}
+        unlink data/reads/{wildcards.sample}_R1.fastq.gz
+        unlink data/reads/{wildcards.sample}_R2.fastq.gz
+        """
+
+rule fastqc_filtered:
+    input:
+        R1 = "data/reads_filtered/{sample}.R1.fastq.gz",
+        R2 = "data/reads_filtered/{sample}.R2.fastq.gz",
+        U = "data/reads_filtered/{sample}.U.fastq.gz"
+        # R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads_filtered"),
+        # R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads_filtered"),
+        # U = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="U", input_folder="data/reads_filtered"),
+    output:
+        html_report_R1 = "results/fastqc_filtered/{sample}.R1_fastqc.html",
+        html_report_R2 = "results/fastqc_filtered/{sample}.R2_fastqc.html",
+        html_report_U = "results/fastqc_filtered/{sample}.U_fastqc.html",
+        # html_report_R1 = lambda wildcards: "results/fastqc_filtered/{outR1}".format(outR1 = os.path.split(input.R1)[1].replace(".fastq.gz", "_fastqc.html")),
+        # html_report_R2 = lambda wildcards: "results/fastqc_filtered/{outR2}".format(outR2 = os.path.split(input.R2)[1].replace(".fastq.gz", "_fastqc.html")),
+        # html_report_U = lambda wildcards: "results/fastqc_filtered/{outU}".format(outU = os.path.split(input.U)[1].replace(".fastq.gz", "_fastqc.html"))
+        #logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
+    params:
+        outDir = "results/fastqc_filtered/"
+    threads:
+        3
+    version:
+        subprocess.check_output("fastqc -V", shell=True)
+    message:
+        "QC of filtered read files {input} with {version}"
+    log:
+        "logs/fastqc_filtered/{sample}.log"
+    shell:
+        """
+
+        mkdir -p {params.outDir}
+        fastqc -t {threads} -o {params.outDir} {input} > {log}
 
         """
 
@@ -491,26 +605,26 @@ rule trimmomatic:
         mem = config['read_processing']['trimmomatic']['java_vm_mem'],
         options = config['read_processing']['trimmomatic']['options'],
         processing_options = config['read_processing']['trimmomatic']['processing_options'],
-        out1P = "data/filtered_reads/{sample}.R1.fastq.gz",
-        out2P = "data/filtered_reads/{sample}.R2.fastq.gz",
-        out1U = "data/filtered_reads/{sample}.1U.fastq.gz",
-        out2U = "data/filtered_reads/{sample}.2U.fastq.gz"
+        out1P = "data/reads_filtered/{sample}.R1.fastq.gz",
+        out2P = "data/reads_filtered/{sample}.R2.fastq.gz",
+        out1U = "data/reads_filtered/{sample}.1U.fastq.gz",
+        out2U = "data/reads_filtered/{sample}.2U.fastq.gz"
     input:
-        R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
-        R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
+        R1 = lambda wildcards: read_datasets_inputs(sample = "{sample}".format(sample=wildcards.sample), read_type = "1", input_folder = "data/reads"),
+        R2 = lambda wildcards: read_datasets_inputs(sample = "{sample}".format(sample=wildcards.sample), read_type = "2", input_folder = "data/reads"),
     output:
-        out1P = "data/filtered_reads/{sample}.R1.fastq.gz",
-        out2P = "data/filtered_reads/{sample}.R2.fastq.gz",
-        out1U = "data/filtered_reads/{sample}.fastq.gz",
-        # out1P = config['proj_dirs']['filtered_reads'] + "/{sample}.R1.fastq.gz",
-        # out2P = config['proj_dirs']['filtered_reads'] + "/{sample}.R2.fastq.gz",
-        # out1U = config['proj_dirs']['filtered_reads'] + "/{sample}.fastq.gz",
+        out1P = "data/reads_filtered/{sample}.R1.fastq.gz",
+        out2P = "data/reads_filtered/{sample}.R2.fastq.gz",
+        out1U = "data/reads_filtered/{sample}.U.fastq.gz",
+        # out1P = config['proj_dirs']['reads_filtered'] + "/{sample}.R1.fastq.gz",
+        # out2P = config['proj_dirs']['reads_filtered'] + "/{sample}.R2.fastq.gz",
+        # out1U = config['proj_dirs']['reads_filtered'] + "/{sample}.fastq.gz",
     threads:
         config['read_processing']['trimmomatic']['threads']
     # version:
     #     subprocess.check_output("trimmomatic -version", shell=True)
     message:
-        "Filtering read datasets for sample {wildcards.sample} with Trimmomatic" # v{version}"
+        "Filtering read datasets for sample {wildcards.sample} with Trimmomatic. {wildcards}" # v{version}"
     log:
         log_dir + "/trimmomatic/{sample}_trimmomatic.log"
     shell:
@@ -529,7 +643,7 @@ rule trimmomatic:
         #     {input.R1} {input.R2} \
         #     {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
         #     {params.processing_options} 2> {log}
-        
+
         zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}
         """
 
@@ -537,11 +651,11 @@ seq_type = "both"
 
 rule map_MT_PE_SE:
     input:
-        R1 = "data/filtered_reads/{sample}.R1.fastq.gz",
-        R2 = "data/filtered_reads/{sample}.R2.fastq.gz",
-        U = "data/filtered_reads/{sample}.fastq.gz",
-        # R1 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "1"),
-        # R2 = lambda wildcards: gsnap_inputs("{sample}".format(sample=wildcards.sample), "2"),
+        R1 = "data/reads_filtered/{sample}.R1.fastq.gz",
+        R2 = "data/reads_filtered/{sample}.R2.fastq.gz",
+        U = "data/reads_filtered/{sample}.U.fastq.gz",
+        # R1 = lambda wildcards: read_datasets_inputs("{sample}".format(sample=wildcards.sample), "1"),
+        # R2 = lambda wildcards: read_datasets_inputs("{sample}".format(sample=wildcards.sample), "2"),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
         outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
@@ -666,6 +780,7 @@ rule sam2bam:
     output:
         "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
     message: "Converting {input.sam} to {output}"
+    group: "variant_calling"
     shell:
         """
         zcat {input.sam} | samtools view -b -o {output} -
@@ -677,6 +792,7 @@ rule sort_bam:
     output:
         sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
+    group: "variant_calling"
     shell:
         """
         samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
@@ -702,6 +818,7 @@ rule bam2pileup:
     params:
         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.sorted_bam}"
+    group: "variant_calling"
     shell:
         """
         samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.sorted_bam}
@@ -715,6 +832,7 @@ rule pileup2mt_table:
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
+    group: "variant_calling"
     run:
         pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=output.mt_table)
 
@@ -723,15 +841,17 @@ rule make_single_VCF:
         sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
         mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     output:
-        single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/vcf.vcf"
+        single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf",
+        single_bed = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Processing {input.sam} to get VCF {output.single_vcf}"
+    group: "variant_calling"
     run:
         # function (and related ones) from mtVariantCaller
         vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name = get_seq_name(params.ref_mt_fasta)
-        VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
-
+        VCF_RECORDS = VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
+        BEDoutput(VCF_RECORDS, seq_name = seq_name, bedfile = output.single_bed)
