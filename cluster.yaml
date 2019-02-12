@@ -64,5 +64,5 @@ variant_calling:
     time: 3:00:00
     threads: 1
     vmem: 4G
-    stdout: logs/cluster_jobs/snakejob.variant_calling.{wildcards.sample}.out
+    stdout: logs/cluster_jobs/snakejob.variant_calling.out
     #stdout: logs/cluster_jobs/snakejob.variant_calling.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
