@@ -545,10 +545,10 @@ rule fastqc_raw:
         outDir = "results/fastqc_raw/",
     threads:
         2
-    version:
-        subprocess.check_output("fastqc -V", shell=True)
-    message:
-        "QC of raw read files {input} with {version}, {wildcards}"
+    # version:
+    #     subprocess.check_output("fastqc -V", shell=True)
+    # message:
+    #     "QC of raw read files {input} with {version}, {wildcards}"
     log:
         "logs/fastqc_raw/{sample}.log"
     shell:
@@ -583,10 +583,10 @@ rule fastqc_filtered:
         outDir = "results/fastqc_filtered/"
     threads:
         3
-    version:
-        subprocess.check_output("fastqc -V", shell=True)
-    message:
-        "QC of filtered read files {input} with {version}"
+    # version:
+    #     subprocess.check_output("fastqc -V", shell=True)
+    # message:
+    #     "QC of filtered read files {input} with {version}"
     log:
         "logs/fastqc_filtered/{sample}.log"
     shell:
