@@ -554,13 +554,15 @@ rule fastqc_raw:
     shell:
         """
         cd $(dirname {input.R1})
-        ln -s $(basename {input.R1}) {wildcards.sample}_R1.fastq.gz
-        ln -s $(basename {input.R2}) {wildcards.sample}_R2.fastq.gz
+        mkdir -p {wildcards.sample}
+        ln -s $(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
+        ln -s $(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
         cd -
         mkdir -p {params.outDir}
-        fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}_R2.fastq.gz > {log}
-        unlink data/reads/{wildcards.sample}_R1.fastq.gz
-        unlink data/reads/{wildcards.sample}_R2.fastq.gz
+        fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
+        rm -R data/reads/{wildcards.sample}
+        #unlink data/reads/{wildcards.sample}_R1.fastq.gz
+        #unlink data/reads/{wildcards.sample}_R2.fastq.gz
         """
 
 rule fastqc_filtered:
