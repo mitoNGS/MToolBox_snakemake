@@ -555,8 +555,8 @@ rule fastqc_raw:
         """
         cd $(dirname {input.R1})
         mkdir -p {wildcards.sample}
-        ln -s $(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
-        ln -s $(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
+        ln -sf `pwd`/$(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
+        ln -sf `pwd`/$(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
         cd -
         mkdir -p {params.outDir}
         fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
