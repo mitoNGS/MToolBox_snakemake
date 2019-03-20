@@ -8,7 +8,7 @@ __default__:
 make_mt_gmap_db:
     time: 3:00:00
     threads: 1
-    stdout: logs/cluster_jobs/nakejob.{rule}.{wildcards.ref_genome_mt}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.ref_genome_mt}.out
 
 make_mt_n_gmap_db:
     time: 3:00:00
@@ -46,19 +46,34 @@ sam2fastq:
     threads: 1
 
 filtering_mt_alignments:
-    time: 1:00:00
+    time: 3:00:00
     threads: 1
     vmem: 10G
 
-# sam2bam:
-#     time: 30:00
-#     threads: 1
-#     vmem: 3G
-#
-# sort_bam:
-#     time: 30:00
-#     threads: 1
-#     vmem: 3G
+sam2bam:
+    time: 3:00:00
+    threads: 1
+    vmem: 3G
+
+sort_bam:
+    time: 3:00:00
+    threads: 1
+    vmem: 3G
+
+bam2pileup:
+    time: 3:00:00
+    threads: 1
+    vmem: 3G
+
+pileup2mt_table:
+    time: 3:00:00
+    threads: 1
+    vmem: 2G
+
+make_single_VCF:
+    time: 3:00:00
+    threads: 1
+    vmem: 3G
 
 variant_calling:
     time: 3:00:00

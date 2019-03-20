@@ -782,7 +782,7 @@ rule sam2bam:
     output:
         "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
     message: "Converting {input.sam} to {output}"
-    group: "variant_calling"
+    #group: "variant_calling"
     shell:
         """
         zcat {input.sam} | samtools view -b -o {output} -
@@ -794,7 +794,7 @@ rule sort_bam:
     output:
         sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
-    group: "variant_calling"
+    #group: "variant_calling"
     shell:
         """
         samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
@@ -820,7 +820,7 @@ rule bam2pileup:
     params:
         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.sorted_bam}"
-    group: "variant_calling"
+    #group: "variant_calling"
     shell:
         """
         samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.sorted_bam}
@@ -834,7 +834,7 @@ rule pileup2mt_table:
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
-    group: "variant_calling"
+    #group: "variant_calling"
     run:
         pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=output.mt_table)
 
@@ -848,7 +848,7 @@ rule make_single_VCF:
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Processing {input.sam} to get VCF {output.single_vcf}"
-    group: "variant_calling"
+    #group: "variant_calling"
     run:
         # function (and related ones) from mtVariantCaller
         vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
