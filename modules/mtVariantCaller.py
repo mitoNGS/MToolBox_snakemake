@@ -11,6 +11,7 @@ import re
 import ast
 from collections import OrderedDict
 import vcf
+from Bio.bgzf import BgzfWriter
 
 #######################################################
 
@@ -997,7 +998,8 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
 
     #writes variant call in the VCF file
     #out=open("VCF_file.vcf","w")
-    out = open(vcffile, 'w')
+    #out = open(vcffile, 'w')
+    out = BgzfWriter(vcffile, 'w')
     out.write('##fileformat=VCFv4.0\n##reference={}\n'.format(reference))
     out.write('##FORMAT=<ID=GT,Number=.,Type=String,Description="Genotype">\n')
     out.write('##FORMAT=<ID=DP,Number=.,Type=Integer,Description="Reads covering the REF position">\n')

@@ -9,7 +9,7 @@ from modules.mtVariantCaller import *
 from modules.BEDoutput import *
 
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
-localrules: index_genome
+localrules: index_genome, merge_VCF, index_VCF
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -287,6 +287,35 @@ def get_vcf_files(df, res_dir="results"):
                                                                                                                     ref_genome_n = getattr(row, "ref_genome_n")))
     return outpaths
 
+def get_genome_single_vcf_files(df, res_dir="results", ref_genome_mt = None):
+    outpaths = []
+    for row in df.itertuples():
+        if getattr(row, "ref_genome_mt") == ref_genome_mt:
+            outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz".format(results = res_dir, \
+                                                                                                                        sample = getattr(row, "sample"), \
+                                                                                                                        ref_genome_mt = getattr(row, "ref_genome_mt"), \
+                                                                                                                        ref_genome_n = getattr(row, "ref_genome_n")))
+    return outpaths
+
+def get_genome_single_vcf_index_files(df, res_dir="results", ref_genome_mt = None):
+    outpaths = []
+    for row in df.itertuples():
+        if getattr(row, "ref_genome_mt") == ref_genome_mt:
+            outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi".format(results = res_dir, \
+                                                                                                                        sample = getattr(row, "sample"), \
+                                                                                                                        ref_genome_mt = getattr(row, "ref_genome_mt"), \
+                                                                                                                        ref_genome_n = getattr(row, "ref_genome_n")))
+    return outpaths
+
+def get_genome_vcf_files(df, res_dir="results/vcf"):
+    outpaths = set()
+    for row in df.itertuples():
+        outpaths.add("{results}/{ref_genome_mt}_{ref_genome_n}.vcf".format(results = res_dir, \
+                                                                            ref_genome_mt = getattr(row, "ref_genome_mt"), \
+                                                                            ref_genome_n = getattr(row, "ref_genome_n")))
+    outpaths = list(outpaths)
+    return outpaths
+
 def get_bed_files(df, res_dir="results"):
     outpaths = []
     for row in df.itertuples():
@@ -483,7 +512,7 @@ target_inputs = [
 
 rule all:
     input:
-        get_vcf_files(analysis_tab),
+        get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
         fastqc_raw_outputs = expand("results/fastqc_raw/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2"]),
         #fastqc_filtered_outputs = expand("results/fastqc_filtered/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2", "U"]),        #fastqc_raw_outputs = fastqc_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_raw", ext = ".fastq.gz", read_types = ["1", "2"]),
@@ -843,7 +872,7 @@ rule make_single_VCF:
         sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
         mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     output:
-        single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf",
+        single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
         single_bed = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
@@ -857,3 +886,25 @@ rule make_single_VCF:
         seq_name = get_seq_name(params.ref_mt_fasta)
         VCF_RECORDS = VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
         BEDoutput(VCF_RECORDS, seq_name = seq_name, bedfile = output.single_bed)
+
+rule index_VCF:
+    input:
+        single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
+    output:
+        index_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
+    message: "Compressing and indexing {input.single_vcf}"
+    run:
+        shell("bcftools index {input.single_vcf}")
+
+rule merge_VCF:
+    input:
+        single_vcf_list = lambda wildcards: get_genome_single_vcf_files(analysis_tab, ref_genome_mt = wildcards.ref_genome_mt),
+        index_vcf = lambda wildcards: get_genome_single_vcf_index_files(analysis_tab, ref_genome_mt = wildcards.ref_genome_mt),
+        #single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
+        #index_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
+    output:
+        merged_vcf = "results/vcf/{ref_genome_mt}_{ref_genome_n}.vcf"
+    #message: lambda wildcards: "Merging vcf files for mt reference genome: {ref_genome_mt}".format(ref_genome_mt = wildcards.ref_genome_mt)
+    message: "Merging vcf files for mt reference genome: {wildcards.ref_genome_mt}"
+    run:
+        shell("bcftools merge {input.single_vcf_list} -O v -o {output.merged_vcf}")
