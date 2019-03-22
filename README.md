@@ -2,22 +2,22 @@
 
 <!-- TOC START min:1 max:4 link:true update:true -->
 - [MToolBox on non-human genomes: Heterobasidion](#mtoolbox-on-non-human-genomes-heterobasidion)
-    - [Installation](#installation)
-        - [Installation of Anaconda](#installation-of-anaconda)
-        - [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
-        - [Copy/symlink data](#copysymlink-data)
-    - [Running the pipeline](#running-the-pipeline)
-        - [Activation of the conda environment](#activation-of-the-conda-environment)
-        - [Compile configuration files](#compile-configuration-files)
-            - [`data/analysis.tab`](#dataanalysistab)
-            - [`data/reference_genomes.tab`](#datareference_genomestab)
-        - [Run the whole workflow](#run-the-whole-workflow)
-        - [Outputs](#outputs)
-            - [Notes on outputs](#notes-on-outputs)
-    - [Notes](#notes)
-        - [Deactivation of the environment](#deactivation-of-the-environment)
-    - [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
-    - [Acknowledgements](#acknowledgements)
+   - [Installation](#installation)
+      - [Installation of Anaconda](#installation-of-anaconda)
+      - [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
+      - [Copy/symlink data](#copysymlink-data)
+   - [Running the pipeline](#running-the-pipeline)
+      - [Activation of the conda environment](#activation-of-the-conda-environment)
+      - [Compile configuration files](#compile-configuration-files)
+         - [`data/analysis.tab`](#dataanalysistab)
+         - [`data/reference_genomes.tab`](#datareference_genomestab)
+      - [Run the whole workflow](#run-the-whole-workflow)
+      - [Outputs](#outputs)
+         - [Notes on outputs](#notes-on-outputs)
+   - [Notes](#notes)
+      - [Deactivation of the environment](#deactivation-of-the-environment)
+   - [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
+   - [Acknowledgements](#acknowledgements)
 
 <!-- TOC END -->
 
@@ -149,99 +149,104 @@ Folders created during the workflow execution: `results`, `gmap_db`, `logs`.
 
 ```
 results
-├── [Feb  8  9:01]  fastqc_filtered
-│   ├── [Feb  8  8:50]  87_124_2.R1_fastqc.html
-│   ├── [Feb  8  8:49]  87_124_2.R1_fastqc.zip
-│   ├── [Feb  8  8:50]  87_124_2.R2_fastqc.html
-│   ├── [Feb  8  8:49]  87_124_2.R2_fastqc.zip
-│   ├── [Feb  8  8:50]  87_124_2.U_fastqc.html
-│   ├── [Feb  8  8:45]  87_124_2.U_fastqc.zip
-│   ├── [Feb  8  8:57]  90166_2.R1_fastqc.html
-│   ├── [Feb  8  8:56]  90166_2.R1_fastqc.zip
-│   ├── [Feb  8  8:57]  90166_2.R2_fastqc.html
-│   ├── [Feb  8  8:56]  90166_2.R2_fastqc.zip
-│   ├── [Feb  8  8:57]  90166_2.U_fastqc.html
-│   ├── [Feb  8  8:51]  90166_2.U_fastqc.zip
-│   ├── [Feb  8  8:50]  Br518_c2.R1_fastqc.html
-│   ├── [Feb  8  8:50]  Br518_c2.R1_fastqc.zip
-│   ├── [Feb  8  8:50]  Br518_c2.R2_fastqc.html
-│   ├── [Feb  8  8:50]  Br518_c2.R2_fastqc.zip
-│   ├── [Feb  8  8:50]  Br518_c2.U_fastqc.html
-│   ├── [Feb  8  8:45]  Br518_c2.U_fastqc.zip
-│   ├── [Feb  8  8:55]  OH2_3c5.R1_fastqc.html
-│   ├── [Feb  8  8:54]  OH2_3c5.R1_fastqc.zip
-│   ├── [Feb  8  8:55]  OH2_3c5.R2_fastqc.html
-│   ├── [Feb  8  8:54]  OH2_3c5.R2_fastqc.zip
-│   ├── [Feb  8  8:55]  OH2_3c5.U_fastqc.html
-│   ├── [Feb  8  8:48]  OH2_3c5.U_fastqc.zip
-│   ├── [Feb  8  9:01]  Sa_159-5.R1_fastqc.html
-│   ├── [Feb  8  9:01]  Sa_159-5.R1_fastqc.zip
-│   ├── [Feb  8  9:01]  Sa_159-5.R2_fastqc.html
-│   ├── [Feb  8  9:01]  Sa_159-5.R2_fastqc.zip
-│   ├── [Feb  8  9:01]  Sa_159-5.U_fastqc.html
-│   └── [Feb  8  8:55]  Sa_159-5.U_fastqc.zip
-├── [Feb  8  8:14]  fastqc_raw
-│   ├── [Feb  8  8:10]  87_124_2_R1_fastqc.html
-│   ├── [Feb  8  8:09]  87_124_2_R1_fastqc.zip
-│   ├── [Feb  8  8:10]  87_124_2_R2_fastqc.html
-│   ├── [Feb  8  8:09]  87_124_2_R2_fastqc.zip
-│   ├── [Feb  8  8:10]  90166_2_R1_fastqc.html
-│   ├── [Feb  8  8:10]  90166_2_R1_fastqc.zip
-│   ├── [Feb  8  8:10]  90166_2_R2_fastqc.html
-│   ├── [Feb  8  8:10]  90166_2_R2_fastqc.zip
-│   ├── [Feb  8  8:10]  Br518_c2_R1_fastqc.html
-│   ├── [Feb  8  8:10]  Br518_c2_R1_fastqc.zip
-│   ├── [Feb  8  8:10]  Br518_c2_R2_fastqc.html
-│   ├── [Feb  8  8:10]  Br518_c2_R2_fastqc.zip
-│   ├── [Feb  8  8:14]  OH2_3c5_R1_fastqc.html
-│   ├── [Feb  8  8:14]  OH2_3c5_R1_fastqc.zip
-│   ├── [Feb  8  8:14]  OH2_3c5_R2_fastqc.html
-│   ├── [Feb  8  8:14]  OH2_3c5_R2_fastqc.zip
-│   ├── [Feb  8  8:11]  Sa_159-5_R1_fastqc.html
-│   ├── [Feb  8  8:11]  Sa_159-5_R1_fastqc.zip
-│   ├── [Feb  8  8:11]  Sa_159-5_R2_fastqc.html
-│   └── [Feb  8  8:10]  Sa_159-5_R2_fastqc.zip
-├── [Feb  8 17:56]  OUT_87_124_2_87_124_2_pb_121-1
-│   ├── [Feb  8 17:57]  87_124_2_87_124_2_pb_121-1.bed
-│   ├── [Feb  8 17:57]  87_124_2_87_124_2_pb_121-1.vcf
-│   ├── [Feb  8 16:15]  map
-│   │   ├── [Feb  8  9:59]  87_124_2_87_124_2_outmt1.fastq.gz
-│   │   ├── [Feb  8  9:59]  87_124_2_87_124_2_outmt2.fastq.gz
-│   │   ├── [Feb  8  9:59]  87_124_2_87_124_2_outmt.fastq.gz
-│   │   ├── [Feb  8  9:39]  87_124_2_87_124_2_outmt.sam.gz
-│   │   ├── [Feb  8 16:14]  87_124_2_87_124_2_pb_121-1_OUT.bam
-│   │   ├── [Feb  8 10:12]  87_124_2_87_124_2_pb_121-1_outP.sam.gz
-│   │   ├── [Feb  8 16:00]  87_124_2_87_124_2_pb_121-1_OUT.sam.gz
-│   │   ├── [Feb 11  8:23]  87_124_2_87_124_2_pb_121-1_OUT-sorted.bam
-│   │   └── [Feb  8 10:06]  87_124_2_87_124_2_pb_121-1_outS.sam.gz
-│   └── [Feb  8 16:19]  variant_calling
-│       ├── [Feb  8 16:33]  87_124_2_87_124_2_pb_121-1_OUT-mt_table.txt
-│       └── [Feb  8 16:19]  87_124_2_87_124_2_pb_121-1_OUT-sorted.pileup
-└── [Feb  8 17:55]  OUT_90166_2_90166_2_pb_121-1
-    ├── [Feb  8 17:56]  90166_2_90166_2_pb_121-1.bed
-    ├── [Feb  8 17:56]  90166_2_90166_2_pb_121-1.vcf
-    ├── [Feb  8 16:18]  map
-    │   ├── [Feb  8 10:57]  90166_2_90166_2_outmt1.fastq.gz
-    │   ├── [Feb  8 10:57]  90166_2_90166_2_outmt2.fastq.gz
-    │   ├── [Feb  8 10:57]  90166_2_90166_2_outmt.fastq.gz
-    │   ├── [Feb  8 10:29]  90166_2_90166_2_outmt.sam.gz
-    │   ├── [Feb  8 16:16]  90166_2_90166_2_pb_121-1_OUT.bam
-    │   ├── [Feb  8 11:06]  90166_2_90166_2_pb_121-1_outP.sam.gz
-    │   ├── [Feb  8 15:58]  90166_2_90166_2_pb_121-1_OUT.sam.gz
-    │   ├── [Feb  8 16:21]  90166_2_90166_2_pb_121-1_OUT-sorted.bam
-    │   └── [Feb  8 10:59]  90166_2_90166_2_pb_121-1_outS.sam.gz
-    └── [Feb  8 16:25]  variant_calling
-        ├── [Feb  8 16:40]  90166_2_90166_2_pb_121-1_OUT-mt_table.txt
-        └── [Feb  8 16:25]  90166_2_90166_2_pb_121-1_OUT-sorted.pileup
+├── fastqc_filtered
+│   ├── 87074_1.R1_fastqc.html
+│   ├── 87074_1.R1_fastqc.zip
+│   ├── 87074_1.R2_fastqc.html
+│   ├── 87074_1.R2_fastqc.zip
+│   ├── 87074_1.U_fastqc.html
+│   ├── 87074_1.U_fastqc.zip
+│   ├── 87075_2.R1_fastqc.html
+│   ├── 87075_2.R1_fastqc.zip
+│   ├── 87075_2.R2_fastqc.html
+│   ├── 87075_2.R2_fastqc.zip
+│   ├── 87075_2.U_fastqc.html
+│   ├── 87075_2.U_fastqc.zip
+│   ├── 87_179_2.R1_fastqc.html
+│   ├── 87_179_2.R1_fastqc.zip
+│   ├── 87_179_2.R2_fastqc.html
+│   ├── 87_179_2.R2_fastqc.zip
+│   ├── 87_179_2.U_fastqc.html
+│   └── 87_179_2.U_fastqc.zip
+├── fastqc_raw
+│   ├── 87074_1_R1_fastqc.html
+│   ├── 87074_1_R1_fastqc.zip
+│   ├── 87074_1_R2_fastqc.html
+│   ├── 87074_1_R2_fastqc.zip
+│   ├── 87075_2_R1_fastqc.html
+│   ├── 87075_2_R1_fastqc.zip
+│   ├── 87075_2_R2_fastqc.html
+│   ├── 87075_2_R2_fastqc.zip
+│   ├── 87_179_2_R1_fastqc.html
+│   ├── 87_179_2_R1_fastqc.zip
+│   ├── 87_179_2_R2_fastqc.html
+│   └── 87_179_2_R2_fastqc.zip
+├── OUT_87074_1_Sa94_B_8_pb_121-1
+│   ├── 87074_1_Sa94_B_8_pb_121-1.bed
+│   ├── 87074_1_Sa94_B_8_pb_121-1.vcf.gz
+│   ├── 87074_1_Sa94_B_8_pb_121-1.vcf.gz.csi
+│   ├── map
+│   │   ├── 87074_1_Sa94_B_8_outmt1.fastq.gz
+│   │   ├── 87074_1_Sa94_B_8_outmt2.fastq.gz
+│   │   ├── 87074_1_Sa94_B_8_outmt.fastq.gz
+│   │   ├── 87074_1_Sa94_B_8_outmt.sam.gz
+│   │   ├── 87074_1_Sa94_B_8_pb_121-1_OUT.bam
+│   │   ├── 87074_1_Sa94_B_8_pb_121-1_outP.sam.gz
+│   │   ├── 87074_1_Sa94_B_8_pb_121-1_OUT.sam.gz
+│   │   ├── 87074_1_Sa94_B_8_pb_121-1_OUT-sorted.bam
+│   │   └── 87074_1_Sa94_B_8_pb_121-1_outS.sam.gz
+│   └── variant_calling
+│       ├── 87074_1_Sa94_B_8_pb_121-1_OUT-mt_table.txt
+│       └── 87074_1_Sa94_B_8_pb_121-1_OUT-sorted.pileup
+├── OUT_87075_2_Sa94_B_8_pb_121-1
+│   ├── 87075_2_Sa94_B_8_pb_121-1.bed
+│   ├── 87075_2_Sa94_B_8_pb_121-1.vcf.gz
+│   ├── 87075_2_Sa94_B_8_pb_121-1.vcf.gz.csi
+│   ├── map
+│   │   ├── 87075_2_Sa94_B_8_outmt1.fastq.gz
+│   │   ├── 87075_2_Sa94_B_8_outmt2.fastq.gz
+│   │   ├── 87075_2_Sa94_B_8_outmt.fastq.gz
+│   │   ├── 87075_2_Sa94_B_8_outmt.sam.gz
+│   │   ├── 87075_2_Sa94_B_8_pb_121-1_OUT.bam
+│   │   ├── 87075_2_Sa94_B_8_pb_121-1_outP.sam.gz
+│   │   ├── 87075_2_Sa94_B_8_pb_121-1_OUT.sam.gz
+│   │   ├── 87075_2_Sa94_B_8_pb_121-1_OUT-sorted.bam
+│   │   └── 87075_2_Sa94_B_8_pb_121-1_outS.sam.gz
+│   └── variant_calling
+│       ├── 87075_2_Sa94_B_8_pb_121-1_OUT-mt_table.txt
+│       └── 87075_2_Sa94_B_8_pb_121-1_OUT-sorted.pileup
+├── OUT_87_179_2_Sa94_B_8_pb_121-1
+│   ├── 87_179_2_Sa94_B_8_pb_121-1.bed
+│   ├── 87_179_2_Sa94_B_8_pb_121-1.vcf.gz
+│   ├── 87_179_2_Sa94_B_8_pb_121-1.vcf.gz.csi
+│   ├── map
+│   │   ├── 87_179_2_Sa94_B_8_outmt1.fastq.gz
+│   │   ├── 87_179_2_Sa94_B_8_outmt2.fastq.gz
+│   │   ├── 87_179_2_Sa94_B_8_outmt.fastq.gz
+│   │   ├── 87_179_2_Sa94_B_8_outmt.sam.gz
+│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_OUT.bam
+│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_outP.sam.gz
+│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_OUT.sam.gz
+│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_OUT-sorted.bam
+│   │   └── 87_179_2_Sa94_B_8_pb_121-1_outS.sam.gz
+│   └── variant_calling
+│       ├── 87_179_2_Sa94_B_8_pb_121-1_OUT-mt_table.txt
+│       └── 87_179_2_Sa94_B_8_pb_121-1_OUT-sorted.pileup
+└── vcf
+    └── Sa94_B_8_pb_121-1.vcf
 ```
 
 #### Notes on outputs
 
-For each sample:
+**For each sample**
 
-- `OUT-sorted.bam` contains filtered alignments (in binary format) used for variant calling, useful for displaying alignment data (reads overlapping a specific genome region, coverage depth at specific sites etc) in external tools, _e.g._ IGV.
+- `OUT-sorted.bam` contains filtered alignments (in binary format) used for variant calling, useful for displaying alignment data (reads overlapping a specific genome region, coverage depth at specific sites etc) in external tools, _e.g._ [IGV](https://software.broadinstitute.org/software/igv/).
 - `OUT-sorted.pileup` contains a text-format report of SNP calling. It can suggest the presence of indels, but it does not report them. More details at https://en.wikipedia.org/wiki/Pileup_format.
-- `vcf.vcf` contains genotype information for each sample. The genotype is reported following the structure reported in the FORMAT field GT:DP:HF:CILOW:CIUP, where each subfield is explained as follows:
+- `*.bed` file reports called variants with related HF/CI and can be imported in a genome viewer, _e.g._ [IGV](https://software.broadinstitute.org/software/igv/). 
+
+**Aggregated**
+
+- The `results/vcf` folder contains VCF files generated during the run, reporting aggregated genotype information all samples mapped against a specific reference mitochondrial genome. The genotype is reported following the structure reported in the FORMAT field GT:DP:HF:CILOW:CIUP, where each subfield is explained as follows:
 
 |  Subfield |                Description                |
 |:---------:|:-----------------------------------------:|
