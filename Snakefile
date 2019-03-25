@@ -515,12 +515,7 @@ rule all:
         get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
         fastqc_raw_outputs = expand("results/fastqc_raw/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2"]),
-        #fastqc_filtered_outputs = expand("results/fastqc_filtered/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2", "U"]),        #fastqc_raw_outputs = fastqc_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_raw", ext = ".fastq.gz", read_types = ["1", "2"]),
-        #fastqc_filtered_outputs = expand("results/fastqc_filtered/{outfile}", outfile = [os.path.split(i)[1].replace(".fastq.gz", "_fastqc.html") for i in read_datasets_inputs(sample = , read_type = "1", input_folder="data/reads"))
         fastqc_filtered_outputs = fastqc_filtered_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_filtered", ext = ".fastq.gz"),
-        #fastqc_filtered_outputs = fastqc_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_filtered", ext = ".fastq.gz", read_types = ["1", "2", "U"]),
-        #expand("results/fastqc_filtered/{outR1}".format(outR1 = os.path.split(input.R1)[1].replace(".fastq.gz", "_fastqc.html")))
-        #expand("results/fastqc_filtered/{sample}")
 
 rule make_mt_gmap_db:
     input:
@@ -590,8 +585,6 @@ rule fastqc_raw:
         mkdir -p {params.outDir}
         fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
         rm -R data/reads/{wildcards.sample}
-        #unlink data/reads/{wildcards.sample}_R1.fastq.gz
-        #unlink data/reads/{wildcards.sample}_R2.fastq.gz
         """
 
 rule fastqc_filtered:
@@ -599,17 +592,10 @@ rule fastqc_filtered:
         R1 = "data/reads_filtered/{sample}.R1.fastq.gz",
         R2 = "data/reads_filtered/{sample}.R2.fastq.gz",
         U = "data/reads_filtered/{sample}.U.fastq.gz"
-        # R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads_filtered"),
-        # R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads_filtered"),
-        # U = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="U", input_folder="data/reads_filtered"),
     output:
         html_report_R1 = "results/fastqc_filtered/{sample}.R1_fastqc.html",
         html_report_R2 = "results/fastqc_filtered/{sample}.R2_fastqc.html",
         html_report_U = "results/fastqc_filtered/{sample}.U_fastqc.html",
-        # html_report_R1 = lambda wildcards: "results/fastqc_filtered/{outR1}".format(outR1 = os.path.split(input.R1)[1].replace(".fastq.gz", "_fastqc.html")),
-        # html_report_R2 = lambda wildcards: "results/fastqc_filtered/{outR2}".format(outR2 = os.path.split(input.R2)[1].replace(".fastq.gz", "_fastqc.html")),
-        # html_report_U = lambda wildcards: "results/fastqc_filtered/{outU}".format(outU = os.path.split(input.U)[1].replace(".fastq.gz", "_fastqc.html"))
-        #logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
     params:
         outDir = "results/fastqc_filtered/"
     threads:
