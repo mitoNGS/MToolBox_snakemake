@@ -904,16 +904,26 @@ rule sam2bam:
         zcat {input.sam} | samtools view -b -o {output} -
         """
 
+def check_tmp_dir(dir):
+    if os.getenv("TMP"):
+        TMP = os.getenv("TMP")
+    else:
+        TMP = dir
+    return TMP
+
 rule sort_bam:
     input:
         bam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
     output:
         sorted_bam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
+    params: 
+        TMP = check_tmp_dir(config["tmp_dir"])
     #group: "variant_calling"
     shell:
         """
-        samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
+        samtools sort -o {output.sorted_bam} -T {params.TMP} {input.bam}
+        # samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
         """
 
 rule merge_bam:
