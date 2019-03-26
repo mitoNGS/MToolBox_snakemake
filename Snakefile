@@ -594,18 +594,19 @@ rule fastqc_raw:
     #     subprocess.check_output("fastqc -V", shell=True)
     # message:
     #     "QC of raw read files {input} with {version}, {wildcards}"
-    # log:
-    #     "logs/fastqc_raw/{sample}.log"
+    log:
+        "logs/fastqc_raw/{sample}_{adapter}_{lane}.log"
     shell:
         """
         cd $(dirname {input.R1})
         mkdir -p {wildcards.sample}
-        ln -sf `pwd`/$(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
-        ln -sf `pwd`/$(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
+        # ln -sf `pwd`/$(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
+        # ln -sf `pwd`/$(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
         cd -
         mkdir -p {params.outDir}
-        fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
-        rm -R data/reads/{wildcards.sample}
+        # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
+        fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R1.fastq.gz data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R2.fastq.gz > {log}
+        # rm -R data/reads/{wildcards.sample}
         """
 
 rule make_mt_gmap_db:
