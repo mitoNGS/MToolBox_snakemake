@@ -1,4 +1,4 @@
-# MToolBox on non-human genomes: Heterobasidion
+# MToolBox on non-human genomes
 
 <!-- TOC START min:1 max:4 link:true update:true -->
 - [MToolBox on non-human genomes: Heterobasidion](#mtoolbox-on-non-human-genomes-heterobasidion)
