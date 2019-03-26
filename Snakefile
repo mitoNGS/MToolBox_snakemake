@@ -923,7 +923,7 @@ rule merge_bam:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     shell:
         """
-        RATM {output} {input}
+        samtools merge {output} {input}
         """ 
 
 rule index_genome:
