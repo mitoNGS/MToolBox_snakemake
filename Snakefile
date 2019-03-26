@@ -605,7 +605,8 @@ rule fastqc_raw:
         # cd -
         mkdir -p {params.outDir}
         # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
-        fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R1.fastq.gz data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R2.fastq.gz > {log}
+        fastqc -t {threads} -o {params.outDir} {input} > {log}
+        # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R1.fastq.gz data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R2.fastq.gz > {log}
         # rm -R data/reads/{wildcards.sample}
         """
 
@@ -988,13 +989,16 @@ rule make_single_VCF:
         single_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
         single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
+        TMP = check_tmp_dir(config["tmp_dir"])
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
     #group: "variant_calling"
     run:
         # function (and related ones) from mtVariantCaller
         # vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
-        vcf_dict = mtvcf_main_analysis(sam_file = input.merged_bam, mtable_file = input.mt_table, name2 = wildcards.sample)
+        tmp_sam = input.merged_bam.replace("bam", "sam")
+        shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam = input.merged_bam, tmp_dir = params.TMP, tmp_sam = tmp_sam))
+        vcf_dict = mtvcf_main_analysis(sam_file = "{tmp_dir}/{tmp_sam}".format(tmp_dir = params.TMP, tmp_sam = tmp_sam), mtable_file = input.mt_table, name2 = wildcards.sample)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name = get_seq_name(params.ref_mt_fasta)
