@@ -579,8 +579,8 @@ rule fastqc_raw:
         # R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads"),
         # R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads"),
     output:
-        html_report_R1 = "results/fastqc_raw/{sample}_{adapter}_{lane}_R1_fastqc.html",
-        html_report_R2 = "results/fastqc_raw/{sample}_{adapter}_{lane}_R2_fastqc.html",
+        html_report_R1 = "results/fastqc_raw/{sample}_{adapter}_{lane}_R1_001_fastqc.html",
+        html_report_R2 = "results/fastqc_raw/{sample}_{adapter}_{lane}_R2_001_fastqc.html",
         #html_report_R1 = "results/fastqc_raw/{sample}_R1_fastqc.html",
         #html_report_R2 = "results/fastqc_raw/{sample}_R2_fastqc.html",
         # html_report_R1 = lambda wildcards: "results/fastqc_raw/{outR1}".format(outR1 = os.path.split({input.R1})[1].replace(".fastq.gz", "_fastqc.html")),
@@ -603,11 +603,12 @@ rule fastqc_raw:
         # ln -sf `pwd`/$(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
         # ln -sf `pwd`/$(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
         # cd -
-        mkdir -p {params.outDir}
         # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
-        fastqc -t {threads} -o {params.outDir} {input} > {log}
         # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R1.fastq.gz data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R2.fastq.gz > {log}
         # rm -R data/reads/{wildcards.sample}
+
+        mkdir -p {params.outDir}
+        fastqc -t {threads} -o {params.outDir} {input} > {log}
         """
 
 rule make_mt_gmap_db:
