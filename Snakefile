@@ -744,7 +744,7 @@ rule map_MT_PE_SE:
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
         uncompressed_output = lambda wildcards, output: output.outmt_sam.replace("_outmt.sam.gz", "_outmt.sam")
     log:
-        log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
+        log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_map_MT_PE_SE.log"
     threads:
         config["map"]["gmap_threads"]
     message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.adapter}_{wildcards.lane} to {wildcards.ref_genome_mt} mt genome"
@@ -786,7 +786,7 @@ rule map_nuclear_MT_SE:
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0],
+        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
         uncompressed_output = lambda wildcards, output: output.outS.replace("_outS.sam.gz", "_outS.sam")
         #gsnap_db = config['map']['gsnap_n_mt_db']
     threads:
@@ -797,7 +797,7 @@ rule map_nuclear_MT_SE:
     #       )
     #     """
     log:
-        logS = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
+        logS = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
@@ -817,7 +817,7 @@ rule map_nuclear_MT_PE:
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].split(".")[0],
+        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
         uncompressed_output = lambda wildcards, output: output.outP.replace("_outP.sam.gz", "_outP.sam")
         #gsnap_db = config['map']['gsnap_n_mt_db']
     threads:
@@ -828,7 +828,7 @@ rule map_nuclear_MT_PE:
     #       )
     #     """
     log:
-        logP = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logP.sam"
+        logP = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
     message:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
     run:
