@@ -529,26 +529,26 @@ def fastqc_filtered_outputs(datasets_tab, infolder="data/reads", outfolder="resu
 #             fastqc_out.append(os.path.join(outfolder, "{sample}.{read_type}_fastqc.html".format(sample=s, read_type=read_type)))
 #     return fastqc_out
 
-def fastqc_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz", read_types = ["1", "2"]):
-    # keyword default values are for raw reads
-    fastqc_out = []
-    for s in analysis_tab["sample"]:
-        # fastqc_html_1 and fastqc_html_2 could be strings, but
-        # keep them as lists in case one sample has multiple datasets
-        for read_type in read_types:
-            for i in read_datasets_inputs(sample = s, read_type = read_type, input_folder = infolder):
-                print(i)
-                print(os.path.split(i)[1])
-                fastqc_html = [os.path.join(outfolder, os.path.split(i)[1].replace(ext, "_fastqc.html"))]
-            fastqc_out.extend(fastqc_html)
-        # fastqc_html_1 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "1", input_folder = infolder)]
-        # fastqc_out.extend(fastq_html_1)
-        # fastqc_html_2 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "2", input_folder = infolder)]
-        # fastqc_out.extend(fastq_html_2)
-        # fastqc_html_U = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "U", input_folder = infolder)]
-        # fastqc_out.extend(fastq_html_U)
-    print("fastqc_outputs: {}".format(fastqc_out))
-    return fastqc_out
+# def fastqc_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz", read_types = ["1", "2"]):
+#     # keyword default values are for raw reads
+#     fastqc_out = []
+#     for s in analysis_tab["sample"]:
+#         # fastqc_html_1 and fastqc_html_2 could be strings, but
+#         # keep them as lists in case one sample has multiple datasets
+#         for read_type in read_types:
+#             for i in read_datasets_inputs(sample = s, read_type = read_type, input_folder = infolder):
+#                 print(i)
+#                 print(os.path.split(i)[1])
+#                 fastqc_html = [os.path.join(outfolder, os.path.split(i)[1].replace(ext, "_fastqc.html"))]
+#             fastqc_out.extend(fastqc_html)
+#         # fastqc_html_1 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "1", input_folder = infolder)]
+#         # fastqc_out.extend(fastq_html_1)
+#         # fastqc_html_2 = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "2", input_folder = infolder)]
+#         # fastqc_out.extend(fastq_html_2)
+#         # fastqc_html_U = [os.path.join(outfolder, i.replace(ext, "_fastqc.html")) for i in read_datasets_inputs(sample = s, read_type = "U", input_folder = infolder)]
+#         # fastqc_out.extend(fastq_html_U)
+#     print("fastqc_outputs: {}".format(fastqc_out))
+#     return fastqc_out
 
 
 wildcard_constraints:
