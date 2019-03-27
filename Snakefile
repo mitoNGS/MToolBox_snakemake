@@ -314,7 +314,7 @@ def get_sample_bamfiles(df, res_dir="results", sample = None, ref_genome_mt = No
             outpaths.append("{results}/{sample}/map/{out_folder}/{bam_file}".format(results = res_dir, bam_file = bam_file, sample = sample, out_folder = out_folder))
             # outpaths.append("{results}/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam".format(results = res_dir, \
             #                                                                                                                                                                                     sample = ))
-            # 
+            #
             # outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz".format(results = res_dir, \
             #                                                                                                             sample = getattr(row, "sample"), \
             #                                                                                                             ref_genome_mt = getattr(row, "ref_genome_mt"), \
@@ -483,7 +483,7 @@ def read_datasets_inputs(sample = None, read_type = "1", input_folder="data/read
         sys.exit("No read files found for sample: {}".format(sample))
     return [os.path.join(input_folder, r) for r in read_files]
 
-def fastqc_raw_outputs(datasets_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext="_001.fastq.gz"):
+def fastqc_raw_outputs(datasets_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
     fastqc_out = []
     for i,l in datasets_tab.iterrows():
         fastqc_out.append(os.path.join(outfolder, l["R1"].replace(ext, "_fastqc.html")))
@@ -491,12 +491,15 @@ def fastqc_raw_outputs(datasets_tab, infolder="data/reads", outfolder="results/f
     return fastqc_out
 
 # results/fastqc_filtered/{sample}_{adapter}_{lane}_R1_fastqc.html
+# html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R1_fastqc.html",
+# html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R2_fastqc.html",
+# html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_U_fastqc.html",
 def fastqc_filtered_outputs(datasets_tab, infolder="data/reads", outfolder="results/fastqc_filtered", ext="_001.fastq.gz"):
     fastqc_out = []
     for i,l in datasets_tab.iterrows():
-        fastqc_out.append(os.path.join(outfolder, l["R1"].replace(ext, "_fastqc.html")))
-        fastqc_out.append(os.path.join(outfolder, l["R2"].replace(ext, "_fastqc.html")))
-        fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_U_fastqc.html")))
+        fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_R1_fastqc.html")))
+        fastqc_out.append(os.path.join(outfolder, l["R2"].replace("_R2_001.fastq.gz", "_qc_R2_fastqc.html")))
+        fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_U_fastqc.html")))
     return fastqc_out
 
 # def fastqc_raw_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
@@ -566,7 +569,7 @@ target_inputs = [
 #         fastqc_filtered_outputs = fastqc_filtered_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_filtered", ext = ".fastq.gz"),
 
 rule all:
-    input: 
+    input:
         fastqc_raw_outputs(datasets_tab),
         fastqc_filtered_outputs(datasets_tab),
         get_genome_vcf_files(analysis_tab),
@@ -598,17 +601,8 @@ rule fastqc_raw:
         "logs/fastqc_raw/{sample}_{adapter}_{lane}.log"
     shell:
         """
-        # cd $(dirname {input.R1})
-        # mkdir -p {wildcards.sample}
-        # ln -sf `pwd`/$(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
-        # ln -sf `pwd`/$(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
-        # cd -
-        # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
-        # fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R1.fastq.gz data/reads/{wildcards.sample}_{wildcards.adapter}_{wildcards.lane}_R2.fastq.gz > {log}
-        # rm -R data/reads/{wildcards.sample}
-
         mkdir -p {params.outDir}
-        fastqc -t {threads} -o {params.outDir} {input} > {log}
+        fastqc -t {threads} -o {params.outDir} {input} &> {log}
         """
 
 rule make_mt_gmap_db:
@@ -620,12 +614,14 @@ rule make_mt_gmap_db:
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
+        # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
+        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
+	log: "logs/gmap_build/{ref_genome_mt}.log"
     shell:
         """
         #module load gsnap
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta}
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {input.mt_genome_fasta} &> {log}
         """
 
 rule make_mt_n_gmap_db:
@@ -639,47 +635,17 @@ rule make_mt_n_gmap_db:
         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
+        # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
+        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
+	log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n_file}.log"
     shell:
         """
         #module load gsnap
         cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {output.mt_n_fasta}
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {output.mt_n_fasta} &> {log}
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
-
-# rule fastqc_raw:
-#     input:
-#         R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads"),
-#         R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads"),
-#     output:
-#         html_report_R1 = "results/fastqc_raw/{sample}_R1_fastqc.html",
-#         html_report_R2 = "results/fastqc_raw/{sample}_R2_fastqc.html",
-#         # html_report_R1 = lambda wildcards: "results/fastqc_raw/{outR1}".format(outR1 = os.path.split({input.R1})[1].replace(".fastq.gz", "_fastqc.html")),
-#         # html_report_R2 = lambda wildcards: "results/fastqc_raw/{outR2}".format(outR2 = os.path.split({input.R2})[1].replace(".fastq.gz", "_fastqc.html"))
-#         #logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
-#     params:
-#         outDir = "results/fastqc_raw/",
-#     threads:
-#         2
-#     # version:
-#     #     subprocess.check_output("fastqc -V", shell=True)
-#     # message:
-#     #     "QC of raw read files {input} with {version}, {wildcards}"
-#     log:
-#         "logs/fastqc_raw/{sample}.log"
-#     shell:
-#         """
-#         cd $(dirname {input.R1})
-#         mkdir -p {wildcards.sample}
-#         ln -sf `pwd`/$(basename {input.R1}) {wildcards.sample}/{wildcards.sample}_R1.fastq.gz
-#         ln -sf `pwd`/$(basename {input.R2}) {wildcards.sample}/{wildcards.sample}_R2.fastq.gz
-#         cd -
-#         mkdir -p {params.outDir}
-#         fastqc -t {threads} -o {params.outDir} data/reads/{wildcards.sample}/{wildcards.sample}_R1.fastq.gz data/reads/{wildcards.sample}/{wildcards.sample}_R2.fastq.gz > {log}
-#         rm -R data/reads/{wildcards.sample}
-#         """
 
 rule fastqc_filtered:
     input:
@@ -690,9 +656,9 @@ rule fastqc_filtered:
         # R2 = "data/reads_filtered/{sample}.R2.fastq.gz",
         # U = "data/reads_filtered/{sample}.U.fastq.gz"
     output:
-        html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_R1_fastqc.html",
-        html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_R2_fastqc.html",
-        html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_U_fastqc.html",
+        html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R1_fastqc.html",
+        html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R2_fastqc.html",
+        html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_U_fastqc.html",
         # html_report_R1 = "results/fastqc_filtered/{sample}.R1_fastqc.html",
         # html_report_R2 = "results/fastqc_filtered/{sample}.R2_fastqc.html",
         # html_report_U = "results/fastqc_filtered/{sample}.U_fastqc.html",
@@ -710,7 +676,7 @@ rule fastqc_filtered:
         """
 
         mkdir -p {params.outDir}
-        fastqc -t {threads} -o {params.outDir} {input} > {log}
+        fastqc -t {threads} -o {params.outDir} {input} &> {log}
 
         """
 
@@ -754,14 +720,7 @@ rule trimmomatic:
             -threads {threads} \
             {input.R1} {input.R2} \
             {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
-            {params.processing_options} 2> {log}
-
-        # trimmomatic PE \
-        #     {params.options} \
-        #     -threads {threads} \
-        #     {input.R1} {input.R2} \
-        #     {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
-        #     {params.processing_options} 2> {log}
+            {params.processing_options} &> {log}
 
         zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}
         """
@@ -783,20 +742,20 @@ rule map_MT_PE_SE:
         gmap_db = lambda wildcards: wildcards.ref_genome_mt,
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample'
     log:
-        log_dir + "{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
+        log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
     threads:
         config["map"]["gmap_threads"]
     message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.adapter}_{wildcards.lane} to {wildcards.ref_genome_mt} mt genome"
     run:
         if seq_type == "pe":
             print("PE mode")
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} | gzip -c - > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} | gzip -c - > {output.outmt_sam} &> {log}")
         if seq_type == "se":
             print("SE mode")
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} | gzip -c - > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} | gzip -c - > {output.outmt_sam} &> {log}")
         elif seq_type == "both":
             print("PE + SE mode")
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} | gzip -c - > {output.outmt_sam} 2> {log}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} | gzip -c - > {output.outmt_sam} &> {log}")
 
 rule sam2fastq:
     input:
@@ -835,7 +794,7 @@ rule map_nuclear_MT_SE:
     #       )
     #     """
     log:
-        logS = log_dir + "{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
+        logS = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logmt.txt"
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
@@ -865,7 +824,7 @@ rule map_nuclear_MT_PE:
     #       )
     #     """
     log:
-        logP = log_dir + "{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logP.sam"
+        logP = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/logP.sam"
     message:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
     run:
@@ -900,10 +859,11 @@ rule sam2bam:
     output:
         "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam",
     message: "Converting {input.sam} to {output}"
+    log: log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sam2bam.log"
     #group: "variant_calling"
     shell:
         """
-        zcat {input.sam} | samtools view -b -o {output} -
+        zcat {input.sam} | samtools view -b -o {output} - &> {log}
         """
 
 def check_tmp_dir(dir):
@@ -919,12 +879,14 @@ rule sort_bam:
     output:
         sorted_bam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
-    params: 
+    params:
         TMP = check_tmp_dir(config["tmp_dir"])
+    log: log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sort_bam.log"
+
     #group: "variant_calling"
     shell:
         """
-        samtools sort -o {output.sorted_bam} -T {params.TMP} {input.bam}
+        samtools sort -o {output.sorted_bam} -T {params.TMP} {input.bam} &> {log}
         # samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
         """
 
@@ -933,10 +895,11 @@ rule merge_bam:
         sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir="results", sample = wildcards.sample, ref_genome_mt = wildcards.ref_genome_mt, ref_genome_n = wildcards.ref_genome_n)
     output:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+    log: log_dir + "/{sample}/merge_bam.log"
     shell:
         """
-        samtools merge {output} {input}
-        """ 
+        samtools merge {output} {input} &> {log}
+        """
 
 rule index_genome:
     input:
@@ -944,9 +907,10 @@ rule index_genome:
     output:
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     message: "Indexing {input.mt_n_fasta} with samtools faidx"
+    log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
     shell:
         """
-        samtools faidx {input.mt_n_fasta}
+        samtools faidx {input.mt_n_fasta} &> {log}
         """
 
 rule bam2pileup:
@@ -960,10 +924,11 @@ rule bam2pileup:
     params:
         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.merged_bam}"
+    log: log_dir + "/{sample}/bam2pileup.log"
     #group: "variant_calling"
     shell:
         """
-        samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.merged_bam}
+        samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.merged_bam} &> {log}
         """
 
 rule pileup2mt_table:
