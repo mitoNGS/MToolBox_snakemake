@@ -483,23 +483,25 @@ def read_datasets_inputs(sample = None, read_type = "1", input_folder="data/read
         sys.exit("No read files found for sample: {}".format(sample))
     return [os.path.join(input_folder, r) for r in read_files]
 
-def fastqc_raw_outputs(datasets_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
+def fastqc_raw_outputs(datasets_tab, analysis_tab = None, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
     fastqc_out = []
     for i,l in datasets_tab.iterrows():
-        fastqc_out.append(os.path.join(outfolder, l["R1"].replace(ext, "_fastqc.html")))
-        fastqc_out.append(os.path.join(outfolder, l["R2"].replace(ext, "_fastqc.html")))
+        if l["sample"] in list(analysis_tab["sample"]):
+            fastqc_out.append(os.path.join(outfolder, l["R1"].replace(ext, "_fastqc.html")))
+            fastqc_out.append(os.path.join(outfolder, l["R2"].replace(ext, "_fastqc.html")))
     return fastqc_out
 
 # results/fastqc_filtered/{sample}_{adapter}_{lane}_R1_fastqc.html
 # html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R1_fastqc.html",
 # html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R2_fastqc.html",
 # html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_U_fastqc.html",
-def fastqc_filtered_outputs(datasets_tab, infolder="data/reads", outfolder="results/fastqc_filtered", ext="_001.fastq.gz"):
+def fastqc_filtered_outputs(datasets_tab, analysis_tab = None, infolder="data/reads", outfolder="results/fastqc_filtered", ext="_001.fastq.gz"):
     fastqc_out = []
     for i,l in datasets_tab.iterrows():
-        fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_R1_fastqc.html")))
-        fastqc_out.append(os.path.join(outfolder, l["R2"].replace("_R2_001.fastq.gz", "_qc_R2_fastqc.html")))
-        fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_U_fastqc.html")))
+        if l["sample"] in list(analysis_tab["sample"]):
+            fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_R1_fastqc.html")))
+            fastqc_out.append(os.path.join(outfolder, l["R2"].replace("_R2_001.fastq.gz", "_qc_R2_fastqc.html")))
+            fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_U_fastqc.html")))
     return fastqc_out
 
 # def fastqc_raw_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
@@ -570,8 +572,8 @@ target_inputs = [
 
 rule all:
     input:
-        fastqc_raw_outputs(datasets_tab),
-        fastqc_filtered_outputs(datasets_tab),
+        fastqc_raw_outputs(datasets_tab, analysis_tab = analysis_tab),
+        fastqc_filtered_outputs(datasets_tab, analysis_tab = analysis_tab),
         get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
 
@@ -617,7 +619,7 @@ rule make_mt_gmap_db:
         # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
-	log: "logs/gmap_build/{ref_genome_mt}.log"
+    log: "logs/gmap_build/{ref_genome_mt}.log"
     shell:
         """
         #module load gsnap
@@ -638,10 +640,9 @@ rule make_mt_n_gmap_db:
         # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
-	log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n_file}.log"
+    log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     shell:
         """
-        #module load gsnap
         cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
         gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {output.mt_n_fasta} &> {log}
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
@@ -895,7 +896,7 @@ rule merge_bam:
         sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir="results", sample = wildcards.sample, ref_genome_mt = wildcards.ref_genome_mt, ref_genome_n = wildcards.ref_genome_n)
     output:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
-    log: log_dir + "/{sample}/merge_bam.log"
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_merge_bam.log"
     shell:
         """
         samtools merge {output} {input} &> {log}
@@ -924,7 +925,7 @@ rule bam2pileup:
     params:
         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.merged_bam}"
-    log: log_dir + "/{sample}/bam2pileup.log"
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2pileup.log"
     #group: "variant_calling"
     shell:
         """
