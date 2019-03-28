@@ -98,7 +98,7 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rscnt=m.split(softclippingright)
 			if len(rscnt)>2:  #if  there are other options on the right end
 				softclippingright=int(rscnt[-2])
-			else:  #if there is only S option
+			else:  #if there is only S option 
 				softclippingright=int(rscnt[0])
 		else:
 			softclippingright=0 # no softclipped bases right
@@ -111,8 +111,8 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rhcnt=m.split(hardclippingright)
 			if len(rhcnt)>2:  #if  there are other options on the right end
 				hardclippingright=int(rhcnt[-2])
-			else:  #if there is only H option
-				hardclippingright=int(rhcnt[0])
+			else:  #if there is only H option 
+				hardclippingright=int(rhcnt[0])			
 		else:
 			hardclippingright=0 # no hardclipped bases right
 		left=m.split(pcigar[0])
@@ -120,8 +120,9 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 		numIns=int(left[-1])
 		left.pop(-1)
 		s=sum(left) # number of 5' flanking positions to Ins
-		lflank=s-softclippingleft # exclude softclipped bases from left pos calculation
-		lflank=s-hardclippingleft # exclude hardclipped bases from left pos calculation
+		lflank=s-(softclippingleft+hardclippingleft)
+		# lflank=s-softclippingleft # exclude softclipped bases from left pos calculation
+		# lflank=s-hardclippingleft # exclude hardclipped bases from left pos calculation
 		error(right)
 		sr=sum(right)-(hardclippingright+softclippingright) # number of 3' flanking positions to Ins
 		rLeft=refposleft+lflank # modified
@@ -161,7 +162,7 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rscnt=m.split(softclippingright)
 			if len(rscnt)>2:  #if  there are other options on the right end
 				softclippingright=int(rscnt[-2])
-			else:  #if there is only S option
+			else:  #if there is only S option 
 				softclippingright=int(rscnt[0])
 		else:
 			softclippingright=0 # no softclipped bases right
@@ -174,28 +175,29 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 			rhcnt=m.split(hardclippingright)
 			if len(rhcnt)>2:  #if  there are other options on the right end
 				hardclippingright=int(rhcnt[-2])
-			else:  #if there is only H option
-				hardclippingright=int(rhcnt[0])
+			else:  #if there is only H option 
+				hardclippingright=int(rhcnt[0])			
 		else:
 			hardclippingright=0 # no hardclipped bases right
 		left=m.split(pcigar[0])
 		right=m.split(pcigar[-1])
 		nDel=int(left[-1])
 		left.pop(-1)
-		s=sum(left) # number of 5' flanking positions to Del
+		s=sum(left)
 		error(right)
 		sr=sum(right)-(hardclippingright+softclippingright) # number of 3' flanking positions to Del
-		lflank=s-softclippingleft # exclude softclipped bases from left pos calculation
-		lflank=s-hardclippingleft # exclude hardclipped bases from left pos calculation
+		lflank=s-(softclippingleft+hardclippingleft) # exclude 5' flanking softclipped/hardclipped bases from left pos calculation
+		#print "lflank=s-softclippingleft", lflank
+		#lflank=s-hardclippingleft # exclude hardclipped bases from left pos calculation
 		rLeft=(refposleft+lflank)
 		lowlimit=rLeft+1
 		rRight=lowlimit+nDel
-		Del=list(range(lowlimit,rRight))
+		Del=range(lowlimit,rRight)
 		type='Del'
 		qsDel=[]
 		if lflank>=tail and sr>=tail:
-			qsLeft=qs[(s-5):s]
-			qsRight=qs[s:(s+5)]
+			qsLeft=qs[(lflank-5):lflank]
+			qsRight=qs[lflank:(lflank+5)]
 			qsL=[]
 			qsR=[]
 			for x in qsLeft:
