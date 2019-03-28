@@ -14,5 +14,5 @@ read_processing:
 
 map:
     gmap_db_dir:        "gmap_db"
-    gmap_threads:       5
+    gmap_threads:       4
     gmap_remap_threads: 4
