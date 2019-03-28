@@ -90,7 +90,7 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
                       chunksize=chunksize, \
                       usecols=[0,2], \
                       names = ['readID', 'RNAME'], \
-                      compression="infer")
+                      compression="infer", index_col = False)
 
     for chunk in t:
         elapsed = time.time()
@@ -442,7 +442,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
                        header=None, \
                        engine="python", \
                        names=["readID", "FLAG", "RNAME"] + list("QWERTYUIOPASDFGHJK"), \
-                       compression="infer")
+                       compression="infer", index_col = False)
 
     # open OUT.sam file and write SAM header from outS.sam (outP would be the same).
     OUT_uncompressed = OUT.replace(".gz", "")
