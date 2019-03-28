@@ -433,7 +433,7 @@ def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5):
 				pass
 			else:
 				rposIns[i[2]].append(i[3:])
-
+	
 	for i in dic['Del']:
 		if i[2] not in rposDel:
 			if i[-1]=='delete':
@@ -651,7 +651,12 @@ def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5):
 	Subst={}
 	Subst[name2] = []
 	print("\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2))
+	mtable = open(mtable_file, 'r')
 	for i in mtable:
+		i = i.split('\t')
+		# skip header
+		if i[0].isdigit() == False:
+			continue
 		b=eval((i[-1]).strip())
 		varnames2(b,i)
 		a=findmutations(A,C,G,T,Position,Ref,Cov)
