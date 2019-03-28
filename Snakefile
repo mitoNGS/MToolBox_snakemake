@@ -966,7 +966,7 @@ rule make_single_VCF:
     run:
         # function (and related ones) from mtVariantCaller
         # vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
-        tmp_sam = input.merged_bam.replace("bam", "sam")
+        tmp_sam = os.path.split(input.merged_bam)[1].replace(".bam", ".sam")
         shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam = input.merged_bam, tmp_dir = params.TMP, tmp_sam = tmp_sam))
         vcf_dict = mtvcf_main_analysis(sam_file = "{tmp_dir}/{tmp_sam}".format(tmp_dir = params.TMP, tmp_sam = tmp_sam), mtable_file = input.mt_table, name2 = wildcards.sample)
         # ref_genome_mt will be used in the VCF descriptive field
