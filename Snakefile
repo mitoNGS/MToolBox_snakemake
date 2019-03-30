@@ -601,6 +601,7 @@ rule fastqc_raw:
     #     "QC of raw read files {input} with {version}, {wildcards}"
     log:
         "logs/fastqc_raw/{sample}_{adapter}_{lane}.log"
+    conda: "envs/environment.yaml"
     shell:
         """
         mkdir -p {params.outDir}
@@ -620,6 +621,7 @@ rule make_mt_gmap_db:
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
     log: "logs/gmap_build/{ref_genome_mt}.log"
+    conda: "envs/environment.yaml"
     shell:
         """
         #module load gsnap
@@ -641,6 +643,7 @@ rule make_mt_n_gmap_db:
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
+    conda: "envs/environment.yaml"
     shell:
         """
         cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
@@ -673,6 +676,7 @@ rule fastqc_filtered:
     #     "QC of filtered read files {input} with {version}"
     log:
         "logs/fastqc_filtered/{sample}_{adapter}_{lane}.log"
+    conda: "envs/environment.yaml"
     shell:
         """
 
@@ -713,6 +717,7 @@ rule trimmomatic:
         "Filtering read dataset {wildcards.sample}_{wildcards.adapter}_{wildcards.lane} with Trimmomatic. {wildcards}" # v{version}"
     log:
         log_dir + "/trimmomatic/{sample}_{adapter}_{lane}_trimmomatic.log"
+    conda: "envs/environment.yaml"
     shell:
         """
         {params.java_cmd} -Xmx{params.mem} -jar {params.jar_file} \
@@ -745,6 +750,7 @@ rule map_MT_PE_SE:
         uncompressed_output = lambda wildcards, output: output.outmt_sam.replace("_outmt.sam.gz", "_outmt.sam")
     log:
         log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_map_MT_PE_SE.log"
+    conda: "envs/environment.yaml"
     threads:
         config["map"]["gmap_threads"]
     message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.adapter}_{wildcards.lane} to {wildcards.ref_genome_mt} mt genome"
@@ -771,6 +777,7 @@ rule sam2fastq:
         # outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt2.fastq.gz",
         # outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.fastq.gz",
         #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
+    conda: "envs/environment.yaml"
     message:
         "Converting {input.outmt_sam} to FASTQ"
     run:
@@ -796,6 +803,7 @@ rule map_nuclear_MT_SE:
     #       gsnap --version
     #       )
     #     """
+    conda: "envs/environment.yaml"
     log:
         logS = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
     message:
@@ -827,6 +835,7 @@ rule map_nuclear_MT_PE:
     #       gsnap --version
     #       )
     #     """
+    conda: "envs/environment.yaml"
     log:
         logP = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
     message:
@@ -848,6 +857,7 @@ rule filtering_mt_alignments:
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
         #outdir = lambda wildcards, output: os.path.split(output.sam)[0]
+    conda: "envs/environment.yaml"
     threads: 1
     message: "Filtering alignments in file {input.outmt} by checking alignments in {input.outS} and {input.outP}"
     run:
@@ -865,6 +875,7 @@ rule sam2bam:
     message: "Converting {input.sam} to {output}"
     log: log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sam2bam.log"
     #group: "variant_calling"
+    conda: "envs/samtools_biopython.yaml"
     shell:
         """
         zcat {input.sam} | samtools view -b -o {output} - &> {log}
@@ -886,7 +897,7 @@ rule sort_bam:
     params:
         TMP = check_tmp_dir(config["tmp_dir"])
     log: log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sort_bam.log"
-
+    conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     shell:
         """
@@ -900,6 +911,7 @@ rule merge_bam:
     output:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_merge_bam.log"
+    conda: "envs/samtools_biopython.yaml"
     shell:
         """
         samtools merge {output} {input} &> {log}
@@ -912,6 +924,7 @@ rule index_genome:
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     message: "Indexing {input.mt_n_fasta} with samtools faidx"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
+    conda: "envs/samtools_biopython.yaml"
     shell:
         """
         samtools faidx {input.mt_n_fasta} &> {log}
@@ -929,6 +942,7 @@ rule bam2pileup:
         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.merged_bam}"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2pileup.log"
+    conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     shell:
         """
@@ -944,6 +958,7 @@ rule pileup2mt_table:
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
+    conda: "envs/environment.yaml"
     #group: "variant_calling"
     run:
         pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=output.mt_table)
@@ -962,6 +977,7 @@ rule make_single_VCF:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
         TMP = check_tmp_dir(config["tmp_dir"])
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
+    conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     run:
         # function (and related ones) from mtVariantCaller
@@ -980,6 +996,7 @@ rule index_VCF:
         single_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
     output:
         index_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
+    conda: "envs/bcftools.yaml"
     message: "Compressing and indexing {input.single_vcf}"
     run:
         shell("bcftools index {input.single_vcf}")
@@ -994,5 +1011,6 @@ rule merge_VCF:
         merged_vcf = "results/vcf/{ref_genome_mt}_{ref_genome_n}.vcf"
     #message: lambda wildcards: "Merging vcf files for mt reference genome: {ref_genome_mt}".format(ref_genome_mt = wildcards.ref_genome_mt)
     message: "Merging vcf files for mt reference genome: {wildcards.ref_genome_mt}"
+    conda: "envs/bcftools.yaml"
     run:
         shell("bcftools merge {input.single_vcf_list} -O v -o {output.merged_vcf}")
