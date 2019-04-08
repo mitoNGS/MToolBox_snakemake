@@ -1,26 +1,30 @@
 # MToolBox on non-human genomes
 
-<!-- TOC START min:1 max:4 link:true update:true -->
-- [MToolBox on non-human genomes: Heterobasidion](#mtoolbox-on-non-human-genomes-heterobasidion)
-   - [Installation](#installation)
-      - [Installation of Anaconda](#installation-of-anaconda)
-      - [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
-      - [Copy/symlink data](#copysymlink-data)
-   - [Running the pipeline](#running-the-pipeline)
-      - [Activation of the conda environment](#activation-of-the-conda-environment)
-      - [Compile configuration files](#compile-configuration-files)
-         - [`data/analysis.tab`](#dataanalysistab)
-         - [`data/reference_genomes.tab`](#datareference_genomestab)
-      - [Run the whole workflow](#run-the-whole-workflow)
-      - [Outputs](#outputs)
-         - [Notes on outputs](#notes-on-outputs)
-   - [Notes](#notes)
-      - [Deactivation of the environment](#deactivation-of-the-environment)
-   - [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
-   - [Acknowledgements](#acknowledgements)
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
 
-<!-- TOC END -->
+- [MToolBox on non-human genomes](#mtoolbox-on-non-human-genomes)
+	- [Installation](#installation)
+		- [Installation of Anaconda](#installation-of-anaconda)
+		- [Installation of the MToolBox-Ark workflow](#installation-of-the-mtoolbox-ark-workflow)
+	- [Running the pipeline](#running-the-pipeline)
+		- [Copy/symlink data](#copysymlink-data)
+		- [Activation of the conda environment](#activation-of-the-conda-environment)
+		- [Preparation of configuration files](#preparation-of-configuration-files)
+			- [`data/analysis.tab`](#dataanalysistab)
+			- [`data/reference_genomes.tab`](#datareferencegenomestab)
+			- [`data/datasets.tab`](#datadatasetstab)
+			- [Notes on configuration files](#notes-on-configuration-files)
+		- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
+		- [Run the whole workflow](#run-the-whole-workflow)
+			- [qsub](#qsub)
+			- [SLURM](#slurm)
+		- [Outputs](#outputs)
+			- [Notes on outputs](#notes-on-outputs)
+	- [Notes](#notes)
+		- [Deactivation of the environment](#deactivation-of-the-environment)
+	- [Acknowledgements](#acknowledgements)
 
+<!-- /TOC -->
 
 ## Installation
 
