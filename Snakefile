@@ -304,7 +304,7 @@ def get_genome_single_vcf_files(df, res_dir="results", ref_genome_mt = None):
     return outpaths
 
 #sorted_bams = lambda.wildcards: get_sample_bamfiles(df, res_dir="results", sample = wildcards.sample, ref_genome_mt = wildcards.ref_genome_mt, ref_genome_n = wildcards.ref_genome_n)
-#"results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
+#"results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
 def get_sample_bamfiles(df, res_dir="results", sample = None, ref_genome_mt = None, ref_genome_n = None):
     outpaths = []
     for row in df.itertuples():
@@ -312,7 +312,7 @@ def get_sample_bamfiles(df, res_dir="results", sample = None, ref_genome_mt = No
             bam_file = getattr(row, "R1").replace("_R1_001.fastq.gz", "_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam".format(ref_genome_mt = ref_genome_mt, ref_genome_n = ref_genome_n))
             out_folder = "OUT_{base}".format(base = bam_file.replace("_OUT-sorted.bam", ""))
             outpaths.append("{results}/{sample}/map/{out_folder}/{bam_file}".format(results = res_dir, bam_file = bam_file, sample = sample, out_folder = out_folder))
-            # outpaths.append("{results}/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam".format(results = res_dir, \
+            # outpaths.append("{results}/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam".format(results = res_dir, \
             #                                                                                                                                                                                     sample = ))
             #
             # outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz".format(results = res_dir, \
@@ -579,13 +579,13 @@ rule all:
 
 rule fastqc_raw:
     input:
-        R1 = "data/reads/{sample}_{adapter}_{lane}_R1_001.fastq.gz",
-        R2 = "data/reads/{sample}_{adapter}_{lane}_R2_001.fastq.gz"
+        R1 = "data/reads/{sample}_{lane}_R1_001.fastq.gz",
+        R2 = "data/reads/{sample}_{lane}_R2_001.fastq.gz"
         # R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads"),
         # R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads"),
     output:
-        html_report_R1 = "results/fastqc_raw/{sample}_{adapter}_{lane}_R1_001_fastqc.html",
-        html_report_R2 = "results/fastqc_raw/{sample}_{adapter}_{lane}_R2_001_fastqc.html",
+        html_report_R1 = "results/fastqc_raw/{sample}_{lane}_R1_001_fastqc.html",
+        html_report_R2 = "results/fastqc_raw/{sample}_{lane}_R2_001_fastqc.html",
         #html_report_R1 = "results/fastqc_raw/{sample}_R1_fastqc.html",
         #html_report_R2 = "results/fastqc_raw/{sample}_R2_fastqc.html",
         # html_report_R1 = lambda wildcards: "results/fastqc_raw/{outR1}".format(outR1 = os.path.split({input.R1})[1].replace(".fastq.gz", "_fastqc.html")),
@@ -600,7 +600,7 @@ rule fastqc_raw:
     # message:
     #     "QC of raw read files {input} with {version}, {wildcards}"
     log:
-        "logs/fastqc_raw/{sample}_{adapter}_{lane}.log"
+        "logs/fastqc_raw/{sample}_{lane}.log"
     #conda: "envs/environment.yaml"
     shell:
         """
@@ -653,16 +653,16 @@ rule make_mt_n_gmap_db:
 
 rule fastqc_filtered:
     input:
-        out1P = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R1.fastq.gz",
-        out2P = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R2.fastq.gz",
-        out1U = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_U.fastq.gz",
+        out1P = "data/reads_filtered/{sample}_{lane}_qc_R1.fastq.gz",
+        out2P = "data/reads_filtered/{sample}_{lane}_qc_R2.fastq.gz",
+        out1U = "data/reads_filtered/{sample}_{lane}_qc_U.fastq.gz",
         # R1 = "data/reads_filtered/{sample}.R1.fastq.gz",
         # R2 = "data/reads_filtered/{sample}.R2.fastq.gz",
         # U = "data/reads_filtered/{sample}.U.fastq.gz"
     output:
-        html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R1_fastqc.html",
-        html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R2_fastqc.html",
-        html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_U_fastqc.html",
+        html_report_R1 = "results/fastqc_filtered/{sample}_{lane}_qc_R1_fastqc.html",
+        html_report_R2 = "results/fastqc_filtered/{sample}_{lane}_qc_R2_fastqc.html",
+        html_report_U = "results/fastqc_filtered/{sample}_{lane}_qc_U_fastqc.html",
         # html_report_R1 = "results/fastqc_filtered/{sample}.R1_fastqc.html",
         # html_report_R2 = "results/fastqc_filtered/{sample}.R2_fastqc.html",
         # html_report_U = "results/fastqc_filtered/{sample}.U_fastqc.html",
@@ -675,7 +675,7 @@ rule fastqc_filtered:
     # message:
     #     "QC of filtered read files {input} with {version}"
     log:
-        "logs/fastqc_filtered/{sample}_{adapter}_{lane}.log"
+        "logs/fastqc_filtered/{sample}_{lane}.log"
     #conda: "envs/environment.yaml"
     shell:
         """
@@ -693,19 +693,19 @@ rule trimmomatic:
         mem = config['read_processing']['trimmomatic']['java_vm_mem'],
         options = config['read_processing']['trimmomatic']['options'],
         processing_options = config['read_processing']['trimmomatic']['processing_options'],
-        out1P = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R1.fastq.gz",
-        out2P = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R2.fastq.gz",
-        out1U = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_1U.fastq.gz",
-        out2U = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_2U.fastq.gz"
+        out1P = "data/reads_filtered/{sample}_{lane}_qc_R1.fastq.gz",
+        out2P = "data/reads_filtered/{sample}_{lane}_qc_R2.fastq.gz",
+        out1U = "data/reads_filtered/{sample}_{lane}_qc_1U.fastq.gz",
+        out2U = "data/reads_filtered/{sample}_{lane}_qc_2U.fastq.gz"
     input:
-        R1 = "data/reads/{sample}_{adapter}_{lane}_R1_001.fastq.gz",
-        R2 = "data/reads/{sample}_{adapter}_{lane}_R2_001.fastq.gz"
+        R1 = "data/reads/{sample}_{lane}_R1_001.fastq.gz",
+        R2 = "data/reads/{sample}_{lane}_R2_001.fastq.gz"
         # R1 = lambda wildcards: read_datasets_inputs(sample = "{sample}".format(sample=wildcards.sample), read_type = "1", input_folder = "data/reads"),
         # R2 = lambda wildcards: read_datasets_inputs(sample = "{sample}".format(sample=wildcards.sample), read_type = "2", input_folder = "data/reads"),
     output:
-        out1P = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R1.fastq.gz",
-        out2P = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R2.fastq.gz",
-        out1U = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_U.fastq.gz",
+        out1P = "data/reads_filtered/{sample}_{lane}_qc_R1.fastq.gz",
+        out2P = "data/reads_filtered/{sample}_{lane}_qc_R2.fastq.gz",
+        out1U = "data/reads_filtered/{sample}_{lane}_qc_U.fastq.gz",
         # out1P = config['proj_dirs']['reads_filtered'] + "/{sample}.R1.fastq.gz",
         # out2P = config['proj_dirs']['reads_filtered'] + "/{sample}.R2.fastq.gz",
         # out1U = config['proj_dirs']['reads_filtered'] + "/{sample}.fastq.gz",
@@ -714,9 +714,9 @@ rule trimmomatic:
     # version:
     #     subprocess.check_output("trimmomatic -version", shell=True)
     message:
-        "Filtering read dataset {wildcards.sample}_{wildcards.adapter}_{wildcards.lane} with Trimmomatic. {wildcards}" # v{version}"
+        "Filtering read dataset {wildcards.sample}_{wildcards.lane} with Trimmomatic. {wildcards}" # v{version}"
     log:
-        log_dir + "/trimmomatic/{sample}_{adapter}_{lane}_trimmomatic.log"
+        log_dir + "/trimmomatic/{sample}_{lane}_trimmomatic.log"
     #conda: "envs/environment.yaml"
     shell:
         """
@@ -735,25 +735,25 @@ seq_type = "both"
 
 rule map_MT_PE_SE:
     input:
-        R1 = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R1.fastq.gz",
-        R2 = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_R2.fastq.gz",
-        U = "data/reads_filtered/{sample}_{adapter}_{lane}_qc_U.fastq.gz",
+        R1 = "data/reads_filtered/{sample}_{lane}_qc_R1.fastq.gz",
+        R2 = "data/reads_filtered/{sample}_{lane}_qc_R2.fastq.gz",
+        U = "data/reads_filtered/{sample}_{lane}_qc_U.fastq.gz",
         # R1 = lambda wildcards: read_datasets_inputs("{sample}".format(sample=wildcards.sample), "1"),
         # R2 = lambda wildcards: read_datasets_inputs("{sample}".format(sample=wildcards.sample), "2"),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
-        outmt_sam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt.sam.gz"
+        outmt_sam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         gmap_db = lambda wildcards: wildcards.ref_genome_mt,
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
         uncompressed_output = lambda wildcards, output: output.outmt_sam.replace("_outmt.sam.gz", "_outmt.sam")
     log:
-        log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_map_MT_PE_SE.log"
+        log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{lane}_{ref_genome_mt}_map_MT_PE_SE.log"
     #conda: "envs/environment.yaml"
     threads:
         config["map"]["gmap_threads"]
-    message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.adapter}_{wildcards.lane} to {wildcards.ref_genome_mt} mt genome"
+    message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.lane} to {wildcards.ref_genome_mt} mt genome"
     run:
         if seq_type == "pe":
             print("PE mode")
@@ -767,12 +767,12 @@ rule map_MT_PE_SE:
 
 rule sam2fastq:
     input:
-        outmt_sam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt.sam.gz"
+        outmt_sam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt.sam.gz"
         #outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
     output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt1.fastq.gz",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt2.fastq.gz",
-        outmt = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt.fastq.gz",
+        outmt1 = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt1.fastq.gz",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt2.fastq.gz",
+        outmt = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt.fastq.gz",
         # outmt1 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt1.fastq.gz",
         # outmt2 = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt2.fastq.gz",
         # outmt = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.fastq.gz",
@@ -785,10 +785,10 @@ rule sam2fastq:
 
 rule map_nuclear_MT_SE:
     input:
-        outmt = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt.fastq.gz",
+        outmt = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
-        outS = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
+        outS = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
         # outS = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
@@ -805,7 +805,7 @@ rule map_nuclear_MT_SE:
     #     """
     #conda: "envs/environment.yaml"
     log:
-        logS = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
+        logS = log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
@@ -817,11 +817,11 @@ rule map_nuclear_MT_SE:
 
 rule map_nuclear_MT_PE:
     input:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt1.fastq.gz",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt2.fastq.gz",
+        outmt1 = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt1.fastq.gz",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt2.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
     output:
-        outP = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
+        outP = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -837,7 +837,7 @@ rule map_nuclear_MT_PE:
     #     """
     #conda: "envs/environment.yaml"
     log:
-        logP = log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
+        logP = log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
     message:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
     run:
@@ -848,11 +848,11 @@ rule map_nuclear_MT_PE:
 
 rule filtering_mt_alignments:
     input:
-        outmt = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_outmt.sam.gz",
-        outS = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz",
-        outP = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
+        outmt = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_outmt.sam.gz",
+        outS = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz",
+        outP = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
     output:
-        sam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
+        sam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
         #sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/OUT.sam"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
@@ -869,11 +869,11 @@ rule filtering_mt_alignments:
 
 rule sam2bam:
     input:
-        sam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
+        sam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
     output:
-        "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam",
+        "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam",
     message: "Converting {input.sam} to {output}"
-    log: log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sam2bam.log"
+    log: log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sam2bam.log"
     #group: "variant_calling"
     #conda: "envs/samtools_biopython.yaml"
     shell:
@@ -890,13 +890,13 @@ def check_tmp_dir(dir):
 
 rule sort_bam:
     input:
-        bam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
+        bam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
     output:
-        sorted_bam = "results/{sample}/map/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+        sorted_bam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
     params:
         TMP = check_tmp_dir(config["tmp_dir"])
-    log: log_dir + "/{sample}/OUT_{sample}_{adapter}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sort_bam.log"
+    log: log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/sort_bam.log"
     #conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     shell:
