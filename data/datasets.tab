@@ -1,10 +1,10 @@
 sample	R1	R2
-5517_hypo	5517_hypo_ATCACG_L003_R1_001.fastq.gz	5517_hypo_ATCACG_L003_R2_001.fastq.gz
-5517_hypo	5517_hypo_ATCACG_L004_R1_001.fastq.gz	5517_hypo_ATCACG_L004_R2_001.fastq.gz
+5517_hypo	5517_hypo_L003_R1_001.fastq.gz	5517_hypo_L003_R2_001.fastq.gz
+5517_hypo	5517_hypo_L004_R1_001.fastq.gz	5517_hypo_L004_R2_001.fastq.gz
 #5517_hypo	5517_hypo_ATCACG_L005_R1_001.fastq.gz	5517_hypo_ATCACG_L005_R2_001.fastq.gz
 #5517_hypo	5517_hypo_ATCACG_L008_R1_001.fastq.gz	5517_hypo_ATCACG_L008_R2_001.fastq.gz
-5517_liver	5517_liver_CAGATC_L001_R1_001.fastq.gz	5517_liver_CAGATC_L001_R2_001.fastq.gz
-5517_liver	5517_liver_CAGATC_L002_R1_001.fastq.gz	5517_liver_CAGATC_L002_R2_001.fastq.gz
+5517_liver	5517_liver_L001_R1_001.fastq.gz	5517_liver_L001_R2_001.fastq.gz
+5517_liver	5517_liver_L002_R1_001.fastq.gz	5517_liver_L002_R2_001.fastq.gz
 #5517_liver	5517_liver_CAGATC_L004_R1_001.fastq.gz	5517_liver_CAGATC_L004_R2_001.fastq.gz
 #5517_liver	5517_liver_CAGATC_L007_R1_001.fastq.gz	5517_liver_CAGATC_L007_R2_001.fastq.gz
 5517_p_major	5517_p_major_ATCACG_L001_R1_001.fastq.gz	5517_p_major_ATCACG_L001_R2_001.fastq.gz
