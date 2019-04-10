@@ -453,6 +453,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
         if l.startswith("@PG") == False:
             f.write(l)
         l = sss.readline().decode("utf-8")
+    f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"]))
 
     f.close()
 
