@@ -954,7 +954,7 @@ rule dict_genome:
     #conda: "envs/samtools_biopython.yaml"
     shell:
         """
-        java -jar picard.jar CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}
+        java -jar modules/picard.jar CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}
         """
 
 rule left_align_merged_bam:
