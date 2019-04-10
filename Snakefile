@@ -9,7 +9,7 @@ from modules.mtVariantCaller import *
 from modules.BEDoutput import *
 
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
-localrules: index_genome, merge_VCF, index_VCF
+localrules: index_genome, merge_VCF, index_VCF, index_merged_bam
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -916,6 +916,19 @@ rule merge_bam:
     shell:
         """
         samtools merge {output} {input} &> {log}
+        """
+
+rule index_merged_bam:
+    input:
+        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+    output:
+        merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_index_merge_bam.log"
+    message: "Indexing {input.merged_bam}"
+    #conda: "envs/samtools_biopython.yaml"
+    shell:
+        """
+        samtools index {input} {output} &> {log}
         """
 
 rule index_genome:
