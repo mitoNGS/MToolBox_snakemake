@@ -9,7 +9,7 @@ from modules.mtVariantCaller import *
 from modules.BEDoutput import *
 
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
-localrules: index_genome, merge_VCF, index_VCF, index_merged_bam
+localrules: index_genome, merge_VCF, index_VCF, index_merged_bam, dict_genome
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -944,9 +944,42 @@ rule index_genome:
         samtools faidx {input.mt_n_fasta} &> {log}
         """
 
-rule bam2pileup:
+rule dict_genome:
+    input:
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+    output:
+        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+    message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
+    log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
+    #conda: "envs/samtools_biopython.yaml"
+    shell:
+        """
+        java -jar picard.jar CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}
+        """
+
+rule left_align_merged_bam:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
+        merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai",
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta",
+        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
+        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+    output:
+        merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam.log"
+    message: "Realigning indels in {input.merged_bam} with GATK 3.8 - LeftAlignIndels"
+    shell:
+        """
+        java -Xmx8G -jar modules/GenomeAnalysisTK.jar \
+            -R {input.mt_n_fasta} \
+            -T LeftAlignIndels \
+            -I {input.merged_bam} \
+            -o {input.merged_bam_index}
+        """
+
+rule bam2pileup:
+    input:
+        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
         # sorted_bam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
