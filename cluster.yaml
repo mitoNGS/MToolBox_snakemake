@@ -3,7 +3,7 @@ __default__:
     threads: 5
     vmem: 10G
     #stderr: logs/snakejob.{rule}.{wildcards.sample}.{jobid}.err
-    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.adapter}.{wildcards.lane}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.lane}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
 
 make_mt_gmap_db:
     time: 3:00:00
@@ -19,19 +19,19 @@ fastqc_raw:
     time: 1:00:00
     threads: 2
     vmem: 4G
-    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.adapter}.{wildcards.lane}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.lane}.out
 
 fastqc_filtered:
     time: 1:00:00
     threads: 3
     vmem: 4G
-    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.adapter}.{wildcards.lane}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.lane}.out
 
 trimmomatic:
     time: 2:00:00
     threads: 4
     vmem: 4G
-    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.adapter}.{wildcards.lane}.out
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.lane}.out
 
 map_nuclear_MT_PE:
     time: 3:00:00
@@ -46,7 +46,7 @@ sam2fastq:
     threads: 1
 
 filtering_mt_alignments:
-    time: 3:00:00
+    time: 5:00:00
     threads: 1
     vmem: 10G
 
