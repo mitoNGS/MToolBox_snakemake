@@ -910,26 +910,28 @@ rule merge_bam:
     input:
         sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir="results", sample = wildcards.sample, ref_genome_mt = wildcards.ref_genome_mt, ref_genome_n = wildcards.ref_genome_n)
     output:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
+        merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_merge_bam.log"
     #conda: "envs/samtools_biopython.yaml"
     shell:
         """
-        samtools merge {output} {input} &> {log}
+        samtools merge {output.merged_bam} {input} &> {log}
+        samtools index {output.merged_bam_index} {output}
         """
 
-rule index_merged_bam:
-    input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
-    output:
-        merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_index_merge_bam.log"
-    message: "Indexing {input.merged_bam}"
-    #conda: "envs/samtools_biopython.yaml"
-    shell:
-        """
-        samtools index {input} {output} &> {log}
-        """
+# rule index_merged_bam:
+#     input:
+#         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+#     output:
+#         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
+#     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_index_merge_bam.log"
+#     message: "Indexing {input.merged_bam}"
+#     #conda: "envs/samtools_biopython.yaml"
+#     shell:
+#         """
+#         samtools index {input} {output} &> {log}
+#         """
 
 rule index_genome:
     input:
@@ -974,7 +976,7 @@ rule left_align_merged_bam:
             -R {input.mt_n_fasta} \
             -T LeftAlignIndels \
             -I {input.merged_bam} \
-            -o {input.merged_bam_index}
+            -o {output.merged_bam_left_realigned}
         """
 
 rule bam2pileup:
