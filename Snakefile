@@ -648,7 +648,7 @@ rule make_mt_n_gmap_db:
     shell:
         """
         cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s numeric-alpha {output.mt_n_fasta} &> {log}
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
         # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
         """
 
