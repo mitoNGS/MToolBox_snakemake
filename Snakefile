@@ -1015,7 +1015,7 @@ rule pileup2mt_table:
 
 rule make_single_VCF:
     input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
+        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
         mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
