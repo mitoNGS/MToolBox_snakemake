@@ -917,7 +917,7 @@ rule merge_bam:
     shell:
         """
         samtools merge {output.merged_bam} {input} &> {log}
-        samtools index {output.merged_bam_index} {output}
+        samtools index {output.merged_bam} {output.merged_bam_index}
         """
 
 # rule index_merged_bam:
@@ -976,7 +976,8 @@ rule left_align_merged_bam:
             -R {input.mt_n_fasta} \
             -T LeftAlignIndels \
             -I {input.merged_bam} \
-            -o {output.merged_bam_left_realigned}
+            -o {output.merged_bam_left_realigned} \
+            --filter_reads_with_N_cigar
         """
 
 rule bam2pileup:
