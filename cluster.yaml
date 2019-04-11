@@ -66,6 +66,12 @@ merge_bam:
     vmem: 3G
     stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
 
+left_align_merged_bam:
+    time: 3:00:00
+    threads: 1
+    vmem: 4G
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
+
 bam2pileup:
     time: 3:00:00
     threads: 1
