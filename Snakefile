@@ -9,7 +9,7 @@ from modules.mtVariantCaller import *
 from modules.BEDoutput import *
 
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
-localrules: index_genome, merge_VCF, index_VCF, index_merged_bam, dict_genome
+localrules: index_genome, merge_VCF, index_VCF, dict_genome
 
 #shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
@@ -453,7 +453,7 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
         if l.startswith("@PG") == False:
             f.write(l)
         l = sss.readline().decode("utf-8")
-    f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"]))
+    f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"])+"\n")
 
     f.close()
 
@@ -972,7 +972,7 @@ rule left_align_merged_bam:
     message: "Realigning indels in {input.merged_bam} with GATK 3.8 - LeftAlignIndels"
     shell:
         """
-        java -Xmx8G -jar modules/GenomeAnalysisTK.jar \
+        java -Xmx6G -jar modules/GenomeAnalysisTK.jar \
             -R {input.mt_n_fasta} \
             -T LeftAlignIndels \
             -I {input.merged_bam} \
