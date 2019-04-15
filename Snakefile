@@ -430,8 +430,17 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     print("Processing {}".format(outP))
     outP_sql, table_name_P = read_sam_file_only_readID_chunks_intoSQL(outP, table_name = "outP")
 
-    good_reads = pd.concat([pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 1".format(table_name=table_name_S), outS_sql), \
-                            pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 2".format(table_name=table_name_P), outP_sql)])
+    good_reads_S = pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 1".format(table_name=table_name_S), outS_sql, chunksize = 100000)
+    print("SQL query on outS, memory: {} MB".format(memory_usage_resource()))
+    good_reads_P = pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 2".format(table_name=table_name_P), outP_sql, chunksize = 100000)
+    print("SQL query on outP, memory: {} MB".format(memory_usage_resource()))
+    good_reads = pd.DataFrame()
+    for c in good_reads_P:
+        good_reads = good_reads.append(c)
+    print("good_reads_P append, memory: {} MB".format(memory_usage_resource()))
+    for c in good_reads_S:
+        good_reads = good_reads.append(c)
+    print("good_reads_S append, memory: {} MB".format(memory_usage_resource()))
     print("Total reads to extract alignments of: {}".format(len(good_reads)))
 
     samfile = outmt
