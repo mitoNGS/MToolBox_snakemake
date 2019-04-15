@@ -6,9 +6,9 @@ tmp_dir:    "/tmp"
 read_processing:
     trimmomatic:
         options: "-phred33"
-        processing_options: "ILLUMINACLIP:/home/quantgen/domenico/anaconda3/envs/mtoolbox-ark/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
+        processing_options: "ILLUMINACLIP:/crex/proj/uppstore2018171/conda_envs/mtoolbox-ark/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
         java_cmd: "java"
-        jar_file: "/home/quantgen/domenico/anaconda3/envs/mtoolbox-ark/share/trimmomatic/trimmomatic.jar"
+        jar_file: "/crex/proj/uppstore2018171/conda_envs/mtoolbox-ark/share/trimmomatic/trimmomatic.jar"
         java_vm_mem: "4G"
         threads: 4
 
