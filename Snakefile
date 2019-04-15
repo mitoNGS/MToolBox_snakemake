@@ -461,12 +461,14 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     for chunk in tc:
         chunk = chunk.query('RNAME != "*"')
         OUT_chunk = pd.merge(chunk, good_reads, how="inner", on="readID")
+        print("Chunk, memory: {} MB".format(memory_usage_resource()))
         n_extracted_alignments += len(OUT_chunk)
         # Append alignments to OUT.sam
         OUT_chunk.to_csv(OUT_uncompressed, mode="a", header=False, sep="\t", index=False)
 
     print("Compressing OUT.sam file")
     os.system("gzip {}".format(OUT_uncompressed))
+    print("OUT.sam compressed, memory: {} MB".format(memory_usage_resource()))
     print("Total alignments extracted: {}".format(n_extracted_alignments))
 
 def read_datasets_inputs(sample = None, read_type = "1", input_folder="data/reads"):
