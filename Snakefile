@@ -309,8 +309,8 @@ def get_sample_bamfiles(df, res_dir="results", sample = None, ref_genome_mt = No
     outpaths = []
     for row in df.itertuples():
         if getattr(row, "sample") == sample:
-            bam_file = getattr(row, "R1").replace("_R1_001.fastq.gz", "_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam".format(ref_genome_mt = ref_genome_mt, ref_genome_n = ref_genome_n))
-            out_folder = "OUT_{base}".format(base = bam_file.replace("_OUT-sorted.bam", ""))
+            bam_file = getattr(row, "R1").replace("_R1_001.fastq.gz", "_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.bam".format(ref_genome_mt = ref_genome_mt, ref_genome_n = ref_genome_n))
+            out_folder = "OUT_{base}".format(base = bam_file.replace("_OUT-sorted.final.bam", ""))
             outpaths.append("{results}/{sample}/map/{out_folder}/{bam_file}".format(results = res_dir, bam_file = bam_file, sample = sample, out_folder = out_folder))
             # outpaths.append("{results}/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam".format(results = res_dir, \
             #                                                                                                                                                                                     sample = ))
@@ -915,6 +915,27 @@ rule sort_bam:
         """
         samtools sort -o {output.sorted_bam} -T {params.TMP} {input.bam} &> {log}
         # samtools sort -o {output.sorted_bam} -T ${{TMP}} {input.bam}
+        """
+
+rule mark_duplicates:
+    input:
+        sorted_bam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+    output:
+        sorted_bam_md = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.bam",
+        metrics_file = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.metrics.txt"
+    params:
+        TMP = check_tmp_dir(config["tmp_dir"])
+    message: "Removing duplicate reads from {input.sorted_bam}, output: {output.sorted_bam_md}"
+    log: log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/mark_duplicates.log"
+    shell:
+        """
+        picard MarkDuplicates \
+            INPUT={input.sorted_bam} \
+            OUTPUT={output.sorted_bam_md} \
+            METRICS_FILE={output.metrics_file} \
+            ASSUME_SORTED=true \
+            REMOVE_DUPLICATES=true \
+            TMP_DIR={params.TMP}
         """
 
 rule merge_bam:

@@ -60,6 +60,11 @@ sort_bam:
     threads: 1
     vmem: 3G
 
+mark_duplicates:
+    time: 3:00:00
+    threads: 1
+    vmem: 3G
+
 merge_bam:
     time: 3:00:00
     threads: 1
