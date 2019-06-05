@@ -13,6 +13,7 @@
 			- [`data/analysis.tab`](#dataanalysistab)
 			- [`data/reference_genomes.tab`](#datareferencegenomestab)
 			- [`data/datasets.tab`](#datadatasetstab)
+			- [`config.yaml`](#configyaml)
 			- [Notes on configuration files](#notes-on-configuration-files)
 		- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
 		- [Run the whole workflow](#run-the-whole-workflow)
@@ -201,6 +202,8 @@ results
 │   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_outmt1.fastq.gz
 │   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_outmt2.fastq.gz
@@ -211,6 +214,8 @@ results
 │   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_outmt1.fastq.gz
 │   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_outmt2.fastq.gz
@@ -221,6 +226,8 @@ results
 │   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_outmt1.fastq.gz
 │   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_outmt2.fastq.gz
@@ -231,6 +238,8 @@ results
 │   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_outmt1.fastq.gz
 │   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_outmt2.fastq.gz
@@ -251,6 +260,8 @@ results
 │   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_outmt1.fastq.gz
 │   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_outmt2.fastq.gz
@@ -261,6 +272,8 @@ results
 │   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_outmt1.fastq.gz
 │   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_outmt2.fastq.gz
@@ -271,6 +284,8 @@ results
 │   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_outmt1.fastq.gz
 │   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_outmt2.fastq.gz
@@ -281,6 +296,8 @@ results
 │   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_outP.sam.gz
 │   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT.sam.gz
 │   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
 │   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_outS.sam.gz
 │   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_outmt1.fastq.gz
 │   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_outmt2.fastq.gz
