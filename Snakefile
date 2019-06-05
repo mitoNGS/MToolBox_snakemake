@@ -1,5 +1,5 @@
 import pandas as pd
-import os, re, sys, time, gzip, bz2, subprocess
+import os, re, sys, time, gzip, bz2, subprocess, shutil
 from Bio import SeqIO
 import resource
 import numpy as np
@@ -924,19 +924,35 @@ rule mark_duplicates:
         sorted_bam_md = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.bam",
         metrics_file = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.metrics.txt"
     params:
-        TMP = check_tmp_dir(config["tmp_dir"])
-    message: "Removing duplicate reads from {input.sorted_bam}, output: {output.sorted_bam_md}"
+        TMP = check_tmp_dir(config["tmp_dir"]),
+        mark_duplicates = config["mark_duplicates"]
+    message: "Removing duplicate reads from {input.sorted_bam}: {params.mark_duplicates}. Output: {output.sorted_bam_md}"
     log: log_dir + "/{sample}/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/map/mark_duplicates.log"
-    shell:
-        """
-        picard MarkDuplicates \
-            INPUT={input.sorted_bam} \
-            OUTPUT={output.sorted_bam_md} \
-            METRICS_FILE={output.metrics_file} \
-            ASSUME_SORTED=true \
-            REMOVE_DUPLICATES=true \
-            TMP_DIR={params.TMP}
-        """
+    run:
+        if params.mark_duplicates == True:
+            shell("picard MarkDuplicates \
+                INPUT={input.sorted_bam} \
+                OUTPUT={output.sorted_bam_md} \
+                METRICS_FILE={output.metrics_file} \
+                ASSUME_SORTED=true \
+                REMOVE_DUPLICATES=true \
+                TMP_DIR={params.TMP}")
+        else:
+            shutil.copy2(input.sorted_bam, output.sorted_bam_md)
+            with open(output.metrics_file, "w") as f:
+                f.write("")
+            #shell("cp {input.sorted_bam} {output.sorted_bam_md}")
+    # shell:
+    #     """
+    # 
+    #     picard MarkDuplicates \
+    #         INPUT={input.sorted_bam} \
+    #         OUTPUT={output.sorted_bam_md} \
+    #         METRICS_FILE={output.metrics_file} \
+    #         ASSUME_SORTED=true \
+    #         REMOVE_DUPLICATES=true \
+    #         TMP_DIR={params.TMP}
+    #     """
 
 rule merge_bam:
     input:

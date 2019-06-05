@@ -16,3 +16,5 @@ map:
     gmap_db_dir:        "gmap_db"
     gmap_threads:       4
     gmap_remap_threads: 4
+
+mark_duplicates: False

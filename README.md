@@ -126,9 +126,13 @@ Example:
 | 5517_liver | 5517_liver_CAGATC_L001_R1_001.fastq.gz | 5517_liver_CAGATC_L001_R2_001.fastq.gz |
 | 5517_liver | 5517_liver_CAGATC_L002_R1_001.fastq.gz | 5517_liver_CAGATC_L002_R2_001.fastq.gz |
 
+#### `config.yaml`
+
+This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the `mark_duplicates` option (which removes duplicate reads with Picard MarkDuplicates) and set it to True or False, depending on your needs.
+
 #### Notes on configuration files
 
-- All configuration files are **stricly tab-separated tables**;
+- Configuration files `data/analysis.tab`, `data/reference_genomes.tab`, `data/datasets.tab` are **stricly tab-separated tables**;
 - Table headings (*e.g.* "sample", "R1"...) are needed for the execution of the workflow and are **case-sensitive**;
 - Lines can be skipped by prepending a `#` ("commenting", in jargon) them. This is particularly useful *e.g.* if you want to run the workflow on a subset of samples without deleting lines from the `data/analysis.tab` table. *E.g.*:
 
