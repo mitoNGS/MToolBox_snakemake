@@ -1,0 +1,93 @@
+sample	R1	R2
+87074_1	87074_1_CTTGTA_L001_R1_001.fastq.gz	87074_1_CTTGTA_L001_R2_001.fastq.gz
+87075_2	87075_2_AGTCAA_L001_R1_001.fastq.gz	87075_2_AGTCAA_L001_R2_001.fastq.gz
+87_179_2	87_179_2_ACAGTG_L008_R1_001.fastq.gz	87_179_2_ACAGTG_L008_R2_001.fastq.gz
+87_183_3	87_183_3_GCCAAT_L008_R1_001.fastq.gz	87_183_3_GCCAAT_L008_R2_001.fastq.gz
+87_215_3	87_215_3_GATCAG_L008_R1_001.fastq.gz	87_215_3_GATCAG_L008_R2_001.fastq.gz
+93028_1	93028_1_CCGTCC_L001_R1_001.fastq.gz	93028_1_CCGTCC_L001_R2_001.fastq.gz
+95123	95123_GTGAAA_L002_R1_001.fastq.gz	95123_GTGAAA_L002_R2_001.fastq.gz
+FSE_3	FSE_3_TAGCTT_L004_R1_001.fastq.gz	FSE_3_TAGCTT_L004_R2_001.fastq.gz
+RB48_9	RB48_9_ACTTGA_L007_R1_001.fastq.gz	RB48_9_ACTTGA_L007_R2_001.fastq.gz
+Sa94_B_8	Sa94_B_8_GTTTCG_L006_R1_001.fastq.gz	Sa94_B_8_GTTTCG_L006_R2_001.fastq.gz
+87074_1	87074_1_CTTGTA_L001_R1_001.fastq.gz	87074_1_CTTGTA_L001_R2_001.fastq.gz
+87075_2	87075_2_AGTCAA_L001_R1_001.fastq.gz	87075_2_AGTCAA_L001_R2_001.fastq.gz
+87_179_2	87_179_2_ACAGTG_L008_R1_001.fastq.gz	87_179_2_ACAGTG_L008_R2_001.fastq.gz
+87_183_3	87_183_3_GCCAAT_L008_R1_001.fastq.gz	87_183_3_GCCAAT_L008_R2_001.fastq.gz
+87_215_3	87_215_3_GATCAG_L008_R1_001.fastq.gz	87_215_3_GATCAG_L008_R2_001.fastq.gz
+93028_1	93028_1_CCGTCC_L001_R1_001.fastq.gz	93028_1_CCGTCC_L001_R2_001.fastq.gz
+95123	95123_GTGAAA_L002_R1_001.fastq.gz	95123_GTGAAA_L002_R2_001.fastq.gz
+FSE_3	FSE_3_TAGCTT_L004_R1_001.fastq.gz	FSE_3_TAGCTT_L004_R2_001.fastq.gz
+RB48_9	RB48_9_ACTTGA_L007_R1_001.fastq.gz	RB48_9_ACTTGA_L007_R2_001.fastq.gz
+Sa159_5	Sa159_5_CGTACG_L005_R1_001.fastq.gz	Sa159_5_CGTACG_L005_R2_001.fastq.gz
+# #5517_hypo	5517_hypo_L003_R1_001.fastq.gz	5517_hypo_L003_R2_001.fastq.gz
+# #5517_hypo	5517_hypo_L004_R1_001.fastq.gz	5517_hypo_L004_R2_001.fastq.gz
+# 5517_hypo	5517_hypo_ATCACG_L005_R1_001.fastq.gz	5517_hypo_ATCACG_L005_R2_001.fastq.gz
+# 5517_hypo	5517_hypo_ATCACG_L008_R1_001.fastq.gz	5517_hypo_ATCACG_L008_R2_001.fastq.gz
+# #5517_liver	5517_liver_L001_R1_001.fastq.gz	5517_liver_L001_R2_001.fastq.gz
+# #5517_liver	5517_liver_L002_R1_001.fastq.gz	5517_liver_L002_R2_001.fastq.gz
+# 5517_liver	5517_liver_CAGATC_L004_R1_001.fastq.gz	5517_liver_CAGATC_L004_R2_001.fastq.gz
+# 5517_liver	5517_liver_CAGATC_L007_R1_001.fastq.gz	5517_liver_CAGATC_L007_R2_001.fastq.gz
+# 5517_p_major	5517_p_major_ATCACG_L001_R1_001.fastq.gz	5517_p_major_ATCACG_L001_R2_001.fastq.gz
+# 5517_p_major	5517_p_major_ATCACG_L002_R1_001.fastq.gz	5517_p_major_ATCACG_L002_R2_001.fastq.gz
+# 5517_p_major	5517_p_major_ATCACG_L003_R1_001.fastq.gz	5517_p_major_ATCACG_L003_R2_001.fastq.gz
+# 5517_p_major	5517_p_major_ATCACG_L006_R1_001.fastq.gz	5517_p_major_ATCACG_L006_R2_001.fastq.gz
+# 5518_hypo	5518_hypo_CGATGT_L003_R1_001.fastq.gz	5518_hypo_CGATGT_L003_R2_001.fastq.gz
+# 5518_hypo	5518_hypo_CGATGT_L004_R1_001.fastq.gz	5518_hypo_CGATGT_L004_R2_001.fastq.gz
+# 5518_hypo	5518_hypo_CGATGT_L005_R1_001.fastq.gz	5518_hypo_CGATGT_L005_R2_001.fastq.gz
+# 5518_hypo	5518_hypo_CGATGT_L008_R1_001.fastq.gz	5518_hypo_CGATGT_L008_R2_001.fastq.gz
+# 5518_liver	5518_liver_ACTTGA_L001_R1_001.fastq.gz	5518_liver_ACTTGA_L001_R2_001.fastq.gz
+# 5518_liver	5518_liver_ACTTGA_L002_R1_001.fastq.gz	5518_liver_ACTTGA_L002_R2_001.fastq.gz
+# 5518_liver	5518_liver_ACTTGA_L004_R1_001.fastq.gz	5518_liver_ACTTGA_L004_R2_001.fastq.gz
+# 5518_liver	5518_liver_ACTTGA_L007_R1_001.fastq.gz	5518_liver_ACTTGA_L007_R2_001.fastq.gz
+# 5518_p_major	5518_p_major_CGATGT_L001_R1_001.fastq.gz	5518_p_major_CGATGT_L001_R2_001.fastq.gz
+# 5518_p_major	5518_p_major_CGATGT_L002_R1_001.fastq.gz	5518_p_major_CGATGT_L002_R2_001.fastq.gz
+# 5518_p_major	5518_p_major_CGATGT_L003_R1_001.fastq.gz	5518_p_major_CGATGT_L003_R2_001.fastq.gz
+# 5518_p_major	5518_p_major_CGATGT_L006_R1_001.fastq.gz	5518_p_major_CGATGT_L006_R2_001.fastq.gz
+# 5519_hypo	5519_hypo_TTAGGC_L003_R1_001.fastq.gz	5519_hypo_TTAGGC_L003_R2_001.fastq.gz
+# 5519_hypo	5519_hypo_TTAGGC_L004_R1_001.fastq.gz	5519_hypo_TTAGGC_L004_R2_001.fastq.gz
+# 5519_hypo	5519_hypo_TTAGGC_L005_R1_001.fastq.gz	5519_hypo_TTAGGC_L005_R2_001.fastq.gz
+# 5519_hypo	5519_hypo_TTAGGC_L008_R1_001.fastq.gz	5519_hypo_TTAGGC_L008_R2_001.fastq.gz
+# 5519_liver	5519_liver_GATCAG_L001_R1_001.fastq.gz	5519_liver_GATCAG_L001_R2_001.fastq.gz
+# 5519_liver	5519_liver_GATCAG_L002_R1_001.fastq.gz	5519_liver_GATCAG_L002_R2_001.fastq.gz
+# 5519_liver	5519_liver_GATCAG_L004_R1_001.fastq.gz	5519_liver_GATCAG_L004_R2_001.fastq.gz
+# 5519_liver	5519_liver_GATCAG_L007_R1_001.fastq.gz	5519_liver_GATCAG_L007_R2_001.fastq.gz
+# 5519_p_major	5519_p_major_TTAGGC_L001_R1_001.fastq.gz	5519_p_major_TTAGGC_L001_R2_001.fastq.gz
+# 5519_p_major	5519_p_major_TTAGGC_L002_R1_001.fastq.gz	5519_p_major_TTAGGC_L002_R2_001.fastq.gz
+# 5519_p_major	5519_p_major_TTAGGC_L003_R1_001.fastq.gz	5519_p_major_TTAGGC_L003_R2_001.fastq.gz
+# 5519_p_major	5519_p_major_TTAGGC_L006_R1_001.fastq.gz	5519_p_major_TTAGGC_L006_R2_001.fastq.gz
+# 5551_hypo	5551_hypo_TGACCA_L003_R1_001.fastq.gz	5551_hypo_TGACCA_L003_R2_001.fastq.gz
+# 5551_hypo	5551_hypo_TGACCA_L004_R1_001.fastq.gz	5551_hypo_TGACCA_L004_R2_001.fastq.gz
+# 5551_hypo	5551_hypo_TGACCA_L005_R1_001.fastq.gz	5551_hypo_TGACCA_L005_R2_001.fastq.gz
+# 5551_hypo	5551_hypo_TGACCA_L008_R1_001.fastq.gz	5551_hypo_TGACCA_L008_R2_001.fastq.gz
+# 5551_liver	5551_liver_TAGCTT_L001_R1_001.fastq.gz	5551_liver_TAGCTT_L001_R2_001.fastq.gz
+# 5551_liver	5551_liver_TAGCTT_L002_R1_001.fastq.gz	5551_liver_TAGCTT_L002_R2_001.fastq.gz
+# 5551_liver	5551_liver_TAGCTT_L004_R1_001.fastq.gz	5551_liver_TAGCTT_L004_R2_001.fastq.gz
+# 5551_liver	5551_liver_TAGCTT_L007_R1_001.fastq.gz	5551_liver_TAGCTT_L007_R2_001.fastq.gz
+# 5551_p_major	5551_p_major_TGACCA_L001_R1_001.fastq.gz	5551_p_major_TGACCA_L001_R2_001.fastq.gz
+# 5551_p_major	5551_p_major_TGACCA_L002_R1_001.fastq.gz	5551_p_major_TGACCA_L002_R2_001.fastq.gz
+# 5551_p_major	5551_p_major_TGACCA_L003_R1_001.fastq.gz	5551_p_major_TGACCA_L003_R2_001.fastq.gz
+# 5551_p_major	5551_p_major_TGACCA_L006_R1_001.fastq.gz	5551_p_major_TGACCA_L006_R2_001.fastq.gz
+# 5552_hypo	5552_hypo_ACAGTG_L003_R1_001.fastq.gz	5552_hypo_ACAGTG_L003_R2_001.fastq.gz
+# 5552_hypo	5552_hypo_ACAGTG_L004_R1_001.fastq.gz	5552_hypo_ACAGTG_L004_R2_001.fastq.gz
+# 5552_hypo	5552_hypo_ACAGTG_L005_R1_001.fastq.gz	5552_hypo_ACAGTG_L005_R2_001.fastq.gz
+# 5552_hypo	5552_hypo_ACAGTG_L008_R1_001.fastq.gz	5552_hypo_ACAGTG_L008_R2_001.fastq.gz
+# 5552_liver	5552_liver_GGCTAC_L001_R1_001.fastq.gz	5552_liver_GGCTAC_L001_R2_001.fastq.gz
+# 5552_liver	5552_liver_GGCTAC_L002_R1_001.fastq.gz	5552_liver_GGCTAC_L002_R2_001.fastq.gz
+# 5552_liver	5552_liver_GGCTAC_L004_R1_001.fastq.gz	5552_liver_GGCTAC_L004_R2_001.fastq.gz
+# 5552_liver	5552_liver_GGCTAC_L007_R1_001.fastq.gz	5552_liver_GGCTAC_L007_R2_001.fastq.gz
+# 5552_p_major	5552_p_major_ACAGTG_L001_R1_001.fastq.gz	5552_p_major_ACAGTG_L001_R2_001.fastq.gz
+# 5552_p_major	5552_p_major_ACAGTG_L002_R1_001.fastq.gz	5552_p_major_ACAGTG_L002_R2_001.fastq.gz
+# 5552_p_major	5552_p_major_ACAGTG_L003_R1_001.fastq.gz	5552_p_major_ACAGTG_L003_R2_001.fastq.gz
+# 5552_p_major	5552_p_major_ACAGTG_L006_R1_001.fastq.gz	5552_p_major_ACAGTG_L006_R2_001.fastq.gz
+# 5555_hypo	5555_hypo_GCCAAT_L003_R1_001.fastq.gz	5555_hypo_GCCAAT_L003_R2_001.fastq.gz
+# 5555_hypo	5555_hypo_GCCAAT_L004_R1_001.fastq.gz	5555_hypo_GCCAAT_L004_R2_001.fastq.gz
+# 5555_hypo	5555_hypo_GCCAAT_L005_R1_001.fastq.gz	5555_hypo_GCCAAT_L005_R2_001.fastq.gz
+# 5555_hypo	5555_hypo_GCCAAT_L008_R1_001.fastq.gz	5555_hypo_GCCAAT_L008_R2_001.fastq.gz
+# 5555_liver	5555_liver_CTTGTA_L001_R1_001.fastq.gz	5555_liver_CTTGTA_L001_R2_001.fastq.gz
+# 5555_liver	5555_liver_CTTGTA_L002_R1_001.fastq.gz	5555_liver_CTTGTA_L002_R2_001.fastq.gz
+# 5555_liver	5555_liver_CTTGTA_L004_R1_001.fastq.gz	5555_liver_CTTGTA_L004_R2_001.fastq.gz
+# 5555_liver	5555_liver_CTTGTA_L007_R1_001.fastq.gz	5555_liver_CTTGTA_L007_R2_001.fastq.gz
+# 5555_p_major	5555_p_major_GCCAAT_L001_R1_001.fastq.gz	5555_p_major_GCCAAT_L001_R2_001.fastq.gz
+# 5555_p_major	5555_p_major_GCCAAT_L002_R1_001.fastq.gz	5555_p_major_GCCAAT_L002_R2_001.fastq.gz
+# 5555_p_major	5555_p_major_GCCAAT_L003_R1_001.fastq.gz	5555_p_major_GCCAAT_L003_R2_001.fastq.gz
+# 5555_p_major	5555_p_major_GCCAAT_L006_R1_001.fastq.gz	5555_p_major_GCCAAT_L006_R2_001.fastq.gz

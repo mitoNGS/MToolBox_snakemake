@@ -27,7 +27,7 @@ def BEDoutput(VCF_RECORDS, seq_name="seq", bedfile="bed.bed"):
     outBED = open(bedfile, 'w')
     write_bed_header(outBED, seq_name=seq_name)
     for r in VCF_RECORDS:
-        print(r.__dict__)
+        #print(r.__dict__)
         for x, allele in enumerate(r.ALT):
             if r.ALT[x] == r.REF[0]: continue
             START = r.POS + (len(r.REF[0]) - 1) - 1

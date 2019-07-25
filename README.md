@@ -1,26 +1,31 @@
-# MToolBox on non-human genomes: Heterobasidion
+# MToolBox on non-human genomes
 
-<!-- TOC START min:1 max:4 link:true update:true -->
-- [MToolBox on non-human genomes: Heterobasidion](#mtoolbox-on-non-human-genomes-heterobasidion)
-   - [Installation](#installation)
-      - [Installation of Anaconda](#installation-of-anaconda)
-      - [Installation of the MToolBox workflow](#installation-of-the-mtoolbox-workflow)
-      - [Copy/symlink data](#copysymlink-data)
-   - [Running the pipeline](#running-the-pipeline)
-      - [Activation of the conda environment](#activation-of-the-conda-environment)
-      - [Compile configuration files](#compile-configuration-files)
-         - [`data/analysis.tab`](#dataanalysistab)
-         - [`data/reference_genomes.tab`](#datareference_genomestab)
-      - [Run the whole workflow](#run-the-whole-workflow)
-      - [Outputs](#outputs)
-         - [Notes on outputs](#notes-on-outputs)
-   - [Notes](#notes)
-      - [Deactivation of the environment](#deactivation-of-the-environment)
-   - [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
-   - [Acknowledgements](#acknowledgements)
+<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:0 orderedList:0 -->
 
-<!-- TOC END -->
+- [MToolBox on non-human genomes](#mtoolbox-on-non-human-genomes)
+	- [Installation](#installation)
+		- [Installation of Anaconda](#installation-of-anaconda)
+		- [Installation of the MToolBox-Ark workflow](#installation-of-the-mtoolbox-ark-workflow)
+	- [Running the pipeline](#running-the-pipeline)
+		- [Copy/symlink data](#copysymlink-data)
+		- [Activation of the conda environment](#activation-of-the-conda-environment)
+		- [Preparation of configuration files](#preparation-of-configuration-files)
+			- [`data/analysis.tab`](#dataanalysistab)
+			- [`data/reference_genomes.tab`](#datareferencegenomestab)
+			- [`data/datasets.tab`](#datadatasetstab)
+			- [`config.yaml`](#configyaml)
+			- [Notes on configuration files](#notes-on-configuration-files)
+		- [Graphical representation of the workflow](#graphical-representation-of-the-workflow)
+		- [Run the whole workflow](#run-the-whole-workflow)
+			- [qsub](#qsub)
+			- [SLURM](#slurm)
+		- [Outputs](#outputs)
+			- [Notes on outputs](#notes-on-outputs)
+	- [Notes](#notes)
+		- [Deactivation of the environment](#deactivation-of-the-environment)
+	- [Acknowledgements](#acknowledgements)
 
+<!-- /TOC -->
 
 ## Installation
 
@@ -32,9 +37,9 @@ To this purpose, please follow instructions at http://docs.anaconda.com/anaconda
 
 **Note on installation**: step 11 (verify installation by opening `anaconda-navigator`) is not compulsory. However, if you wish to do so, please make sure you have logged in the grid with either the `-X` or the `-Y` option, *e.g.* `ssh -Y username@my-mgrid.mykopat.slu.se`.
 
-### Installation of the MToolBox workflow
+### Installation of the MToolBox-Ark workflow
 
-Since the workflow and the input/output data will be in the same folder, it is strongly recommended to install the workflow in some subfolder of `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/`. In this example this folder will be `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox`.
+The workflow and the input/output data will be in the same folder, it is strongly recommended to install the workflow in some subfolder of `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/`. In this example this folder will be `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox`.
 
 **Please note**: to `git clone` the repository you need to have an account on https://github.com/.
 
@@ -49,12 +54,12 @@ cd $pipelineDir
 conda install git
 
 # fetch repo
-git clone https://github.com/domenico-simone/heterobasidion_mt.git
+git clone https://github.com/SLUBioinformaticsInfrastructure/MToolBox-Ark.git
 
 # install environment
-cd heterobasidion_mt
+cd MToolBox-Ark
 conda env create \
--n heterobasidion_mt \
+-n mtoolbox-ark \
 -f envs/environment.yaml
 
 # create folders needed by the workflow
@@ -63,51 +68,32 @@ mkdir -p data/genomes
 mkdir -p logs/cluster_jobs
 ```
 
+## Running the pipeline
+
 ### Copy/symlink data
 
-```bash
-export projfolder="/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen"
-
-# reads
-ln -s \
-${projfolder}/hpar_raw_seq_data/*/*.fastq.gz \
-data/reads
-
-# nuclear genome
-ln -sf /nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/nuclear_contigs_121-1/pb_121-1_polished_assembly_nucl.fasta \
-data/genomes/pb_121-1_polished_assembly.fasta
-
-# mt genomes
-ln -s \
-${projfolder}/NOVOPlasty_assemblys/*/*.fasta \
-data/genomes
-```
-
-## Running the pipeline
+Copy or symlink read datasets in the `data/reads` folder.  
+Copy or symlink genome fasta files in the `data/genomes` folder. **IMPORTANT**: please copy **one file** containing **only** the nuclear genome and **one file** containing **only** the mitochondrial genome.
 
 ### Activation of the conda environment
 
 ```bash
 # To activate this environment, use
-source activate heterobasidion_mt
-
-# load appropriate modules (their conda packages have problems)
-module load samtools/1.8
-module load gsnap
+source activate mtoolbox-ark
 ```
 
-### Compile configuration files
+### Preparation of configuration files
+
+**Please read the "Notes on configuration files" at the end of this section.**
 
 #### `data/analysis.tab`
 
-Structure (strictly **tab-separated**):
+Example:
 
-| sample    | ref_genome_mt   | ref_genome_n   |
-|:---------:|:---------------:|:--------------:|
-| 87074_1 | 87074_1       | pb_121-1     |
-| 87075_2 | 87074_1       | pb_121-1     |
-| 87075_2 | 87075_2       | pb_121-1     |
-| #A      | mt1           | n1           |
+|   sample   | ref_genome_mt |   ref_genome_n  |
+|:----------:|:-------------:|:---------------:|
+|  5517_hypo |  NC_001323.1  | GCF_000002315.5 |
+| 5517_liver |  NC_001323.1  | GCF_000002315.5 |
 
 The workflow will execute as many analyses as the number of non-commented (i.e. not starting with `#`) lines in this file. Hint: instead of removing lines, you can comment them by prepending a `#` so that they will be skipped.
 Every analysis is configured by one row in this table. Specifically:
@@ -116,27 +102,83 @@ Every analysis is configured by one row in this table. Specifically:
 - **ref_genome_mt** is the reference mitochondrial genome used in the analysis;
 - **ref_genome_n** is the reference mitochondrial genome used in the analysis.
 
-*Eg*: The first row specifies that variant calling (with heteroplasmy) will be performed on sample 87074_1m using the mitochondrial reference genome 87074_1, by discarding those reads aligning on the nuclear reference genome pb_121-1.
+*Eg*: The first row specifies that variant calling (with heteroplasmy) will be performed on sample 5517_hypo using the mitochondrial reference genome NC_001323.1, by discarding those reads aligning on the nuclear reference genome GCF_000002315.5. Please note that the names used in this table will be used in the workflow execution (and are case-sensitive). Actual read dataset names will be detailed in the `data/datasets.tab` table.
 
 #### `data/reference_genomes.tab`
 
 Structure (strictly **tab-separated**):
 
-| ref_genome_mt | ref_genome_n |      ref_genome_mt_file     |         ref_genome_n_file        |
-|:-------------:|:------------:|:---------------------------:|:--------------------------------:|
-|    87074_1    |   pb_121-1   | 87074_1-mtgenome-v270.fasta | pb_121-1_polished_assembly.fasta |
-|    87075_2    |   pb_121-1   | 87075_2-mtgenome-v270.fasta | pb_121-1_polished_assembly.fasta |
-|      mt1      |      n1      |          mt1.fasta          |             n1.fasta             |
+| ref_genome_mt |      ref_genome_n     | ref_genome_mt_file |   ref_genome_n_file   |
+|:-------------:|:---------------------:|:------------------:|:---------------------:|
+|  NC_001323.1  | GCF_000002315.5.fasta |  NC_001323.1.fasta | GCF_000002315.5.fasta |
 
 This table contains explicit names for reference genome files used in the workflow. Names in the columns `ref_genome_mt` and `ref_genome_n` should be consistent with the ones in the same columns in the `data/analysis.tab` table. Genome files must be located in the `data/genomes` folder.
 
+#### `data/datasets.tab`
+
+Fill this table with as many read (paired) datasets are available per sample. Each read dataset will be processed independently and merged with the others from the same sample before the variant calling stage.
+
+Example:
+
+|   sample   |                   R1                   |                   R2                   |
+|:----------:|:--------------------------------------:|:--------------------------------------:|
+|  5517_hypo |  5517_hypo_ATCACG_L003_R1_001.fastq.gz |  5517_hypo_ATCACG_L003_R2_001.fastq.gz |
+|  5517_hypo |  5517_hypo_ATCACG_L004_R1_001.fastq.gz |  5517_hypo_ATCACG_L004_R2_001.fastq.gz |
+| 5517_liver | 5517_liver_CAGATC_L001_R1_001.fastq.gz | 5517_liver_CAGATC_L001_R2_001.fastq.gz |
+| 5517_liver | 5517_liver_CAGATC_L002_R1_001.fastq.gz | 5517_liver_CAGATC_L002_R2_001.fastq.gz |
+
+#### `config.yaml`
+
+This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the `mark_duplicates` option (which removes duplicate reads with Picard MarkDuplicates) and set it to True or False, depending on your needs.
+
+#### Notes on configuration files
+
+- Configuration files `data/analysis.tab`, `data/reference_genomes.tab`, `data/datasets.tab` are **stricly tab-separated tables**;
+- Table headings (*e.g.* "sample", "R1"...) are needed for the execution of the workflow and are **case-sensitive**;
+- Lines can be skipped by prepending a `#` ("commenting", in jargon) them. This is particularly useful *e.g.* if you want to run the workflow on a subset of samples without deleting lines from the `data/analysis.tab` table. *E.g.*:
+
+|   sample   | ref_genome_mt |   ref_genome_n  |
+|:----------:|:-------------:|:---------------:|
+|  5517_hypo |  NC_001323.1  | GCF_000002315.5 |
+|#5517_liver |  NC_001323.1  | GCF_000002315.5 |
+
+will run the workflow only on the sample 5517_hypo.
+
+### Graphical representation of the workflow
+
+Before running the workflow, it's good practice to check if the provided setup is correct. You can run `snakemake -nrp` to execute a dry run and get a list of the files that will be created and the commands that will be run.
+
+A graphical - and probably more user-friendly - representation of the workflow can be obtained by running
+
+```bash
+snakemake --dag | dot -Tsvg > my_workflow.svg
+```
+
+The graph in file `my_workflow.svg` will report all the workflow steps (for each sample in the `analysis.tab` configuration file). Steps in dashed lines are to be run (because their outputs are not present), whereas outputs for steps in solid lines are already present. A graphical representation of the workflow as per the `analysis.tab` file in this repo is reported as follows.
+
+![workflow](workflow.png)
+
+
 ### Run the whole workflow
+
+#### qsub
+
+The workflow is primary built to be run on a computing cluster with a job scheduling system. A possible command line involving the qsub scheduling system is:
 
 ```bash
 nohup \
 snakemake -rpk \
 -j 100 --cluster-config cluster.yaml --latency-wait 60 \
---cluster 'qsub -V -l h_rt={cluster.time} -l h_vmem={cluster.vmem} -pe smp {cluster.threads} -cwd -j y -o {cluster.stdout}' &> logs/nohup_MToolBox.log &
+--cluster 'qsub -V -l h_rt={cluster.time} -l h_vmem={cluster.vmem} -pe smp {cluster.threads} -cwd -j y -o {cluster.stdout}' &> logs/nohup_MToolBox-Ark.log &
+```
+
+#### SLURM
+
+```bash
+nohup \
+snakemake -rpk -j 100 \
+--cluster-config cluster.yaml --latency-wait 60 \
+--cluster 'sbatch -A snic2018-8-310 -p core -n {cluster.threads} -t {cluster.time} -o {cluster.stdout}' &> logs/nohup_MToolBox-Ark.log &
 ```
 
 The file `logs/nohup_MToolBox.log` contains info about the whole run. The `logs` folder will also contain logs for each step of the workflow.
@@ -149,91 +191,206 @@ Folders created during the workflow execution: `results`, `gmap_db`, `logs`.
 
 ```
 results
-├── fastqc_filtered
-│   ├── 87074_1.R1_fastqc.html
-│   ├── 87074_1.R1_fastqc.zip
-│   ├── 87074_1.R2_fastqc.html
-│   ├── 87074_1.R2_fastqc.zip
-│   ├── 87074_1.U_fastqc.html
-│   ├── 87074_1.U_fastqc.zip
-│   ├── 87075_2.R1_fastqc.html
-│   ├── 87075_2.R1_fastqc.zip
-│   ├── 87075_2.R2_fastqc.html
-│   ├── 87075_2.R2_fastqc.zip
-│   ├── 87075_2.U_fastqc.html
-│   ├── 87075_2.U_fastqc.zip
-│   ├── 87_179_2.R1_fastqc.html
-│   ├── 87_179_2.R1_fastqc.zip
-│   ├── 87_179_2.R2_fastqc.html
-│   ├── 87_179_2.R2_fastqc.zip
-│   ├── 87_179_2.U_fastqc.html
-│   └── 87_179_2.U_fastqc.zip
+├── 5517_hypo
+│   ├── 5517_hypo_NC_001323.1_GCF_000002315.5.bed
+│   ├── 5517_hypo_NC_001323.1_GCF_000002315.5.vcf.gz
+│   ├── 5517_hypo_NC_001323.1_GCF_000002315.5.vcf.gz.csi
+│   ├── map
+│   │   ├── 5517_hypo_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   ├── OUT_5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_outmt1.fastq.gz
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_outmt2.fastq.gz
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_outmt.fastq.gz
+│   │   │   └── 5517_hypo_ATCACG_L003_NC_001323.1_outmt.sam.gz
+│   │   ├── OUT_5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_hypo_ATCACG_L003_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_outmt1.fastq.gz
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_outmt2.fastq.gz
+│   │   │   ├── 5517_hypo_ATCACG_L004_NC_001323.1_outmt.fastq.gz
+│   │   │   └── 5517_hypo_ATCACG_L004_NC_001323.1_outmt.sam.gz
+│   │   ├── OUT_5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_outmt1.fastq.gz
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_outmt2.fastq.gz
+│   │   │   ├── 5517_hypo_ATCACG_L005_NC_001323.1_outmt.fastq.gz
+│   │   │   └── 5517_hypo_ATCACG_L005_NC_001323.1_outmt.sam.gz
+│   │   └── OUT_5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_outmt1.fastq.gz
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_outmt2.fastq.gz
+│   │       ├── 5517_hypo_ATCACG_L008_NC_001323.1_outmt.fastq.gz
+│   │       └── 5517_hypo_ATCACG_L008_NC_001323.1_outmt.sam.gz
+│   └── variant_calling
+│       ├── 5517_hypo_NC_001323.1_GCF_000002315.5_OUT-mt_table.txt
+│       └── 5517_hypo_NC_001323.1_GCF_000002315.5_OUT-sorted.pileup
+├── 5517_liver
+│   ├── 5517_liver_NC_001323.1_GCF_000002315.5.bed
+│   ├── 5517_liver_NC_001323.1_GCF_000002315.5.vcf.gz
+│   ├── 5517_liver_NC_001323.1_GCF_000002315.5.vcf.gz.csi
+│   ├── map
+│   │   ├── 5517_liver_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   ├── 5517_liver_NC_001323.1_GCF_000002315.5_OUT-sorted.bam.bai
+│   │   ├── OUT_5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_outmt1.fastq.gz
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_outmt2.fastq.gz
+│   │   │   ├── 5517_liver_CAGATC_L001_NC_001323.1_outmt.fastq.gz
+│   │   │   └── 5517_liver_CAGATC_L001_NC_001323.1_outmt.sam.gz
+│   │   ├── OUT_5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_outmt1.fastq.gz
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_outmt2.fastq.gz
+│   │   │   ├── 5517_liver_CAGATC_L002_NC_001323.1_outmt.fastq.gz
+│   │   │   └── 5517_liver_CAGATC_L002_NC_001323.1_outmt.sam.gz
+│   │   ├── OUT_5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_outmt1.fastq.gz
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_outmt2.fastq.gz
+│   │   │   ├── 5517_liver_CAGATC_L004_NC_001323.1_outmt.fastq.gz
+│   │   │   └── 5517_liver_CAGATC_L004_NC_001323.1_outmt.sam.gz
+│   │   └── OUT_5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT.bam
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_outP.sam.gz
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT.sam.gz
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT-sorted.bam
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT-sorted.final.bam
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_OUT-sorted.final.metrics.txt
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_GCF_000002315.5_outS.sam.gz
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_outmt1.fastq.gz
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_outmt2.fastq.gz
+│   │       ├── 5517_liver_CAGATC_L007_NC_001323.1_outmt.fastq.gz
+│   │       └── 5517_liver_CAGATC_L007_NC_001323.1_outmt.sam.gz
+│   └── variant_calling
+│       ├── 5517_liver_NC_001323.1_GCF_000002315.5_OUT-mt_table.txt
+│       └── 5517_liver_NC_001323.1_GCF_000002315.5_OUT-sorted.pileup
 ├── fastqc_raw
-│   ├── 87074_1_R1_fastqc.html
-│   ├── 87074_1_R1_fastqc.zip
-│   ├── 87074_1_R2_fastqc.html
-│   ├── 87074_1_R2_fastqc.zip
-│   ├── 87075_2_R1_fastqc.html
-│   ├── 87075_2_R1_fastqc.zip
-│   ├── 87075_2_R2_fastqc.html
-│   ├── 87075_2_R2_fastqc.zip
-│   ├── 87_179_2_R1_fastqc.html
-│   ├── 87_179_2_R1_fastqc.zip
-│   ├── 87_179_2_R2_fastqc.html
-│   └── 87_179_2_R2_fastqc.zip
-├── OUT_87074_1_Sa94_B_8_pb_121-1
-│   ├── 87074_1_Sa94_B_8_pb_121-1.bed
-│   ├── 87074_1_Sa94_B_8_pb_121-1.vcf.gz
-│   ├── 87074_1_Sa94_B_8_pb_121-1.vcf.gz.csi
-│   ├── map
-│   │   ├── 87074_1_Sa94_B_8_outmt1.fastq.gz
-│   │   ├── 87074_1_Sa94_B_8_outmt2.fastq.gz
-│   │   ├── 87074_1_Sa94_B_8_outmt.fastq.gz
-│   │   ├── 87074_1_Sa94_B_8_outmt.sam.gz
-│   │   ├── 87074_1_Sa94_B_8_pb_121-1_OUT.bam
-│   │   ├── 87074_1_Sa94_B_8_pb_121-1_outP.sam.gz
-│   │   ├── 87074_1_Sa94_B_8_pb_121-1_OUT.sam.gz
-│   │   ├── 87074_1_Sa94_B_8_pb_121-1_OUT-sorted.bam
-│   │   └── 87074_1_Sa94_B_8_pb_121-1_outS.sam.gz
-│   └── variant_calling
-│       ├── 87074_1_Sa94_B_8_pb_121-1_OUT-mt_table.txt
-│       └── 87074_1_Sa94_B_8_pb_121-1_OUT-sorted.pileup
-├── OUT_87075_2_Sa94_B_8_pb_121-1
-│   ├── 87075_2_Sa94_B_8_pb_121-1.bed
-│   ├── 87075_2_Sa94_B_8_pb_121-1.vcf.gz
-│   ├── 87075_2_Sa94_B_8_pb_121-1.vcf.gz.csi
-│   ├── map
-│   │   ├── 87075_2_Sa94_B_8_outmt1.fastq.gz
-│   │   ├── 87075_2_Sa94_B_8_outmt2.fastq.gz
-│   │   ├── 87075_2_Sa94_B_8_outmt.fastq.gz
-│   │   ├── 87075_2_Sa94_B_8_outmt.sam.gz
-│   │   ├── 87075_2_Sa94_B_8_pb_121-1_OUT.bam
-│   │   ├── 87075_2_Sa94_B_8_pb_121-1_outP.sam.gz
-│   │   ├── 87075_2_Sa94_B_8_pb_121-1_OUT.sam.gz
-│   │   ├── 87075_2_Sa94_B_8_pb_121-1_OUT-sorted.bam
-│   │   └── 87075_2_Sa94_B_8_pb_121-1_outS.sam.gz
-│   └── variant_calling
-│       ├── 87075_2_Sa94_B_8_pb_121-1_OUT-mt_table.txt
-│       └── 87075_2_Sa94_B_8_pb_121-1_OUT-sorted.pileup
-├── OUT_87_179_2_Sa94_B_8_pb_121-1
-│   ├── 87_179_2_Sa94_B_8_pb_121-1.bed
-│   ├── 87_179_2_Sa94_B_8_pb_121-1.vcf.gz
-│   ├── 87_179_2_Sa94_B_8_pb_121-1.vcf.gz.csi
-│   ├── map
-│   │   ├── 87_179_2_Sa94_B_8_outmt1.fastq.gz
-│   │   ├── 87_179_2_Sa94_B_8_outmt2.fastq.gz
-│   │   ├── 87_179_2_Sa94_B_8_outmt.fastq.gz
-│   │   ├── 87_179_2_Sa94_B_8_outmt.sam.gz
-│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_OUT.bam
-│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_outP.sam.gz
-│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_OUT.sam.gz
-│   │   ├── 87_179_2_Sa94_B_8_pb_121-1_OUT-sorted.bam
-│   │   └── 87_179_2_Sa94_B_8_pb_121-1_outS.sam.gz
-│   └── variant_calling
-│       ├── 87_179_2_Sa94_B_8_pb_121-1_OUT-mt_table.txt
-│       └── 87_179_2_Sa94_B_8_pb_121-1_OUT-sorted.pileup
+│   ├── 5517_hypo_ATCACG_L003_R1_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L003_R1_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L003_R2_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L003_R2_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L004_R1_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L004_R1_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L004_R2_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L004_R2_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L005_R1_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L005_R1_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L005_R2_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L005_R2_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L008_R1_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L008_R1_001_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L008_R2_001_fastqc.html
+│   ├── 5517_hypo_ATCACG_L008_R2_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L001_R1_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L001_R1_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L001_R2_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L001_R2_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L002_R1_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L002_R1_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L002_R2_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L002_R2_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L004_R1_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L004_R1_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L004_R2_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L004_R2_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L007_R1_001_fastqc.html
+│   ├── 5517_liver_CAGATC_L007_R1_001_fastqc.zip
+│   ├── 5517_liver_CAGATC_L007_R2_001_fastqc.html
+│   └── 5517_liver_CAGATC_L007_R2_001_fastqc.zip
+├── fastqc_filtered
+│   ├── 5517_hypo_ATCACG_L003_qc_R1_fastqc.html
+│   ├── 5517_hypo_ATCACG_L003_qc_R1_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L003_qc_R2_fastqc.html
+│   ├── 5517_hypo_ATCACG_L003_qc_R2_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L003_qc_U_fastqc.html
+│   ├── 5517_hypo_ATCACG_L003_qc_U_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L004_qc_R1_fastqc.html
+│   ├── 5517_hypo_ATCACG_L004_qc_R1_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L004_qc_R2_fastqc.html
+│   ├── 5517_hypo_ATCACG_L004_qc_R2_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L004_qc_U_fastqc.html
+│   ├── 5517_hypo_ATCACG_L004_qc_U_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L005_qc_R1_fastqc.html
+│   ├── 5517_hypo_ATCACG_L005_qc_R1_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L005_qc_R2_fastqc.html
+│   ├── 5517_hypo_ATCACG_L005_qc_R2_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L005_qc_U_fastqc.html
+│   ├── 5517_hypo_ATCACG_L005_qc_U_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L008_qc_R1_fastqc.html
+│   ├── 5517_hypo_ATCACG_L008_qc_R1_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L008_qc_R2_fastqc.html
+│   ├── 5517_hypo_ATCACG_L008_qc_R2_fastqc.zip
+│   ├── 5517_hypo_ATCACG_L008_qc_U_fastqc.html
+│   ├── 5517_hypo_ATCACG_L008_qc_U_fastqc.zip
+│   ├── 5517_liver_CAGATC_L001_qc_R1_fastqc.html
+│   ├── 5517_liver_CAGATC_L001_qc_R1_fastqc.zip
+│   ├── 5517_liver_CAGATC_L001_qc_R2_fastqc.html
+│   ├── 5517_liver_CAGATC_L001_qc_R2_fastqc.zip
+│   ├── 5517_liver_CAGATC_L001_qc_U_fastqc.html
+│   ├── 5517_liver_CAGATC_L001_qc_U_fastqc.zip
+│   ├── 5517_liver_CAGATC_L002_qc_R1_fastqc.html
+│   ├── 5517_liver_CAGATC_L002_qc_R1_fastqc.zip
+│   ├── 5517_liver_CAGATC_L002_qc_R2_fastqc.html
+│   ├── 5517_liver_CAGATC_L002_qc_R2_fastqc.zip
+│   ├── 5517_liver_CAGATC_L002_qc_U_fastqc.html
+│   ├── 5517_liver_CAGATC_L002_qc_U_fastqc.zip
+│   ├── 5517_liver_CAGATC_L004_qc_R1_fastqc.html
+│   ├── 5517_liver_CAGATC_L004_qc_R1_fastqc.zip
+│   ├── 5517_liver_CAGATC_L004_qc_R2_fastqc.html
+│   ├── 5517_liver_CAGATC_L004_qc_R2_fastqc.zip
+│   ├── 5517_liver_CAGATC_L004_qc_U_fastqc.html
+│   ├── 5517_liver_CAGATC_L004_qc_U_fastqc.zip
+│   ├── 5517_liver_CAGATC_L007_qc_R1_fastqc.html
+│   ├── 5517_liver_CAGATC_L007_qc_R1_fastqc.zip
+│   ├── 5517_liver_CAGATC_L007_qc_R2_fastqc.html
+│   ├── 5517_liver_CAGATC_L007_qc_R2_fastqc.zip
+│   ├── 5517_liver_CAGATC_L007_qc_U_fastqc.html
+│   └── 5517_liver_CAGATC_L007_qc_U_fastqc.zip
 └── vcf
-    └── Sa94_B_8_pb_121-1.vcf
+    └── NC_001323.1_GCF_000002315.5.vcf
+
 ```
 
 #### Notes on outputs
@@ -279,18 +436,6 @@ conda deactivate
 ```
 
 - if the same cluster job is runned again, its log will be appended to the existing file [need to change this behaviour]
-
-## Graphical representation of the workflow
-
-A graphical representation of the workflow can be obtained by running
-
-```bash
-snakemake --dag | dot -Tsvg > my_workflow.svg
-```
-
-The graph in file `my_workflow.svg` will report all the workflow steps (for each sample in the `analysis.tab` configuration file). Steps in dashed lines are to be run (because their outputs are not present), whereas outputs for steps in solid lines are already present. A graphical representation of the workflow as per the `analysis.tab` file in this repo is reported as follows.
-
-![workflow](workflow.png)
 
 ## Acknowledgements
 
