@@ -697,11 +697,15 @@ rule fastqc_filtered:
 
         """
 
+def get_trimmomatic_adapters_path(s):
+    trimmomatic_exec_path = s
+    return trimmomatic_exec_path.replace("bin/trimmomatic", "share/trimmomatic/adapters/TruSeq3-PE.fa") + ":2:30:10"
+
 rule trimmomatic:
     """ QCing and cleaning reads """
     params:
         java_cmd = config['read_processing']['trimmomatic']['java_cmd'],
-        jar_file = config['read_processing']['trimmomatic']['jar_file'],
+        #jar_file = config['read_processing']['trimmomatic']['jar_file'],
         mem = config['read_processing']['trimmomatic']['java_vm_mem'],
         options = config['read_processing']['trimmomatic']['options'],
         processing_options = config['read_processing']['trimmomatic']['processing_options'],
@@ -730,18 +734,22 @@ rule trimmomatic:
     log:
         log_dir + "/trimmomatic/{sample}_{lane}_trimmomatic.log"
     #conda: "envs/environment.yaml"
-    shell:
-        """
-        {params.java_cmd} -Xmx{params.mem} -jar {params.jar_file} \
-            PE \
-            {params.options} \
-            -threads {threads} \
-            {input.R1} {input.R2} \
-            {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
-            {params.processing_options} &> {log}
-
-        zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}
-        """
+    run:
+        #trimmomatic_adapters_path = get_trimmomatic_adapters_path()
+        shell("export tap=$(which trimmomatic | sed 's/bin\/trimmomatic/share\/trimmomatic\/adapters\/TruSeq3-PE.fa/g'); trimmomatic PE {params.options} -threads {threads} {input.R1} {input.R2} {params.out1P} {params.out1U} {params.out2P} {params.out2U} ILLUMINACLIP:$tap:2:30:10 {params.processing_options} &> {log}")
+        shell("zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}")
+    # shell:
+    #     """
+    #     {params.java_cmd} -Xmx{params.mem} -jar {params.jar_file} \
+    #         PE \
+    #         {params.options} \
+    #         -threads {threads} \
+    #         {input.R1} {input.R2} \
+    #         {params.out1P} {params.out1U} {params.out2P} {params.out2U} \
+    #         {params.processing_options} &> {log}
+    # 
+    #     zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}
+    #     """
 
 seq_type = "both"
 
