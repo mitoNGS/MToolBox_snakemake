@@ -39,6 +39,13 @@ def get_SAM_header(samfile):
         l = s_encoding(samhandle.readline())
     return header_lines, comment_count
 
+def check_tmp_dir(dir):
+    if os.getenv("TMP"):
+        TMP = os.getenv("TMP")
+    else:
+        TMP = dir
+    return TMP
+
 ### Functions taken or adapted from assembleMTgenome.py
 r=re.compile("#+")
 r1=re.compile("""\^.{1}""")

@@ -340,13 +340,6 @@ rule sam2bam:
         zcat {input.sam} | samtools view -b -o {output} - &> {log}
         """
 
-def check_tmp_dir(dir):
-    if os.getenv("TMP"):
-        TMP = os.getenv("TMP")
-    else:
-        TMP = dir
-    return TMP
-
 rule sort_bam:
     input:
         bam = "results/{sample}/map/OUT_{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}/{sample}_{lane}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
