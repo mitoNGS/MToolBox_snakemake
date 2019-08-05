@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from Bio import SeqIO
-import resource, sys, gzip, bz2, re
+import resource, sys, gzip, bz2, re, os
 
 def memory_usage_resource():
     """

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import pandas as pd
+import os
+from snakemake.io import *
 
 def get_genome_single_vcf_files(df, res_dir="results", ref_genome_mt = None):
     outpaths = []

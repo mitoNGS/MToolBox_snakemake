@@ -2,7 +2,7 @@
 
 import pandas as pd
 from sqlalchemy import create_engine
-from general import get_SAM_header, memory_usage_resource
+from modules.general import get_SAM_header, memory_usage_resource
 
 def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000, table_name = "outS", ext = ".sam.gz"):
     """
