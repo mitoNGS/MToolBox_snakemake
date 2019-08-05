@@ -10,8 +10,7 @@ Welcome to MToolBox-Ark's documentation!
    :maxdepth: 2
    :caption: Contents:
    
-   feature-a
-   feature-b
+   installation
 
 
 Indices and tables
