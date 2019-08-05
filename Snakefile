@@ -33,14 +33,6 @@ gmap_db_dir = config["map"]["gmap_db_dir"]
 # res_dir = "results"
 # map_dir = "map"
 
-
-
-
-# results/fastqc_filtered/{sample}_{adapter}_{lane}_R1_fastqc.html
-# html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R1_fastqc.html",
-# html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R2_fastqc.html",
-# html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_U_fastqc.html",
-
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
     ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
@@ -50,13 +42,6 @@ outpaths = get_mt_genomes(analysis_tab)
 
 target_inputs = [
     outpaths ]
-
-# rule all:
-#     input:
-#         get_genome_vcf_files(analysis_tab),
-#         get_bed_files(analysis_tab),
-#         fastqc_raw_outputs = expand("results/fastqc_raw/{sample}_{read_type}_fastqc.html", sample=analysis_tab["sample"], read_type = ["R1", "R2"]),
-#         fastqc_filtered_outputs = fastqc_filtered_outputs(analysis_tab = analysis_tab, infolder = "data/reads", outfolder = "results/fastqc_filtered", ext = ".fastq.gz"),
 
 rule all:
     input:
@@ -69,16 +54,9 @@ rule fastqc_raw:
     input:
         R1 = "data/reads/{sample}_{lane}_R1_001.fastq.gz",
         R2 = "data/reads/{sample}_{lane}_R2_001.fastq.gz"
-        # R1 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="1", input_folder="data/reads"),
-        # R2 = lambda wildcards: read_datasets_inputs(sample="{sample}".format(sample=wildcards.sample), read_type="2", input_folder="data/reads"),
     output:
         html_report_R1 = "results/fastqc_raw/{sample}_{lane}_R1_001_fastqc.html",
         html_report_R2 = "results/fastqc_raw/{sample}_{lane}_R2_001_fastqc.html",
-        #html_report_R1 = "results/fastqc_raw/{sample}_R1_fastqc.html",
-        #html_report_R2 = "results/fastqc_raw/{sample}_R2_fastqc.html",
-        # html_report_R1 = lambda wildcards: "results/fastqc_raw/{outR1}".format(outR1 = os.path.split({input.R1})[1].replace(".fastq.gz", "_fastqc.html")),
-        # html_report_R2 = lambda wildcards: "results/fastqc_raw/{outR2}".format(outR2 = os.path.split({input.R2})[1].replace(".fastq.gz", "_fastqc.html"))
-        #logFile = os.path.join(config["proj_dirs"]["logs"], "fastqc_raw.log")
     params:
         outDir = "results/fastqc_raw/",
     threads:
@@ -144,16 +122,10 @@ rule fastqc_filtered:
         out1P = "data/reads_filtered/{sample}_{lane}_qc_R1.fastq.gz",
         out2P = "data/reads_filtered/{sample}_{lane}_qc_R2.fastq.gz",
         out1U = "data/reads_filtered/{sample}_{lane}_qc_U.fastq.gz",
-        # R1 = "data/reads_filtered/{sample}.R1.fastq.gz",
-        # R2 = "data/reads_filtered/{sample}.R2.fastq.gz",
-        # U = "data/reads_filtered/{sample}.U.fastq.gz"
     output:
         html_report_R1 = "results/fastqc_filtered/{sample}_{lane}_qc_R1_fastqc.html",
         html_report_R2 = "results/fastqc_filtered/{sample}_{lane}_qc_R2_fastqc.html",
         html_report_U = "results/fastqc_filtered/{sample}_{lane}_qc_U_fastqc.html",
-        # html_report_R1 = "results/fastqc_filtered/{sample}.R1_fastqc.html",
-        # html_report_R2 = "results/fastqc_filtered/{sample}.R2_fastqc.html",
-        # html_report_U = "results/fastqc_filtered/{sample}.U_fastqc.html",
     params:
         outDir = "results/fastqc_filtered/"
     threads:
@@ -188,15 +160,10 @@ rule trimmomatic:
     input:
         R1 = "data/reads/{sample}_{lane}_R1_001.fastq.gz",
         R2 = "data/reads/{sample}_{lane}_R2_001.fastq.gz"
-        # R1 = lambda wildcards: read_datasets_inputs(sample = "{sample}".format(sample=wildcards.sample), read_type = "1", input_folder = "data/reads"),
-        # R2 = lambda wildcards: read_datasets_inputs(sample = "{sample}".format(sample=wildcards.sample), read_type = "2", input_folder = "data/reads"),
     output:
         out1P = "data/reads_filtered/{sample}_{lane}_qc_R1.fastq.gz",
         out2P = "data/reads_filtered/{sample}_{lane}_qc_R2.fastq.gz",
         out1U = "data/reads_filtered/{sample}_{lane}_qc_U.fastq.gz",
-        # out1P = config['proj_dirs']['reads_filtered'] + "/{sample}.R1.fastq.gz",
-        # out2P = config['proj_dirs']['reads_filtered'] + "/{sample}.R2.fastq.gz",
-        # out1U = config['proj_dirs']['reads_filtered'] + "/{sample}.fastq.gz",
     threads:
         config['read_processing']['trimmomatic']['threads']
     # version:
