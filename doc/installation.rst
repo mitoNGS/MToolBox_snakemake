@@ -14,28 +14,27 @@ Installation of the MToolBox-Ark workflow
 -----------------------------------------
 
 **Please note**: to `git clone` the repository you need to have an account on https://github.com/.
+.. code-block:: bash
 
-```bash  
-# create directory and go there
-export pipelineDir="/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox"
+   # create directory and go there
+   export pipelineDir="/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox"
 
-mkdir -p $pipelineDir
-cd $pipelineDir
+   mkdir -p $pipelineDir
+   cd $pipelineDir
 
-# update git
-conda install git
+   # update git
+   conda install git
 
-# fetch repo
-git clone https://github.com/SLUBioinformaticsInfrastructure/MToolBox-Ark.git
+   # fetch repo
+   git clone https://github.com/SLUBioinformaticsInfrastructure/MToolBox-Ark.git
 
-# install environment
-cd MToolBox-Ark
-conda env create \
--n mtoolbox-ark \
--f envs/environment.yaml
+   # install environment
+   cd MToolBox-Ark
+   conda env create \
+   -n mtoolbox-ark \
+   -f envs/environment.yaml
 
-# create folders needed by the workflow
-mkdir -p data/reads
-mkdir -p data/genomes
-mkdir -p logs/cluster_jobs
-```
+   # create folders needed by the workflow
+   mkdir -p data/reads
+   mkdir -p data/genomes
+   mkdir -p logs/cluster_jobs
