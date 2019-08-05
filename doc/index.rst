@@ -11,6 +11,7 @@ Welcome to MToolBox-Ark's documentation!
    :caption: Contents:
    
    feature-a
+   feature-b
 
 
 Indices and tables
