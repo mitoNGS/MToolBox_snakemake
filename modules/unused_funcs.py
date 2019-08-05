@@ -95,3 +95,15 @@ def get_trimmomatic_adapters_path(s):
     trimmomatic_exec_path = s
     return trimmomatic_exec_path.replace("bin/trimmomatic", "share/trimmomatic/adapters/TruSeq3-PE.fa") + ":2:30:10"
 
+# rule index_merged_bam:
+#     input:
+#         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+#     output:
+#         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
+#     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_index_merge_bam.log"
+#     message: "Indexing {input.merged_bam}"
+#     #conda: "envs/samtools_biopython.yaml"
+#     shell:
+#         """
+#         samtools index {input} {output} &> {log}
+#         """
