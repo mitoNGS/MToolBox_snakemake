@@ -15,7 +15,7 @@ Installation of the MToolBox-Ark workflow
 
 **Please note**: to `git clone` the repository you need to have an account on https://github.com/.
 
-::
+.. code-block:: console
     
     # create directory and go there
     export pipelineDir="/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox"
