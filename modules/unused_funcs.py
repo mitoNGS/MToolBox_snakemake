@@ -90,3 +90,8 @@ def fastqc_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder
         # fastqc_out.extend(fastq_html_U)
     print("fastqc_outputs: {}".format(fastqc_out))
     return fastqc_out
+
+def get_trimmomatic_adapters_path(s):
+    trimmomatic_exec_path = s
+    return trimmomatic_exec_path.replace("bin/trimmomatic", "share/trimmomatic/adapters/TruSeq3-PE.fa") + ":2:30:10"
+

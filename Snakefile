@@ -173,10 +173,6 @@ rule fastqc_filtered:
 
         """
 
-def get_trimmomatic_adapters_path(s):
-    trimmomatic_exec_path = s
-    return trimmomatic_exec_path.replace("bin/trimmomatic", "share/trimmomatic/adapters/TruSeq3-PE.fa") + ":2:30:10"
-
 rule trimmomatic:
     """ QCing and cleaning reads """
     params:
