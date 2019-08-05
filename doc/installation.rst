@@ -1,6 +1,8 @@
-## Installation
+Installation
+============
 
-### Installation of Anaconda
+Installation of Anaconda
+------------------------
 
 The grid implementation of the MToolBox snakemake workflow, a side project of the MToolBox pipeline (https://github.com/mitoNGS/MToolBox), is deployed in a conda environment, _i.e._ a virtual environment with all the needed tools/modules. Installing Anaconda is therefore essential, before installing the pipeline.
 
@@ -8,7 +10,8 @@ To this purpose, please follow instructions at http://docs.anaconda.com/anaconda
 
 **Note on installation**: step 11 (verify installation by opening `anaconda-navigator`) is not compulsory. However, if you wish to do so, please make sure you have logged in the grid with either the `-X` or the `-Y` option, *e.g.* `ssh -Y username@my-mgrid.mykopat.slu.se`.
 
-### Installation of the MToolBox-Ark workflow
+Installation of the MToolBox-Ark workflow
+-----------------------------------------
 
 The workflow and the input/output data will be in the same folder, it is strongly recommended to install the workflow in some subfolder of `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/`. In this example this folder will be `/nfs4/my-gridfront/mykopat-proj3/mykopat-hmtgen/heterobasidion_MToolBox`.
 
