@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+
+import os, sys, subprocess
+from snakemake.shell import shell
+from pathlib import Path
+
+# get absolute path of running script
+DIR = os.path.split(Path(sys.argv[0]).resolve())[0]
+snakefile = os.path.join(DIR, "Snakefile")
+args = " ".join(sys.argv[1:]).lower()
+
+# do you want the DAG?
+if "--dag" in args:
+    shell(
+        "snakemake --dag -s {snakefile} | dot -Tsvg | display".format(snakefile = snakefile))
+else:
+    shell(
+        "snakemake {args} -s {snakefile}".format(args = args, snakefile = snakefile))

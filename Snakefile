@@ -12,6 +12,8 @@ from modules.config_parsers import *
 from modules.filter_alignments import *
 from modules.general import *
 
+source_dir = os.path.dirname(workflow.snakefile)
+
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 localrules: index_genome, merge_VCF, index_VCF, dict_genome
 
