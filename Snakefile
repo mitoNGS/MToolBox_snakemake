@@ -9,6 +9,8 @@ from modules.mtVariantCaller import *
 from modules.BEDoutput import *
 
 from modules.config_parsers import *
+from modules.filter_alignments import *
+from modules.general import *
 
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 localrules: index_genome, merge_VCF, index_VCF, dict_genome
@@ -31,78 +33,6 @@ gmap_db_dir = config["map"]["gmap_db_dir"]
 # res_dir = "results"
 # map_dir = "map"
 
-def memory_usage_resource():
-    """
-    Function to get memory usage (in MB)
-    Source: http://fa.bianp.net/blog/2013/different-ways-to-get-memory-consumption-or-lessons-learned-from-memory_profiler/
-    """
-    import resource
-    rusage_denom = 1024.
-    if sys.platform == 'darwin':
-        # ... it seems that in OSX the output is different units ...
-        rusage_denom = rusage_denom * rusage_denom
-    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
-    return mem
-
-def s_encoding(s):
-    if type(s) == bytes:
-        return s.decode("utf-8")
-    elif type(s) == str:
-        return s
-
-def get_SAM_header(samfile):
-    # is the file compressed?
-    if samfile.endswith("gz"):
-        samhandle = gzip.GzipFile(samfile, mode = 'r')
-    elif samfile.endswith("bz2"):
-        samhandle = bz2.BZ2File(samfile, mode = 'r')
-    else:
-        samhandle = open(samfile, 'r')
-    comment_count = 0
-    header_lines = []
-    l = s_encoding(samhandle.readline())
-    print(l)
-    while l[0] == "@":
-        header_lines.append(l)
-        comment_count += 1
-        l = s_encoding(samhandle.readline())
-    return header_lines, comment_count
-
-def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000, table_name = "outS", ext = ".sam.gz"):
-    """
-    Read a SAM file, then keep a list of IDs of reads occurring <n_occurrences> times.
-    In the specific case of outS.sam and outP.sam files, these are the IDs of the reads we want
-    to keep in the OUT.sam file.
-    Load the entries in a SQL db
-    """
-    n = n_occurrences
-
-    # Create in-memory SQLite db
-    engine = create_engine('sqlite://', echo=False)
-    # samfile = path/to/out.sam --> table_name = out
-    table_name = table_name
-    #table_name = samfile.split('/')[-1].replace(ext, "").upper().replace("-", "_")
-
-    # Read the SAM file in chunks
-    header_lines, comment_count = get_SAM_header(samfile)
-    # function that reads a samfile and skips rows with unaligned reads
-    t = pd.read_table(samfile, \
-                      sep = '\t', \
-                      skiprows=comment_count, \
-                      chunksize=chunksize, \
-                      usecols=[0,2], \
-                      names = ['readID', 'RNAME'], \
-                      compression="infer", index_col = False)
-
-    for chunk in t:
-        elapsed = time.time()
-        #print("chunk")
-        chunk = chunk.query('RNAME != "*"')
-        chunk = chunk.drop(columns=['RNAME'])
-        chunk.to_sql(table_name, con=engine, if_exists="append")
-        print("{} seconds, memory: {} MB".format(time.time()-elapsed, memory_usage_resource()))
-
-    return engine, table_name
 
 ### Functions taken or adapted from assembleMTgenome.py
 r=re.compile("#+")
@@ -322,97 +252,10 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq1.close()
     mtoutfastq2.close()
 
-def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
-    print("Processing {}".format(outS))
-    outS_sql, table_name_S = read_sam_file_only_readID_chunks_intoSQL(outS, table_name = "outS")
-    print("Processing {}".format(outP))
-    outP_sql, table_name_P = read_sam_file_only_readID_chunks_intoSQL(outP, table_name = "outP")
-
-    good_reads_S = pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 1".format(table_name=table_name_S), outS_sql, chunksize = 100000)
-    print("SQL query on outS, memory: {} MB".format(memory_usage_resource()))
-    good_reads_P = pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 2".format(table_name=table_name_P), outP_sql, chunksize = 100000)
-    print("SQL query on outP, memory: {} MB".format(memory_usage_resource()))
-    good_reads = pd.DataFrame()
-    for c in good_reads_P:
-        good_reads = good_reads.append(c)
-    print("good_reads_P append, memory: {} MB".format(memory_usage_resource()))
-    for c in good_reads_S:
-        good_reads = good_reads.append(c)
-    print("good_reads_S append, memory: {} MB".format(memory_usage_resource()))
-    print("Total reads to extract alignments of: {}".format(len(good_reads)))
-
-    samfile = outmt
-    tc = pd.read_table(samfile, \
-                       sep = '\t', \
-                       skiprows=get_SAM_header(samfile)[1], \
-                       chunksize=100000, \
-                       header=None, \
-                       engine="python", \
-                       names=["readID", "FLAG", "RNAME"] + list("QWERTYUIOPASDFGHJK"), \
-                       compression="infer", index_col = False)
-
-    # open OUT.sam file and write SAM header from outS.sam (outP would be the same).
-    OUT_uncompressed = OUT.replace(".gz", "")
-    f = open(OUT_uncompressed, 'w')
-    sss = gzip.open(outS, 'rb')
-    l = sss.readline().decode("utf-8")
-    while l[0] == "@":
-        if l.startswith("@PG") == False:
-            f.write(l)
-        l = sss.readline().decode("utf-8")
-    f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"])+"\n")
-
-    f.close()
-
-    n_extracted_alignments = 0
-    for chunk in tc:
-        chunk = chunk.query('RNAME != "*"')
-        OUT_chunk = pd.merge(chunk, good_reads, how="inner", on="readID")
-        print("Chunk, memory: {} MB".format(memory_usage_resource()))
-        n_extracted_alignments += len(OUT_chunk)
-        # Append alignments to OUT.sam
-        OUT_chunk.to_csv(OUT_uncompressed, mode="a", header=False, sep="\t", index=False)
-
-    print("Compressing OUT.sam file")
-    os.system("gzip {}".format(OUT_uncompressed))
-    print("OUT.sam compressed, memory: {} MB".format(memory_usage_resource()))
-    print("Total alignments extracted: {}".format(n_extracted_alignments))
-
-def read_datasets_inputs(sample = None, read_type = "1", input_folder="data/reads"):
-    # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
-    ### This regex matches typical names in illumina sequencing, eg 95191_TGACCA_L002_R2_001.fastq.gz
-    #read_file_regex = re.escape(sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
-    ### This is for more general cases, seems to work
-    read_file_regex = re.escape(sample) + r'[_.][\S]*R' + read_type + r'[\S]*fastq.gz'
-    #print(os.listdir(input_folder))
-    read_files = [f for f in os.listdir(input_folder) if re.match(read_file_regex, f)]
-    #print(read_files)
-    if len(read_files) > 1:
-        sys.exit("Ambiguous name in read files.")
-    elif len(read_files) == 0:
-        sys.exit("No read files found for sample: {}".format(sample))
-    return [os.path.join(input_folder, r) for r in read_files]
-
-def fastqc_raw_outputs(datasets_tab, analysis_tab = None, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
-    fastqc_out = []
-    for i,l in datasets_tab.iterrows():
-        if l["sample"] in list(analysis_tab["sample"]):
-            fastqc_out.append(os.path.join(outfolder, l["R1"].replace(ext, "_fastqc.html")))
-            fastqc_out.append(os.path.join(outfolder, l["R2"].replace(ext, "_fastqc.html")))
-    return fastqc_out
-
 # results/fastqc_filtered/{sample}_{adapter}_{lane}_R1_fastqc.html
 # html_report_R1 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R1_fastqc.html",
 # html_report_R2 = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_R2_fastqc.html",
 # html_report_U = "results/fastqc_filtered/{sample}_{adapter}_{lane}_qc_U_fastqc.html",
-def fastqc_filtered_outputs(datasets_tab, analysis_tab = None, infolder="data/reads", outfolder="results/fastqc_filtered", ext="_001.fastq.gz"):
-    fastqc_out = []
-    for i,l in datasets_tab.iterrows():
-        if l["sample"] in list(analysis_tab["sample"]):
-            fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_R1_fastqc.html")))
-            fastqc_out.append(os.path.join(outfolder, l["R2"].replace("_R2_001.fastq.gz", "_qc_R2_fastqc.html")))
-            fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_U_fastqc.html")))
-    return fastqc_out
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),

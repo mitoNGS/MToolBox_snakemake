@@ -75,3 +75,20 @@ def get_mt_genomes(df):
 
 def get_mt_fasta(df, ref_genome_mt, field):
     return df.loc[df['ref_genome_mt'] == ref_genome_mt, field][0]
+
+def fastqc_raw_outputs(datasets_tab, analysis_tab = None, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
+    fastqc_out = []
+    for i,l in datasets_tab.iterrows():
+        if l["sample"] in list(analysis_tab["sample"]):
+            fastqc_out.append(os.path.join(outfolder, l["R1"].replace(ext, "_fastqc.html")))
+            fastqc_out.append(os.path.join(outfolder, l["R2"].replace(ext, "_fastqc.html")))
+    return fastqc_out
+
+def fastqc_filtered_outputs(datasets_tab, analysis_tab = None, infolder="data/reads", outfolder="results/fastqc_filtered", ext="_001.fastq.gz"):
+    fastqc_out = []
+    for i,l in datasets_tab.iterrows():
+        if l["sample"] in list(analysis_tab["sample"]):
+            fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_R1_fastqc.html")))
+            fastqc_out.append(os.path.join(outfolder, l["R2"].replace("_R2_001.fastq.gz", "_qc_R2_fastqc.html")))
+            fastqc_out.append(os.path.join(outfolder, l["R1"].replace("_R1_001.fastq.gz", "_qc_U_fastqc.html")))
+    return fastqc_out

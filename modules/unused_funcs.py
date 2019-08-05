@@ -26,6 +26,21 @@ def get_single_vcf_files(df, ref_genome_mt = None):
             outpaths.append("{}/OUT_{}_{}_{}/vcf.vcf".format(res_dir, getattr(row, "sample"), getattr(row, "ref_genome_mt"), getattr(row, "ref_genome_n")))
     return outpaths
 
+def read_datasets_inputs(sample = None, read_type = "1", input_folder="data/reads"):
+    # https://stackoverflow.com/questions/6930982/how-to-use-a-variable-inside-a-regular-expression
+    ### This regex matches typical names in illumina sequencing, eg 95191_TGACCA_L002_R2_001.fastq.gz
+    #read_file_regex = re.escape(sample) + r'_[\D]{6}_L001_R' + read_type + r'_001.fastq.gz'
+    ### This is for more general cases, seems to work
+    read_file_regex = re.escape(sample) + r'[_.][\S]*R' + read_type + r'[\S]*fastq.gz'
+    #print(os.listdir(input_folder))
+    read_files = [f for f in os.listdir(input_folder) if re.match(read_file_regex, f)]
+    #print(read_files)
+    if len(read_files) > 1:
+        sys.exit("Ambiguous name in read files.")
+    elif len(read_files) == 0:
+        sys.exit("No read files found for sample: {}".format(sample))
+    return [os.path.join(input_folder, r) for r in read_files]
+
 ############################
 
 def fastqc_raw_outputs(analysis_tab = analysis_tab, infolder="data/reads", outfolder="results/fastqc_raw", ext=".fastq.gz"):
