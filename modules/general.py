@@ -84,13 +84,13 @@ def nuc(seq):
         else: d['N']+=1
     return d
 
-dn={'A':'T','T':'A','C':'G','G':'C'}
-def comp(s):
-    ss=''
-    for i in s:
-        if dn.has_key(i): ss+=dn[i]
-        else: ss+='N'
-    return ss
+# dn={'A':'T','T':'A','C':'G','G':'C'}
+# def comp(s):
+#     ss=''
+#     for i in s:
+#         if dn.has_key(i): ss+=dn[i]
+#         else: ss+='N'
+#     return ss
 
 def ff(v,l):
     for i in l:
