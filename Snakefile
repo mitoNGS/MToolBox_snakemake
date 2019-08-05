@@ -15,23 +15,16 @@ from modules.general import *
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 localrules: index_genome, merge_VCF, index_VCF, dict_genome
 
-#shell.prefix("module load gsnap; ")
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-#print(analysis_tab)
 reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
 datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
 
-#print(reference_tab)
-
 configfile: "config.yaml"
-#clusterfile: "cluster."
 res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
-# res_dir = "results"
-# map_dir = "map"
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
