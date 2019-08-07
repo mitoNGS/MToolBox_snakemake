@@ -1,18 +1,71 @@
 #!/usr/bin/env python
 
-import os, sys, subprocess
+import os, sys, subprocess, inspect
 from snakemake.shell import shell
+import snakemake
+import argparse
 from pathlib import Path
 
 # get absolute path of running script
 DIR = os.path.split(Path(sys.argv[0]).resolve())[0]
 snakefile = os.path.join(DIR, "Snakefile")
-args = " ".join(sys.argv[1:]).lower()
+# args = " ".join(sys.argv[1:]).lower()
+args = sys.argv[1:]
 
-# do you want the DAG?
-if "--dag" in args:
-    shell(
-        "snakemake --dag -s {snakefile} | dot -Tsvg | display".format(snakefile = snakefile))
-else:
-    shell(
-        "snakemake {args} -s {snakefile}".format(args = args, snakefile = snakefile))
+snakemake_sig = inspect.signature(snakemake.snakemake)
+snakemake_sig_dict = dict()
+
+for parameter_name in snakemake_sig.parameters.values():
+    #print(parameter_name.name)
+    if parameter_name.name == "snakefile":
+        snakemake_sig_dict[parameter_name.name] = snakefile
+    elif parameter_name.name == "cluster_config":
+        snakemake_sig_dict[parameter_name.name] = "cluster.yaml"
+    elif parameter_name.name == "configfile":
+        snakemake_sig_dict[parameter_name.name] = "config.yaml"
+    else:
+        snakemake_sig_dict[parameter_name.name] = parameter_name.default
+
+######
+# This should help using those arguments having short versions
+# But at the moment it doesn't work :'-)
+def check_arg_short(arg = None, dict = None):
+    if arg in dict:
+        return ["--{}".format(arg), "-{}".format(dict[arg])]
+    else:
+        return ["--{}".format(arg)]
+
+opts_w_short_flags = {"dryrun" : "n",
+                        "snakefile" : "s",
+                        "cores" : "j",
+                        "directory" : "d",
+                        "touch" : "t",
+                        "keep-going" : "k",
+                        "force" : "f",
+                        "forceall" : "F",
+                        "forcerun" : "R"}
+######
+
+parser = argparse.ArgumentParser(description='A MToolBox wrapper to run variant calling.')
+for k in snakemake_sig_dict:
+    #print(k, snakemake_sig_dict[k])
+    if type(snakemake_sig_dict[k]) == bool:
+        #print("{} is bool".format(k))
+        parser.add_argument('--{}'.format(k), dest=k, default=snakemake_sig_dict[k], action="store_true")
+    else:
+        parser.add_argument('--{}'.format(k), dest=k, default=snakemake_sig_dict[k])
+args, unknown = parser.parse_known_args()
+# print("Known args: {}".format(args))
+# print("Unknown args: {}".format(unknown))
+# print(unknown)
+
+snakemake.snakemake(**vars(args))
+
+### Old version (so far, kept for teh lulz)
+# # do you want the DAG?
+# if "--dag" in args:
+#     shell(
+#         "snakemake --dag -s {snakefile} | dot -Tsvg | display".format(snakefile = snakefile))
+# else:
+#     shell(
+#         "snakemake {args} -s {snakefile}".format(args = args, snakefile = snakefile))
