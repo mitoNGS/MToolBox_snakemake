@@ -11,6 +11,7 @@ Welcome to MToolBox-Ark's documentation!
    :caption: Contents:
    
    installation
+   run-the-pipeline
 
 
 Indices and tables
