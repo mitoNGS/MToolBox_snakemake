@@ -5,6 +5,23 @@ MToolBox is made by several snakemake workflows which can be run independently. 
  
 All the wrappers accepts snakemake **long** arguments and parse automatically the `config.yaml` and `cluster.yaml` configuration files required by snakemake.
 
+Setting up a working directory
+------------------------------
+
+Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
+
+.. code-block:: bash
+    
+    export MTOOLBOX_DIR=/path/to/MToolBox/dir/
+    
+    cd /path/to/analysis/dir
+    cp $MTOOLBOX_DIR/config.yaml .
+    cp $MTOOLBOX_DIR/cluster.yaml .
+    # create folders needed by the workflow
+    mkdir -p data/reads
+    mkdir -p data/genomes
+    mkdir -p logs/cluster_jobs
+
 How to run the MToolBox wrappers
 --------------------------------
 
