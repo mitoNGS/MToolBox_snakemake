@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'MToolBox-Ark'
+project = 'MToolBox'
 copyright = '2019, Domenico Simone'
 author = 'Domenico Simone'
 
