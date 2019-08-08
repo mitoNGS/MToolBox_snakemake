@@ -15,6 +15,14 @@ args = sys.argv[1:]
 snakemake_sig = inspect.signature(snakemake.snakemake)
 snakemake_sig_dict = dict()
 
+# def assign_def_type(arg):
+#     """
+#     Check type of default value of a function argument,
+#     so arg should be a Signature.parameters[argument] 
+#     """
+#     default_value = arg.default
+#     return default 
+
 for parameter_name in snakemake_sig.parameters.values():
     #print(parameter_name.name)
     if parameter_name.name == "snakefile":
@@ -48,16 +56,20 @@ opts_w_short_flags = {"dryrun" : "n",
 
 parser = argparse.ArgumentParser(description='A MToolBox wrapper to run variant calling.')
 for k in snakemake_sig_dict:
+    print(k, type(snakemake_sig_dict[k]))
     #print(k, snakemake_sig_dict[k])
     if type(snakemake_sig_dict[k]) == bool:
         #print("{} is bool".format(k))
         parser.add_argument('--{}'.format(k), dest=k, default=snakemake_sig_dict[k], action="store_true")
+    elif type(snakemake_sig_dict[k]) == int:
+        #print("{} is bool".format(k))
+        parser.add_argument('--{}'.format(k), dest=k, default=snakemake_sig_dict[k], type=int)
     else:
         parser.add_argument('--{}'.format(k), dest=k, default=snakemake_sig_dict[k])
 args, unknown = parser.parse_known_args()
-# print("Known args: {}".format(args))
-# print("Unknown args: {}".format(unknown))
-# print(unknown)
+print("Known args: {}".format(args))
+print("Unknown args: {}".format(unknown))
+print(unknown)
 
 snakemake.snakemake(**vars(args))
 
