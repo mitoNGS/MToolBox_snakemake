@@ -3,7 +3,7 @@ Run MToolBox
 
 MToolBox is made by several snakemake workflows which can be run independently. We provide wrappers for the most common tasks and analyses. Using these wrappers will save a lot of typing and headache for the lazy users (probably *you*). Cool, isn't it? :)
  
-All the wrappers accepts snakemake **long** arguments and parse automatically the `config.yaml` and `cluster.yaml` configuration files required by snakemake.
+All the wrappers accepts snakemake **long** arguments (*e.g.* :code:`--dryrun` but not :code:`-n`) and parse automatically the `config.yaml` and `cluster.yaml` configuration files required by snakemake.
 
 Setting up a working directory
 ------------------------------
@@ -22,6 +22,12 @@ Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :
     mkdir -p data/genomes
     mkdir -p logs/cluster_jobs
 
+Copy read datasets to `data/reads` and genome fasta files to `data/genomes`.
+
+.. code-block:: bash
+    
+    # some code
+
 How to run the MToolBox wrappers
 --------------------------------
 
@@ -39,7 +45,7 @@ Running the wrappers is as simple as this:
     
     export PATH=/path/to/MToolBox/dir/:$PATH
     
-    MToolBox-variant-calling -p
+    MToolBox-variant-calling --printshellcmds
 
 You can also display a graphical representation of the workflow by running
 
