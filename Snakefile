@@ -387,10 +387,8 @@ rule dict_genome:
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
     #conda: "envs/samtools_biopython.yaml"
-    shell:
-        """
-        java -jar modules/picard.jar CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}
-        """
+    run:
+        shell("picard CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}")
 
 rule left_align_merged_bam:
     input:
