@@ -400,10 +400,12 @@ rule left_align_merged_bam:
     output:
         merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam.log"
+    params:
+        source_dir = source_dir
     message: "Realigning indels in {input.merged_bam} with GATK 3.8 - LeftAlignIndels"
     shell:
         """
-        java -Xmx6G -jar modules/GenomeAnalysisTK.jar \
+        java -Xmx6G -jar {params.source_dir}/modules/GenomeAnalysisTK.jar \
             -R {input.mt_n_fasta} \
             -T LeftAlignIndels \
             -I {input.merged_bam} \
