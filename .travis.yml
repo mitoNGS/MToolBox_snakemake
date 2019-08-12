@@ -1,0 +1,8 @@
+language: python
+python:
+  - "3.7"
+install:
+  - conda create -n mtoolbox envs/environment.yaml
+  - export PYTHONPATH=$PYTHONPATH:.
+script:
+  - pytest -v test/test_mt_classifier.py
