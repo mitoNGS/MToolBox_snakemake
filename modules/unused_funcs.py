@@ -107,3 +107,15 @@ def get_trimmomatic_adapters_path(s):
 #         """
 #         samtools index {input} {output} &> {log}
 #         """
+
+########## from mt_Classifier
+def usage_old():
+	print """\nAssigns haplogroup to contigs and performs functional annotation
+		Options:
+		-i		Contig file [mtDNAassembly-Contigs.fasta]
+		-g		GMAP executable PATH [/usr/local/bin/gmap]
+		-D		GMAP mt sequences database location [/usr/local/share/gmapdb]
+		-m		GMAP mt sequences database [mt_mhcss]
+		-t		GMAP threads [2]
+		-b		basename for output files
+		"""
