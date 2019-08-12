@@ -100,20 +100,20 @@ def get_snps(rif, inc, start_pos=0, gap = '-'):
                 pos_a += 1
                 n_gaps += 1
                 try:
-                    x = rif.seq.tostring()[pos_a]
-                    y = inc.seq.tostring()[pos_a]
+                    x = rif.tostring()[pos_a]
+                    y = inc.tostring()[pos_a]
                 except IndexError:
                     #caso limite: l'inserzione e' di lunghezza 1 alla fine dell'allineamento
                     #print "pos_a:", pos_a, "n_gaps:", n_gaps, "len(rif)", len(rif), "x:", x, "y:", y, "len(inc)", len(inc)
-                    x = rif.seq.tostring()[pos_a-1]
-                    y = inc.seq.tostring()[pos_a-1]
+                    x = rif.tostring()[pos_a-1]
+                    y = inc.tostring()[pos_a-1]
                 while pos_a < alg_len-1 and ( (x == gap and y != gap) or (x == y == gap) ):
                     if y != gap:
                         ins_seq.append(y)
                     pos_a += 1
                     n_gaps += 1
-                    x = rif.seq.tostring()[pos_a]
-                    y = inc.seq.tostring()[pos_a]
+                    x = rif.tostring()[pos_a]
+                    y = inc.tostring()[pos_a]
                 if pos_a == alg_len - 1: pos_a += 1
                 mut = datatypes.Insertion("%d.%s" % (pos_i, ''.join(ins_seq)))
                 #mut.refsequence = rif
@@ -123,13 +123,13 @@ def get_snps(rif, inc, start_pos=0, gap = '-'):
                 pos_d = pos_a-n_gaps+1
                 pos_a += 1
                 if pos_a < alg_len:
-                    x = rif.seq.tostring()[pos_a]
-                    y = inc.seq.tostring()[pos_a]
+                    x = rif.tostring()[pos_a]
+                    y = inc.tostring()[pos_a]
                     while pos_a < alg_len-1 and ( (y == gap and x != gap) or (x == y == gap) ):
                         pos_a += 1
                         if x == y == gap: n_gaps += 1
-                        x = rif.seq.tostring()[pos_a]
-                        y = inc.seq.tostring()[pos_a]
+                        x = rif.tostring()[pos_a]
+                        y = inc.tostring()[pos_a]
                     if pos_a == alg_len - 1: pos_a += 1
                 mut = datatypes.Deletion("%d-%dd" % (pos_d, pos_a-n_gaps))
                 mutations.append(mut)
@@ -197,13 +197,16 @@ def compare_mutations_regions(h_pos_list, s_pos_list, regions = None):
 
 def align_sequences(muscle_exe, rif, inc): #muscle
     muscle = subprocess.Popen([muscle_exe+' -quiet'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-    print(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq.tostring(), inc.name, inc.seq.tostring()))
-    alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq.tostring(), inc.name, inc.seq.tostring()))[0]
-    # print alg
+# <<<<<<< HEAD
+    #print(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq.tostring(), inc.name, inc.seq.tostring()))
+# =======
+# >>>>>>> biopython
+    alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.id, rif.seq.tostring(), inc.id, inc.seq.tostring()))[0]
+    print(alg)
     alg_split = alg.split('>')[1:]
     rif_alg = ''.join(alg_split[0].split()[1:]).upper()
     inc_alg = ''.join(alg_split[1].split()[1:]).upper()
-    return alg, SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS'), inc
+    return alg, SeqRecord(Seq(rif_alg), id = 'RSRS', name = 'RSRS'), SeqRecord(Seq(inc_alg), id = inc.id, name = inc.name)
     #return alg, datatypes.Sequence(rif.name, rif_alg), datatypes.Sequence(inc.name, inc_alg)
 
 #Alcune Sequenze non Vengono correttamente allineate da Muscle, sarebbe da implementare anche mafft?
@@ -237,7 +240,7 @@ class SequenceDiff(object):
     def gen_diff(self, muscle_exe=None, rif=None, obj=None):
         #temporaneo, per i casi in cui viene dato a parte l'allineamento
         if rif:
-            alg, self.rif, self.obj = self.gen_alg(muscle_exe, rif, obj)
+            alg, self.rif, self.obj = self.gen_alg(muscle_exe = muscle_exe, rif = rif, inc = obj)
             self.alg = alg
         self.diff_list = self.gen_snps(self.rif.seq, self.obj.seq)
         # print self.diff_list
@@ -257,8 +260,8 @@ class SequenceDiff(object):
             #e_idx = self.obj.seq.find('-', b_idx)
             tmp = ''.join(reversed(self.obj.seq))
             e_idx = len(self.obj.seq) - min(tmp.find(x) for x in consts.DNA)
-            b_idx = len(self.rif.seq[:b_idx].replace('-',''))
-            e_idx = len(self.rif.seq[:e_idx].replace('-',''))
+            b_idx = len(self.rif.seq[:b_idx].tostring().replace('-',''))
+            e_idx = len(self.rif.seq[:e_idx].tostring().replace('-',''))
             self.start = b_idx
             self.end = e_idx
             self.diff_list_raw = self.diff_list

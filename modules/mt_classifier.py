@@ -143,15 +143,19 @@ def merge_tables(f, g, h):
             o.append([i.pprint(),n,n,y])
     return o
 
-def align_sequence(muscle_exe, sequence, rif=None, ):
-    """sequence is a datatypes.Sequence, rif"""
+def align_sequence(muscle_exe, obj = None, rif = None):
+    """obj is a Bio.SeqRecord.SeqRecord"""
     if rif is None:
         #rif = datatypes.Sequence('RSRS', consts.RCRS)
         rif = SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS')
     seq_diff = NGclassify.SequenceDiff()
     #print "Aligning sequence %s" % sequence.name
     #seq_diff.gen_diff(muscle_exe, rif, datatypes.Sequence(sequence.name, str(sequence)))
-    seq_diff.gen_diff(muscle_exe, rif, sequence)
+# <<<<<<< HEAD
+#     seq_diff.gen_diff(muscle_exe, rif, sequence)
+# =======
+    seq_diff.gen_diff(muscle_exe = muscle_exe, rif = rif, obj = obj)
+# >>>>>>> biopython
     #print "-"*30
     return seq_diff
 
@@ -204,7 +208,6 @@ def write_output(class_obj, seq_diff, seq_diff_mhcs, seq_diff_rcrs, merged_table
         merged_tables_file.write(','.join(row)+'\n')
 
 def main_mt_hpred(contig_file = 'mtDNAassembly-contigs.fasta', muscle_exe = "/usr/bin/muscle", basename = "mtDNAassembly-contigs", best_results_file = 'mt_classification_best_results.csv', data_file = None):
-    
     print("Your best results file is {}".format(best_results_file))
     # sample name
     f = os.path.abspath(contig_file)
@@ -218,7 +221,6 @@ def main_mt_hpred(contig_file = 'mtDNAassembly-contigs.fasta', muscle_exe = "/us
     print("\nLoading contig sequences from file {}".format(contig_file))
     #contig_array = load_sequences(contig_file)
     contig_array = SeqIO.index(contig_file, 'fasta')
-    print(contig_array[list(contig_array.keys())[0]])
     contig_array_seqdiff = [] # lista di liste
     contig_total_seqdiff = [] # lista di varianti
     contig_array_mappings = []
@@ -226,13 +228,15 @@ def main_mt_hpred(contig_file = 'mtDNAassembly-contigs.fasta', muscle_exe = "/us
     print("\nAligning Contigs to mtDNA reference genome...\n")
     
     # update each contig's SeqDiff
-    for x,contig in enumerate(contig_array):
+    #for x,contig in enumerate(contig_array):
+    for x, contig in enumerate(list(contig_array.keys())):
+        #print(type(contig_array[contig]))
         if x == 0:
-            contig_seq_diff = align_sequence(muscle_exe, contig)
+            contig_seq_diff = align_sequence(muscle_exe, contig_array[contig])
             contig_seq_diff.find_segment() # avoid having long gaps at 5' and 3' (not actual gaps but due to the alignment)
             contig_seq_diff.regions.append([contig_seq_diff.start, contig_seq_diff.end])
         else:
-            incoming_seqdiff = align_sequence(muscle_exe, contig)
+            incoming_seqdiff = align_sequence(muscle_exe, contig_array[contig])
             incoming_seqdiff.find_segment()
             contig_seq_diff.diff_list.extend(incoming_seqdiff.diff_list)
             contig_seq_diff.regions.append([incoming_seqdiff.start, incoming_seqdiff.end])
