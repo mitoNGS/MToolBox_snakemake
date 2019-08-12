@@ -3,7 +3,9 @@ import sys, subprocess
 #print sys.path
 from modules.classifier import datatypes, consts, parse_mhcs#, io_modules.serialize, sys
 from collections import OrderedDict
-
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 # be careful to the sequence hereafter defined.
 # it must be the SAME used for alignment and/or read mapping.
 rsrs_seq = consts.RCRS # actually it's RSRS
@@ -45,8 +47,8 @@ def get_snps(rif, inc, start_pos=0, gap = '-'):
     alg_len = len(rif)
     mutations = []
     while pos_a < (alg_len + start_pos):
-        x = rif[pos_a]
-        y = inc[pos_a]
+        x = rif.tostring()[pos_a]
+        y = inc.tostring()[pos_a]
         if x != y:
             if x != gap and y != gap:
                 #SNP
@@ -98,20 +100,20 @@ def get_snps(rif, inc, start_pos=0, gap = '-'):
                 pos_a += 1
                 n_gaps += 1
                 try:
-                    x = rif[pos_a]
-                    y = inc[pos_a]
+                    x = rif.seq.tostring()[pos_a]
+                    y = inc.seq.tostring()[pos_a]
                 except IndexError:
                     #caso limite: l'inserzione e' di lunghezza 1 alla fine dell'allineamento
                     #print "pos_a:", pos_a, "n_gaps:", n_gaps, "len(rif)", len(rif), "x:", x, "y:", y, "len(inc)", len(inc)
-                    x = rif[pos_a-1]
-                    y = inc[pos_a-1]
+                    x = rif.seq.tostring()[pos_a-1]
+                    y = inc.seq.tostring()[pos_a-1]
                 while pos_a < alg_len-1 and ( (x == gap and y != gap) or (x == y == gap) ):
                     if y != gap:
                         ins_seq.append(y)
                     pos_a += 1
                     n_gaps += 1
-                    x = rif[pos_a]
-                    y = inc[pos_a]
+                    x = rif.seq.tostring()[pos_a]
+                    y = inc.seq.tostring()[pos_a]
                 if pos_a == alg_len - 1: pos_a += 1
                 mut = datatypes.Insertion("%d.%s" % (pos_i, ''.join(ins_seq)))
                 #mut.refsequence = rif
@@ -121,13 +123,13 @@ def get_snps(rif, inc, start_pos=0, gap = '-'):
                 pos_d = pos_a-n_gaps+1
                 pos_a += 1
                 if pos_a < alg_len:
-                    x = rif[pos_a]
-                    y = inc[pos_a]
+                    x = rif.seq.tostring()[pos_a]
+                    y = inc.seq.tostring()[pos_a]
                     while pos_a < alg_len-1 and ( (y == gap and x != gap) or (x == y == gap) ):
                         pos_a += 1
                         if x == y == gap: n_gaps += 1
-                        x = rif[pos_a]
-                        y = inc[pos_a]
+                        x = rif.seq.tostring()[pos_a]
+                        y = inc.seq.tostring()[pos_a]
                     if pos_a == alg_len - 1: pos_a += 1
                 mut = datatypes.Deletion("%d-%dd" % (pos_d, pos_a-n_gaps))
                 mutations.append(mut)
@@ -195,12 +197,14 @@ def compare_mutations_regions(h_pos_list, s_pos_list, regions = None):
 
 def align_sequences(muscle_exe, rif, inc): #muscle
     muscle = subprocess.Popen([muscle_exe+' -quiet'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-    alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq, inc.name, inc.seq))[0]
+    print(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq.tostring(), inc.name, inc.seq.tostring()))
+    alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq.tostring(), inc.name, inc.seq.tostring()))[0]
     # print alg
     alg_split = alg.split('>')[1:]
     rif_alg = ''.join(alg_split[0].split()[1:]).upper()
     inc_alg = ''.join(alg_split[1].split()[1:]).upper()
-    return alg, datatypes.Sequence(rif.name, rif_alg), datatypes.Sequence(inc.name, inc_alg)
+    return alg, SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS'), inc
+    #return alg, datatypes.Sequence(rif.name, rif_alg), datatypes.Sequence(inc.name, inc_alg)
 
 #Alcune Sequenze non Vengono correttamente allineate da Muscle, sarebbe da implementare anche mafft?
 #def align_sequences_mafft(rif, inc):

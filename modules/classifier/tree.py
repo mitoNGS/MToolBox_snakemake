@@ -1,6 +1,7 @@
 # encoding=utf8
 
 from modules.classifier import datatypes
+#import datatypes
 import itertools, pickle
 from copy import copy
 

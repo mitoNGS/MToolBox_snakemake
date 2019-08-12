@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
-import getopt, sys, re, os, glob, csv
+import getopt, sys, re, os, glob, csv, shutil
 from modules.classifier import tree, NGclassify, consts, datatypes, parse_mhcs
 from modules.bioinf.seqs import SeqList
 import modules.io_modules.csv
 import modules.io_modules.old_table
 import modules.io_modules.serialize
 import os.path
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 # folder where to find data for haplogroup classification and functional annotation
-data_file = os.path.dirname(sys.argv[0])
+#data_file = os.path.dirname(sys.argv[0])
 
 def usage():
     print("""\nAssigns haplogroup to contigs and performs functional annotation
@@ -143,10 +146,12 @@ def merge_tables(f, g, h):
 def align_sequence(muscle_exe, sequence, rif=None, ):
     """sequence is a datatypes.Sequence, rif"""
     if rif is None:
-        rif = datatypes.Sequence('RSRS', consts.RCRS)
+        #rif = datatypes.Sequence('RSRS', consts.RCRS)
+        rif = SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS')
     seq_diff = NGclassify.SequenceDiff()
     #print "Aligning sequence %s" % sequence.name
-    seq_diff.gen_diff(muscle_exe, rif, datatypes.Sequence(sequence.name, str(sequence)))
+    #seq_diff.gen_diff(muscle_exe, rif, datatypes.Sequence(sequence.name, str(sequence)))
+    seq_diff.gen_diff(muscle_exe, rif, sequence)
     #print "-"*30
     return seq_diff
 
@@ -198,44 +203,22 @@ def write_output(class_obj, seq_diff, seq_diff_mhcs, seq_diff_rcrs, merged_table
     for row in merged_tables:
         merged_tables_file.write(','.join(row)+'\n')
 
-def main_mt_hpred():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hi:m:b:s:")
-    except(getopt.GetoptError, err):
-        print(str(err))
-        usage()
-        sys.exit()
-    #print opts, args
-    contig_file = 'mtDNAassembly-contigs.fasta'
-    muscle_exe='/usr/local/bin/muscle'
-    basename='mtDNAassembly-contigs'
-    best_results_file = 'mt_classification_best_results.csv'
-    #print opts
-    for o,a in opts:
-        #print "option", o, "argument", a
-        if o == "-h":
-            usage()
-            sys.exit()
-        elif o == "-i": contig_file = a
-        elif o == "-m": muscle_exe = a
-        elif o == "-b": basename = a
-        elif o == "-s": best_results_file = a
-        else:
-            assert False, "Unhandled option."
+def main_mt_hpred(contig_file = 'mtDNAassembly-contigs.fasta', muscle_exe = "/usr/bin/muscle", basename = "mtDNAassembly-contigs", best_results_file = 'mt_classification_best_results.csv', data_file = None):
     
     print("Your best results file is {}".format(best_results_file))
     # sample name
     f = os.path.abspath(contig_file)
     #sample_name = f.split('/')[-2].split('_')[-1]
     sample_name = contig_file.split('-')[0]
-    
     # haplogroup tree parsing
-    htrees = [(tree.HaplogroupTree(pickle_data=open(data_file + '/data/phylotree_r17.pickle', 'rb').read()), data_file + '/data/phylotree_r17.pickle')]
+    htrees = [(tree.HaplogroupTree(pickle_data=open(os.path.join(data_file, 'phylotree_r17.pickle'), 'rb').read()), os.path.join(data_file, 'phylotree_r17.pickle'))]
     # mhcs parsing
-    mhcs_dict = parse_mhcs.parse2mhcs_dict(data_file + '/data/mhcs.tab')
+    mhcs_dict = parse_mhcs.parse2mhcs_dict(os.path.join(data_file,'mhcs.tab'))
     
     print("\nLoading contig sequences from file {}".format(contig_file))
-    contig_array = load_sequences(contig_file)
+    #contig_array = load_sequences(contig_file)
+    contig_array = SeqIO.index(contig_file, 'fasta')
+    print(contig_array[list(contig_array.keys())[0]])
     contig_array_seqdiff = [] # lista di liste
     contig_total_seqdiff = [] # lista di varianti
     contig_array_mappings = []
@@ -312,11 +295,40 @@ def main_mt_hpred():
     #    print i
 
 if __name__ == "__main__":
+    #try:
     try:
-        main_mt_hpred()
-    except:
-        sys.stderr.write('Unable to compute haplogroup. Exit')
-        sys.exit(1)
+        opts, args = getopt.getopt(sys.argv[1:], "hi:m:b:s:d:")
+    except(getopt.GetoptError, err):
+        print(str(err))
+        usage()
+        sys.exit()
+    #print opts, args
+    contig_file = 'mtDNAassembly-contigs.fasta'
+    muscle_exe=shutil.which('muscle')
+    basename='mtDNAassembly-contigs'
+    best_results_file = 'mt_classification_best_results.csv'
+    #print opts
+    for o,a in opts:
+        #print "option", o, "argument", a
+        if o == "-h":
+            usage()
+            sys.exit()
+        elif o == "-d": data_file = a
+        elif o == "-i": contig_file = a
+        elif o == "-m": muscle_exe = a
+        elif o == "-b": basename = a
+        elif o == "-s": best_results_file = a
+        else:
+            assert False, "Unhandled option."
+
+    if data_file == None:
+        sys.exit("You must specify the folder where data for mt_classifier execution are located. Abort.")
+    else:
+        assert os.path.exists(os.path.join(data_file, "phylotree_r17.pickle"))
+    main_mt_hpred(contig_file = contig_file, muscle_exe = muscle_exe, basename = basename, best_results_file = best_results_file, data_file = data_file)
+    # except:
+    #     sys.stderr.write('Unable to compute haplogroup. Exit\n')
+    #     sys.exit(1)
 #    path = os.getcwd()
 #    for infile in glob.glob(os.path.join(path, 'OUT_*')):
 #        main_mt_hpred()
