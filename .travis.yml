@@ -6,6 +6,7 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda env create -n mtoolbox -f envs/environment.yaml
+  - conda activate mtoolbox
   - export PYTHONPATH="$PYTHONPATH:."
 script:
   - pytest -v test/test_mt_classifier.py
