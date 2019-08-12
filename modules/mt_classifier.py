@@ -7,6 +7,8 @@ import modules.io_modules.csv
 import modules.io_modules.old_table
 import modules.io_modules.serialize
 import os.path
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 # folder where to find data for haplogroup classification and functional annotation
 data_file = os.path.dirname(sys.argv[0])
@@ -143,10 +145,12 @@ def merge_tables(f, g, h):
 def align_sequence(muscle_exe, sequence, rif=None, ):
     """sequence is a datatypes.Sequence, rif"""
     if rif is None:
-        rif = datatypes.Sequence('RSRS', consts.RCRS)
+        #rif = datatypes.Sequence('RSRS', consts.RCRS)
+        rif = SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS')
     seq_diff = NGclassify.SequenceDiff()
     #print "Aligning sequence %s" % sequence.name
-    seq_diff.gen_diff(muscle_exe, rif, datatypes.Sequence(sequence.name, str(sequence)))
+    #seq_diff.gen_diff(muscle_exe, rif, datatypes.Sequence(sequence.name, str(sequence)))
+    seq_diff.gen_diff(muscle_exe, rif, SeqRecord(Seq(sequence), id = 'RSRS', name = 'RSRS'))
     #print "-"*30
     return seq_diff
 
@@ -235,7 +239,8 @@ def main_mt_hpred():
     mhcs_dict = parse_mhcs.parse2mhcs_dict(data_file + '/data/mhcs.tab')
     
     print("\nLoading contig sequences from file {}".format(contig_file))
-    contig_array = load_sequences(contig_file)
+    #contig_array = load_sequences(contig_file)
+    contig_array = SeqIO.index(contig_file, 'fasta')
     contig_array_seqdiff = [] # lista di liste
     contig_total_seqdiff = [] # lista di varianti
     contig_array_mappings = []
