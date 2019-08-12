@@ -29,8 +29,8 @@ ToDo:
 
 __deprecated__ = "Composition.getCompositionRange Composition.calcComp"
 
-from utils import autoprop
-import seqs
+from modules.bioinf.utils import autoprop
+import modules.bioinf.seqs
 from math import sqrt
 
 #: dizionario contenente i tipi di composizione usati

@@ -15,16 +15,18 @@ __deprecated__ = ""
 
 #python 2.6 raises a DeprecationWarning if sha is not imported from
 #hashlib module
+# try:
+#     from hashlib.sha1 import sha
 try:
-    from hashlib.sha1 import sha
+    from hashlib import sha256 as sha
 except ImportError:
     import sha
 
 from array import array
 import os, imp
-from files import write_funcs, load_funcs, check_funcs, file_types, plugins
-from utils import autoprop
-import comp
+from modules.bioinf.files import write_funcs, load_funcs, check_funcs, file_types, plugins
+from modules.bioinf.utils import autoprop
+import modules.bioinf.comp
 
 ERR_SEQ_LEN   = 'Sequence in not of correct length, must be %d'
 
@@ -69,7 +71,7 @@ def calc_hash(seq):
     @type seq: sequence
     @param seq: a string of chars
     """
-    return array('c', sha.new(seq).digest())
+    return array('u', sha(seq).digest())
 
 class BaseSequence(object):
     """
@@ -94,7 +96,7 @@ class BaseSequence(object):
             raise TypeError
         for gap in gap_types:
             seq = seq.replace(gap,'-')
-        self._seq = array('c', seq.upper())
+        self._seq = array('u', seq.upper())
         self._hash = self._calc_hash(self._seq)
     def _get_seq(self):
         return self._seq
@@ -214,9 +216,9 @@ class BaseSequence(object):
             self._calc_hash(self._seq)
         elif isinstance(item, slice):
             if isinstance(value, str):
-                value = array('c', value)
+                value = array('u', value)
             elif isinstance(value, array):
-                value = array('c', value.tostring().upper())
+                value = array('u', value.tostring().upper())
             elif isinstance(value, BaseSequence):
                 value = value.seq
             self._seq[item.start:item.stop:item.step] = value
@@ -343,7 +345,8 @@ class FileIO(object):
         if not add_func:
             raise ValueError('nessuna funzione di aggiunta dichiarata')
         l_func = None
-        for key, func in self._check_funcs.iteritems():
+        # https://www.tutorialspoint.com/What-is-the-difference-between-dict-items-and-dict-iteritems-in-Python
+        for key, func in self._check_funcs.items():
             if func(fname):
                 l_func = self._load_funcs[key]
         if not l_func:
@@ -449,7 +452,7 @@ class SeqList(FileIO):
             yield dup
     def get_hash(self):
         "ritorna un hash sha1 calcolato usando gli hash di tutte le sequenze"
-        hsh = array('c')
+        hsh = array('u')
         for seq in self:
             hsh += seq.hash
         return calc_hash(hsh)

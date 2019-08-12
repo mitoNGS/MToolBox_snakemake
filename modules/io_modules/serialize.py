@@ -1,10 +1,10 @@
 # encoding=utf8
 
-from classifier import datatypes
+from modules.classifier import datatypes
 # if '..' not in sys.path:
 #     sys.path.append('..')
 
-import cPickle
+import pickle as cPickle
 
 def save_tree_to_file(tree_class, fname):
     f = open(fname, 'wb')

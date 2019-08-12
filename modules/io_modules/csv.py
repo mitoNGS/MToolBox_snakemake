@@ -13,7 +13,7 @@
 # if '..' not in sys.path:
 #     sys.path.append('..')
 
-from classifier import datatypes
+from modules.classifier import datatypes
 
 def common_filter(element):
     "Resituisce None se l'elemento è da scartare"
@@ -60,8 +60,8 @@ def parse_csv(file_handle, aplo_list=None, parent=None):
         try:
 			# trova il "livello" della riga (conta le caselle vuote a sinistra)" 
             level = find_level(line)
-        except IndexError:
-            print "WARNING: La riga:", n+1, "è vuota"
+        except(IndexError):
+            print("WARNING: La riga:", n+1, "è vuota")
         #print n, line[:3], level
         if len(parent_level) - 1 < level:
             parent_level.append(aplo_list[-1])
@@ -69,14 +69,14 @@ def parse_csv(file_handle, aplo_list=None, parent=None):
             parent_level = parent_level[:level+1]
         try:
             value = parse_line(line, level, parent_level[-1])
-        except ValueError, e:
-            print "parent level after, ", parent_level
-            print "level is ", level
-            print value
-            print "ERROR: Più di un valore per campo alla riga:", n+1, "oppure un aprogruppo contiene sia * che ' o -", e.args, line
+        except(ValueError, e):
+            print("parent level after, ", parent_level)
+            print("level is ", level)
+            print(value)
+            print("ERROR: Più di un valore per campo alla riga:", n+1, "oppure un aprogruppo contiene sia * che ' o -", e.args, line)
             #sys.exit(2)
             raise ValueError
-        except IndexError, e:
-            print "WARNING: La riga:", n+1, "è vuota oppure contiene una posizione maggiore della lunghezza di rCRS - ", "(", str(e), ") - ", line
+        except(IndexError, e):
+            print("WARNING: La riga:", n+1, "è vuota oppure contiene una posizione maggiore della lunghezza di rCRS - ", "(", str(e), ") - ", line)
         aplo_list.append(value)  
     return aplo_list
