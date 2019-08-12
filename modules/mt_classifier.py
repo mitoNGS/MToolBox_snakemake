@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import getopt, sys, re, os, glob, csv
+import getopt, sys, re, os, glob, csv, shutil
 from modules.classifier import tree, NGclassify, consts, datatypes, parse_mhcs
 from modules.bioinf.seqs import SeqList
 import modules.io_modules.csv
@@ -207,7 +207,7 @@ def main_mt_hpred():
         sys.exit()
     #print opts, args
     contig_file = 'mtDNAassembly-contigs.fasta'
-    muscle_exe='/usr/local/bin/muscle'
+    muscle_exe=shutil.which('muscle')
     basename='mtDNAassembly-contigs'
     best_results_file = 'mt_classification_best_results.csv'
     #print opts
