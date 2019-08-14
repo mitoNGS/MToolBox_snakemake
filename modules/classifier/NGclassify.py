@@ -156,7 +156,7 @@ def compare_mutations(h_pos_list, s_pos_list, start=None, end=None):
     missing_haplo_pos = sorted([x for x in h_pos_list if x not in s_pos_list], key=lambda x: x.start)
     #cerca poi se NON ci sono le retromutazioni nella lista
     #matched += sum(1 for x in [y for y in h_pos_list if isinstance(y, datatypes.Retromutation)] if x not in s_pos_list)
-    
+
     #------accrocchio da modificare
     #eliminare dal conto le posizioni retromutate
     #bisogna tener conto delle posizioni Retromutated
@@ -315,7 +315,7 @@ class Classify(object):
     # raw_tot: Nph_tot
     # haplo_stats = {'haplo_name' : (Nph, Nph_exp, Nph_tot)}
     # haplogroup prediction % is calculated as matched/tot*100
-    # haplogroup prediction sorting 
+    # haplogroup prediction sorting
     def __init__(self):
         self.stat_list = []
         self.haplo_stats = {}
@@ -375,11 +375,18 @@ class Classify(object):
 #            self.classify_haplogroup(haplo_name, h_pos_list, seq_diff)
 #        self.seq_diff = seq_diff
     def classify90(self):
-        """Generate haplo_stats for which Nph/Nph_exp > 0.89, sorted for decreasing P_Hg"""
+        """
+        Generate haplo_stats for which Nph/Nph_exp > 0.89, sorted for decreasing P_Hg.
+
+        self.haplo_stats[haplo_name] = (matched, tot, raw_tot)
+
+        self.haplo_stats90 is an OrderedDict (in decreasing order of P_Hg) version of self.haplo_stats
+        keeping only predictions with P_Hg > 0.89
+        """
         # test code, start
         # print dict((key, value) for key, value in self.haplo_stats.iteritems())
         # test code, end
-        self.haplo_stats90 = dict((key, value) for key, value in self.haplo_stats.iteritems() if value[0]/float(value[1]) > 0.89)
+        self.haplo_stats90 = dict((key, value) for key, value in self.haplo_stats.items() if value[0]/float(value[1]) > 0.89)
         # print "haplo_stats90 first stage: ", self.haplo_stats90
         self.haplo_stats90 = OrderedDict(sorted(self.haplo_stats90.items(), key=lambda x: x[1][0]/float(x[1][1]), reverse=True))
         # print "haplo_stats90 second stage: ", self.haplo_stats90
@@ -397,7 +404,7 @@ class Classify(object):
             #print haplo, count, total, raw_tot
             #print self.haplo_stats[haplo]
             if total > 0:
-                outfile.write("%s,%s,%d,%d,%d,%d,%.3f\n" % (seq_name, haplo, seq_snps, count, raw_tot, total, count/float(total)*100))    
+                outfile.write("%s,%s,%d,%d,%d,%d,%.3f\n" % (seq_name, haplo, seq_snps, count, raw_tot, total, count/float(total)*100))
     def pprint_sorted(self, outfile=sys.stdout):
         "Output della classificazione, è un csv"
         outfile.write("Sequence Name,Predicted Haplogroup,N,Nph,Nph_tot,Nph_exp,P_Hg,Missing sites\n")
@@ -435,6 +442,10 @@ class Classify(object):
             self.genome = "incomplete"
         return self.genome
     def prediction_sorting(self):
+        """
+            self.classify90 (self.haplo_stats90) is an OrderedDict (in decreasing order of P_Hg) version of self.haplo_stats
+            keeping only predictions with P_Hg > 0.89
+        """
         #print "start is", self.seq_diff.start
         #print "end is", self.seq_diff.end
         s = self.get_genome_state()
@@ -451,8 +462,15 @@ class Classify(object):
                 # print "got 90"
                 self.haplo_stats_sorted = self.classify90()
                 self.haplo_stats_sorted = OrderedDict(sorted(self.haplo_stats_sorted.items(), key=lambda x: x[1][0], reverse = True))
+                print(self.haplo_stats_sorted)
                 #self.haplo_best = OrderedDict(filter(lambda x: x[1][0] == self.haplo_stats_sorted.items()[0][1][0], self.haplo_stats_sorted.items()))
-                self.haplo_best = OrderedDict(filter(lambda x: (x[1][0],x[1][0]/float(x[1][1])) == (self.haplo_stats_sorted.items()[0][1][0],self.haplo_stats_sorted.items()[0][1][0]/float(self.haplo_stats_sorted.items()[0][1][1])), self.haplo_stats_sorted.items()))
+                best_matched = list(self.haplo_stats_sorted.values())[0][0]
+                best_tot = list(self.haplo_stats_sorted.values())[0][1]
+                self.haplo_best = OrderedDict(filter(lambda x: (x[1][0],x[1][0]/float(x[1][1])) == (best_matched,best_matched/float(best_tot)), \
+                                                                                        zip(self.haplo_stats_sorted.keys(), \
+                                                                                        self.haplo_stats_sorted.values())))
+                print(self.haplo_best)
+                #(self.haplo_stats_sorted.items()[0][1][0],self.haplo_stats_sorted.items()[0][1][0]/float(self.haplo_stats_sorted.items()[0][1][1])), self.haplo_stats_sorted.items()))
 
             # cases with no P_Hg >= 0.9, just take the haplogroup(s) with the highest P_Hg
             else:
@@ -469,4 +487,3 @@ class Classify(object):
         self.mhcss = set([parse_mhcs.which_mhcs_lite(i, mhcs_dict) for i in best_list])
         #print "mhcss are ", self.mhcss
         return self.mhcss
-        
