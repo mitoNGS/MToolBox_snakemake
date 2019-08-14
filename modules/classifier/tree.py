@@ -256,3 +256,6 @@ class HaplogroupTree(object):
         for haplo_name in self._aplo_dict:
             yield haplo_name
 
+if __name__ == '__main__':
+    print("This is the modules.classifier.tree module.")
+

@@ -316,3 +316,6 @@ def detect_haplotype(element):
     else:
         return Haplogroup
 
+if __name__ == '__main__':
+    print("This is the modules.classifier.datatypes module.")
+
