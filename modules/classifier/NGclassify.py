@@ -202,7 +202,7 @@ def align_sequences(muscle_exe, rif, inc): #muscle
 # =======
 # >>>>>>> biopython
     alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.id, rif.seq.tostring(), inc.id, inc.seq.tostring()))[0]
-    print(alg)
+    #print(alg)
     alg_split = alg.split('>')[1:]
     rif_alg = ''.join(alg_split[0].split()[1:]).upper()
     inc_alg = ''.join(alg_split[1].split()[1:]).upper()

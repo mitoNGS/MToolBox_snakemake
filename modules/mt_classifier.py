@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import getopt, sys, re, os, glob, csv, shutil
-from modules.classifier import tree, NGclassify, consts, parse_mhcs, datatypes
+from modules.classifier import tree, NGclassify, consts, parse_mhcs, datatypes 
 #from modules.bioinf.seqs import SeqList
 import modules.io_modules.csv
 import modules.io_modules.old_table
@@ -215,89 +215,82 @@ def main_mt_hpred(contig_file = 'mtDNAassembly-contigs.fasta', muscle_exe = "/us
     sample_name = contig_file.split('-')[0]
     # haplogroup tree parsing
     htrees = [(tree.HaplogroupTree(pickle_data=open(os.path.join(data_file, 'phylotree_r17.pickle'), 'rb').read()), os.path.join(data_file, 'phylotree_r17.pickle'))]
+    print(htrees)
     # mhcs parsing
     mhcs_dict = parse_mhcs.parse2mhcs_dict(os.path.join(data_file,'mhcs.tab'))
-
+    
     print("\nLoading contig sequences from file {}".format(contig_file))
     #contig_array = load_sequences(contig_file)
     contig_array = SeqIO.index(contig_file, 'fasta')
     contig_array_seqdiff = [] # lista di liste
     contig_total_seqdiff = [] # lista di varianti
     contig_array_mappings = []
-
+    
     print("\nAligning Contigs to mtDNA reference genome...\n")
-
+    
     # update each contig's SeqDiff
     #for x,contig in enumerate(contig_array):
     for x, contig in enumerate(list(contig_array.keys())):
         #print(type(contig_array[contig]))
         if x == 0:
-            contig_seq_diff = align_sequence(muscle_exe, contig_array[contig])
+            contig_seq_diff = align_sequence(muscle_exe, obj = contig_array[contig], rif = SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS'))
             contig_seq_diff.find_segment() # avoid having long gaps at 5' and 3' (not actual gaps but due to the alignment)
             contig_seq_diff.regions.append([contig_seq_diff.start, contig_seq_diff.end])
         else:
-            incoming_seqdiff = align_sequence(muscle_exe, contig_array[contig])
+            incoming_seqdiff = align_sequence(muscle_exe, obj = contig_array[contig], rif = SeqRecord(Seq(consts.RCRS), id = 'RSRS', name = 'RSRS'))
             incoming_seqdiff.find_segment()
             contig_seq_diff.diff_list.extend(incoming_seqdiff.diff_list)
             contig_seq_diff.regions.append([incoming_seqdiff.start, incoming_seqdiff.end])
-
+    
     print("\nSequence haplogroup assignment\n")
     seq_classify = h_analysis(htrees, contig_seq_diff, contig_seq_diff.regions, mhcs_dict)
     seq_classify.sample_name = sample_name
-
+    
     #print "\nSequence functional annotation\n"
     print("Contig alignment to MHCS and rCRS")
     m = list(seq_classify.mhcss)[0]
     print("Aligning contigs to MHCS SeqDiff object")
-    its_mhcs = datatypes.Sequence(m, mhcs_dict[m])
+    #its_mhcs = datatypes.Sequence(m, mhcs_dict[m])
+    its_mhcs = SeqRecord(Seq(mhcs_dict[m]), id = m, name = m)
     #contig_mhcs_total_seqdiff = []
     for x, contig in enumerate(contig_array):
         if x == 0:
-            contig_mhcs_seq_diff = align_sequence(muscle_exe, contig, its_mhcs)
+            contig_mhcs_seq_diff = align_sequence(muscle_exe, obj = contig_array[contig], rif = its_mhcs)
             contig_mhcs_seq_diff.find_segment()
             contig_mhcs_seq_diff.regions.append([contig_seq_diff.start, contig_seq_diff.end])
         else:
-            incoming_mhcs_seqdiff = align_sequence(muscle_exe, contig, its_mhcs)
+            incoming_mhcs_seqdiff = align_sequence(muscle_exe, obj = contig_array[contig], rif = its_mhcs)
             incoming_mhcs_seqdiff.find_segment()
             contig_mhcs_seq_diff.diff_list.extend(incoming_mhcs_seqdiff.diff_list)
             contig_mhcs_seq_diff.regions.append([incoming_mhcs_seqdiff.start, incoming_mhcs_seqdiff.end])
-
+    
     print("rCRS SeqDiff object")
     rcrs = datatypes.Sequence('rCRS', consts.rcrs)
+    rcrs = SeqRecord(Seq(consts.rcrs), id = m, name = m)
     #contig_rcrs_total_seqdiff = []
     for x, contig in enumerate(contig_array):
         if x == 0:
-            contig_rcrs_seq_diff = align_sequence(muscle_exe, contig, rcrs)
+            contig_rcrs_seq_diff = align_sequence(muscle_exe, obj = contig_array[contig], rif = rcrs)
             contig_rcrs_seq_diff.find_segment()
             contig_rcrs_seq_diff.regions.append([contig_seq_diff.start, contig_seq_diff.end])
         else:
-            incoming_rcrs_seqdiff = align_sequence(muscle_exe, contig, rcrs)
+            incoming_rcrs_seqdiff = align_sequence(muscle_exe, obj = contig_array[contig], rif = rcrs)
             incoming_rcrs_seqdiff.find_segment()
             contig_rcrs_seq_diff.diff_list.extend(incoming_rcrs_seqdiff.diff_list)
             contig_rcrs_seq_diff.regions.append([incoming_rcrs_seqdiff.start, incoming_rcrs_seqdiff.end])
-
+    
     # try gathering diff from reference sequences
     #print "type(seq_diff) is", type(seq_diff.diff_list)
     print("Merging seq_diffs...")
     mergedtables = merge_tables(contig_seq_diff.diff_list, contig_mhcs_seq_diff.diff_list, contig_rcrs_seq_diff.diff_list)
     #print mergedtables
-
+    
     # OUTPUTS
     write_output(seq_classify, contig_seq_diff.diff_list, contig_mhcs_seq_diff.diff_list, contig_rcrs_seq_diff.diff_list, mergedtables, basename)
     #open(os.path.join(folder,'mt_classification_best_results'), 'a').write(','.join([seq_diff.obj.name, ';'.join([i[0] for i in class_obj.haplo_best.items()])])+'\n')
     #open(os.path.join('../', best_results_file), 'a').write(','.join([seq_classify.sample_name, ';'.join([i[0] for i in seq_classify.haplo_best.items()])])+'\n')
-    open(os.path.join('../', best_results_file), 'a').write(','.join([basename, ';'.join([i[0] for i in seq_classify.haplo_best.items()])])+'\n')
-
-    #align_cmd = '%s -D %s -d %s -c chrRSRS -f 9 -B 5 -t 2 %s > %s.coords' % (gmapexe, gmapdb, mtdb, contig_file, basename)
-    #print align_cmd
-    # os.system(align_cmd)    DON'T YOU FORGET ABOUT ME!!!
-    # Parsing gmap output
-    #mutations, contigs_mappings = parse_gmapf9_file(open("%s.coords" % basename, 'r'))
-    #print "mutations, ", mutations
-    #print "contig mappings: "
-    #for i in contigs_mappings:
-    #    print i
-
+    open(best_results_file, 'a').write(','.join([basename, ';'.join([i[0] for i in seq_classify.haplo_best.items()])])+'\n')
+    
 if __name__ == "__main__":
     #try:
     try:
@@ -347,3 +340,5 @@ if __name__ == "__main__":
 #        bestres_file = os.path.join(path, 'mt_classification_best_results')
 #        haptab_file = os.path.join(data_file, 'haplogroups.txt')
 #        variants_functional_annotation.main_functional_analysis(diff_file, file_file, site_file, bestres_file, haptab_file, PATH, FILENAME)
+
+
