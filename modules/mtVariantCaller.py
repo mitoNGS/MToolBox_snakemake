@@ -337,7 +337,7 @@ dIUPAC={'R':['A','G'],'Y':['C','T'],'S':['G','C'],'W':['A','T'],'K':['G','T'],'M
 #returns '' if nucleotide in reference is N
 def getIUPAC(ref_var, dIUPAC):
 	iupac_code = ['']
-	for i in dIUPAC.iteritems():
+	for i in dIUPAC.items():
 		i[1].sort()
 		if ref_var == i[1]:
 			iupac_code= [i[0]]
