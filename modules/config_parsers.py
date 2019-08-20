@@ -69,6 +69,19 @@ def get_bed_files(df, res_dir="results"):
         #                                                                                                             ref_genome_n = getattr(row, "ref_genome_n")))
     return outpaths
 
+def get_fasta_files(df, res_dir="results"):
+    outpaths = []
+    for row in df.itertuples():
+        outpaths.append("{results}/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta".format(results = res_dir, \
+                                                                                                                    sample = getattr(row, "sample"), \
+                                                                                                                    ref_genome_mt = getattr(row, "ref_genome_mt"), \
+                                                                                                                    ref_genome_n = getattr(row, "ref_genome_n")))
+        # outpaths.append("{results}/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed".format(results = res_dir, \
+        #                                                                                                             sample = getattr(row, "sample"), \
+        #                                                                                                             ref_genome_mt = getattr(row, "ref_genome_mt"), \
+        #                                                                                                             ref_genome_n = getattr(row, "ref_genome_n")))
+    return outpaths
+
 def get_genome_files(df, ref_genome_mt, field):
     return expand(df.loc[ref_genome_mt, field])
 
