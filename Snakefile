@@ -443,7 +443,7 @@ rule pileup2mt_table:
     #conda: "envs/environment.yaml"
     #group: "variant_calling"
     run:
-        mt_table_data = pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta)
+        mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
         write_mt_table(mt_table_data=mt_table_data, mt_table_file=output.mt_table)
 
 rule make_single_VCF:

@@ -212,16 +212,16 @@ def write_mt_table(mt_table_data=None, mt_table_file=None):
         mt_table_handle.write('\t'.join(line)+'\n')
         #aseq+=mt_table_data[i+1][1][0]
         # if variant is not #, contigs will have reference, otherwise the # that will be subsequently substituted with N
-        if mt_table_data[i+1][1][0] !='#':
-            aseq+=mt_table_data[i+1][0]
-        else:
-            aseq+=mt_table_data[i+1][1][0]
-        totb+=1
-        if mt_table_data[i+1][1][0] !='#':
-            assb+=1
-            cop+=mt_table_data[i+1][1][2]
-            # track.append('chrRSRS %i %i %i\n' %(i,i+1,mt_table_data[i+1][1][2]))
-            if mt_table_data[i+1][1][2] > maxCval: maxCval=mt_table_data[i+1][1][2]
+        # if mt_table_data[i+1][1][0] !='#':
+        #     aseq+=mt_table_data[i+1][0]
+        # else:
+        #     aseq+=mt_table_data[i+1][1][0]
+        # totb+=1
+        # if mt_table_data[i+1][1][0] !='#':
+        #     assb+=1
+        #     cop+=mt_table_data[i+1][1][2]
+        #     # track.append('chrRSRS %i %i %i\n' %(i,i+1,mt_table_data[i+1][1][2]))
+        #     if mt_table_data[i+1][1][2] > maxCval: maxCval=mt_table_data[i+1][1][2]
 
     mt_table_handle.close()
 
@@ -254,11 +254,11 @@ def mt_table_handle2gapped_fasta(mt_table_data=None):
 def gapped_fasta2contigs(gapped_fasta = None):
     """
     Breaks a #-gapped fasta (string) into a contig list, eg:
-    
+
             gapped_fasta = "ATGCTGTGATTACGTACTG##########CAGTATGTGACGT" -->
-    
+
         --> contigs = [((1, 19), 'ATGCTGTGATTACGTACTG'), ((30, 42), 'CAGTATGTGACGT')]
-    
+
     According to a minimum gap length threshold (glen). (1, 19) and (30, 42) indicate the start and end of contigs on the gapped_fasta (then, in turn, on the reference mt genome).
     At the moment, gap length is hardcoded (glen = 10).
     """
