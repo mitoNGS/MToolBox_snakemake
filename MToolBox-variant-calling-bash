@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 
+#
 # snakemake -s ~/theCellarDoor/MToolBox_dev/heterobasidion_mt/Snakefile --reason \
 # --printshellcmds \
 # --keep-going \
@@ -15,7 +15,7 @@ snakefile=${DIR}/Snakefile
 args=$(echo $@ | tr '[:upper:]' '[:lower:]')
 
 if [[ $args == *"dag"* ]]; then
-    snakemake --dag -s ${snakefile} | dot -Tsvg 
+    snakemake --dag -s ${snakefile} | dot -Tsvg
 else
-    snakemake "$@" -s ${snakefile}
+    snakemake -s ${snakefile} "$@"
 fi
