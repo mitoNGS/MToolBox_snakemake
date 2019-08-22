@@ -285,7 +285,7 @@ def main_mt_hpred(contig_file = 'mtDNAassembly-contigs.fasta', muscle_exe = "/us
     mergedtables = merge_tables(contig_seq_diff.diff_list, contig_mhcs_seq_diff.diff_list, contig_rcrs_seq_diff.diff_list)
     #print mergedtables
     # OUTPUTS
-    write_output(seq_classify, contig_seq_diff.diff_list, contig_mhcs_seq_diff.diff_list, contig_rcrs_seq_diff.diff_list, mergedtables, basename)
+    #write_output(seq_classify, contig_seq_diff.diff_list, contig_mhcs_seq_diff.diff_list, contig_rcrs_seq_diff.diff_list, mergedtables, basename)
     #open(os.path.join(folder,'mt_classification_best_results'), 'a').write(','.join([seq_diff.obj.name, ';'.join([i[0] for i in class_obj.haplo_best.items()])])+'\n')
     #open(os.path.join('../', best_results_file), 'a').write(','.join([seq_classify.sample_name, ';'.join([i[0] for i in seq_classify.haplo_best.items()])])+'\n')
     open(best_results_file, 'a').write(','.join([basename, ';'.join([i[0] for i in seq_classify.haplo_best.items()])])+'\n')
