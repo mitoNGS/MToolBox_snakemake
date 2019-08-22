@@ -145,20 +145,25 @@ def get_seq_name(fasta):
 
 ### FORMAT CONVERTERS
 
-def pileup2mt_table(pileup=None, fasta=None, mt_table=None):
+def pileup2mt_table(pileup=None, ref_fasta=None):
+    """
+    Returns a list with mt_table_data. To be used to write out the mt-table and the fasta output.
+    In the MToolBox pipeline, it's used by two rules:
+    - pileup2mt_table, which passes the output to write_mt_table function to output the mt_table file;
+    - make_single_VCF, which passes the output to mt_table_handle2gapped_fasta function to generate a gapped fasta of the assembled mt genome.
+    """
     # generate mt_table backbone
-    # get mt sequence data from genome fasta file
+    # get mt sequence data from ref genome fasta file
     mtdna = {}
-    mt_genome = SeqIO.index(fasta, 'fasta')
+    mt_genome = SeqIO.index(ref_fasta, 'fasta')
     if len(mt_genome) != 1:
         sys.exit("Sorry, but MToolBox at the moment only accepts single-contig reference mt genomes.")
     for contig, contig_seq in mt_genome.items():
         for pos, nt in enumerate(contig_seq.seq):
             mtdna[pos+1] = (nt, ['#',(0,0,0,0),0,0.0])
 
-    # open input and output files
+    # open input file
     f = open(pileup, 'r')
-    mt_table_handle = open(mt_table, 'w')
 
     # iterate over pileup
     for i in f:
@@ -188,35 +193,100 @@ def pileup2mt_table(pileup=None, fasta=None, mt_table=None):
         else:
             mtdna[pos][1][0]='#'
     f.close()
+    return mtdna
 
-    # write to mt_table
-    aseq = ''
+### End of functions taken from assembleMTgenome
+
+def write_mt_table(mt_table_data=None, mt_table_file=None):
+    """
+    Writes out the mt_table file.
+    """
+    mt_table_handle = open(mt_table_file, 'w')
     mt_table_handle.write('Position\tRefNuc\tConsNuc\tCov\tMeanQ\tBaseCount(A,C,G,T)\n')
     assb,totb=0,0
     cop=0
     maxCval=1
-    for i in range(len(mtdna)):
-        #print i+1, mtdna[i+1]
-        line=[str(i+1),mtdna[i+1][0],mtdna[i+1][1][0],str(mtdna[i+1][1][2]),"%.2f" %(mtdna[i+1][1][3]),str(mtdna[i+1][1][1])]
+    for i in range(len(mt_table_data)):
+        #print i+1, mt_table_data[i+1]
+        line=[str(i+1),mt_table_data[i+1][0],mt_table_data[i+1][1][0],str(mt_table_data[i+1][1][2]),"%.2f" %(mt_table_data[i+1][1][3]),str(mt_table_data[i+1][1][1])]
         mt_table_handle.write('\t'.join(line)+'\n')
-        #aseq+=mtdna[i+1][1][0]
+        #aseq+=mt_table_data[i+1][1][0]
         # if variant is not #, contigs will have reference, otherwise the # that will be subsequently substituted with N
-        if mtdna[i+1][1][0] !='#':
-            aseq+=mtdna[i+1][0]
-        else:
-            aseq+=mtdna[i+1][1][0]
-        totb+=1
-        if mtdna[i+1][1][0] !='#':
-            assb+=1
-            cop+=mtdna[i+1][1][2]
-            # track.append('chrRSRS %i %i %i\n' %(i,i+1,mtdna[i+1][1][2]))
-            if mtdna[i+1][1][2] > maxCval: maxCval=mtdna[i+1][1][2]
+        # if mt_table_data[i+1][1][0] !='#':
+        #     aseq+=mt_table_data[i+1][0]
+        # else:
+        #     aseq+=mt_table_data[i+1][1][0]
+        # totb+=1
+        # if mt_table_data[i+1][1][0] !='#':
+        #     assb+=1
+        #     cop+=mt_table_data[i+1][1][2]
+        #     # track.append('chrRSRS %i %i %i\n' %(i,i+1,mt_table_data[i+1][1][2]))
+        #     if mt_table_data[i+1][1][2] > maxCval: maxCval=mt_table_data[i+1][1][2]
 
     mt_table_handle.close()
 
-### End of functions taken from assembleMTgenome
+def mt_table_handle2gapped_fasta(mt_table_data=None):
+    """
+    Generates gapped fasta (string) from mt_table.
+    """
+    assb,totb=0,0
+    cop=0
+    aseq = ''
+    for i in range(len(mt_table_data)):
+        #print i+1, mt_table_data[i+1]
+        #line=[str(i+1),mt_table_data[i+1][0],mt_table_data[i+1][1][0],str(mt_table_data[i+1][1][2]),"%.2f" %(mt_table_data[i+1][1][3]),str(mt_table_data[i+1][1][1])]
+        #mt_table_handle.write('\t'.join(line)+'\n')
+        #aseq+=mt_table_data[i+1][1][0]
+        # if variant is not #, contigs will have reference, otherwise the # that will be subsequently substituted with N
+        if mt_table_data[i+1][1][0] !='#':
+            aseq+=mt_table_data[i+1][0]
+        else:
+            aseq+=mt_table_data[i+1][1][0]
+        totb+=1
+        # keep this for now
+        if mt_table_data[i+1][1][0] !='#':
+            assb+=1
+            cop+=mt_table_data[i+1][1][2]
+            # track.append('chrRSRS %i %i %i\n' %(i,i+1,mt_table_data[i+1][1][2]))
+            #if mt_table_data[i+1][1][2] > maxCval: maxCval=mt_table_data[i+1][1][2]
+    return aseq
 
+def gapped_fasta2contigs(gapped_fasta = None):
+    """
+    Breaks a #-gapped fasta (string) into a contig list, eg:
 
+            gapped_fasta = "ATGCTGTGATTACGTACTG##########CAGTATGTGACGT" -->
+
+        --> contigs = [((1, 19), 'ATGCTGTGATTACGTACTG'), ((30, 42), 'CAGTATGTGACGT')]
+
+    According to a minimum gap length threshold (glen). (1, 19) and (30, 42) indicate the start and end of contigs on the gapped_fasta (then, in turn, on the reference mt genome).
+    At the moment, gap length is hardcoded (glen = 10).
+    """
+    r=re.compile("#+")
+    r1=re.compile("""\^.{1}""")
+    rr=re.compile("[\+\-]{1}[0-9]+")
+    gaps=[]
+    aseq = gapped_fasta
+    fseq=aseq.replace('#','N')
+    for i in re.finditer(r,gapped_fasta):
+        cc=(i.start()+1,i.end())
+        if (cc[1]-cc[0])+1 >= glen: gaps.append(cc)
+    contigs=[]
+    if len(gaps)!=0:
+        for i in range(len(gaps)-1):
+            cc=(gaps[i][1]+1,gaps[i+1][0]-1)
+            contigs.append((cc,fseq[cc[0]-1:cc[1]]))
+        if gaps[0][0]!=1:
+            cc=(1,gaps[0][0]-1)
+            contigs.insert(0,(cc,fseq[cc[0]-1:cc[1]]))
+        if gaps[-1][1]!=len(aseq):
+            cc=(gaps[-1][1]+1,len(aseq))
+            contigs.append((cc,fseq[cc[0]-1:cc[1]]))
+        contigs.sort()
+    else:
+        cc=(1,len(aseq))
+        contigs=[(cc,fseq[cc[0]-1:cc[1]+1])]
+    return contigs
 
 def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     print('Extracting FASTQ from SAM...')

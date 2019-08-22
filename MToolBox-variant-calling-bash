@@ -13,8 +13,9 @@ snakefile=${DIR}/Snakefile
 
 # do you want the DAG?
 args=$(echo $@ | tr '[:upper:]' '[:lower:]')
+
 if [[ $args == *"dag"* ]]; then
     snakemake --dag -s ${snakefile} | dot -Tsvg 
 else
-    snakemake $@ -s ${snakefile}
+    snakemake "$@" -s ${snakefile}
 fi

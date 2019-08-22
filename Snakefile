@@ -44,6 +44,7 @@ rule all:
         fastqc_filtered_outputs(datasets_tab, analysis_tab = analysis_tab),
         get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
+        get_fasta_files(analysis_tab)
 
 rule fastqc_raw:
     input:
@@ -442,18 +443,21 @@ rule pileup2mt_table:
     #conda: "envs/environment.yaml"
     #group: "variant_calling"
     run:
-        pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=output.mt_table)
+        mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
+        write_mt_table(mt_table_data=mt_table_data, mt_table_file=output.mt_table)
 
 rule make_single_VCF:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
-        mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
+        mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt",
+        pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
         # mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     output:
         single_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
-        single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed"
+        single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed",
+        single_fasta = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
         TMP = check_tmp_dir(config["tmp_dir"])
@@ -471,6 +475,12 @@ rule make_single_VCF:
         seq_name = get_seq_name(params.ref_mt_fasta)
         VCF_RECORDS = VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
         BEDoutput(VCF_RECORDS, seq_name = seq_name, bedfile = output.single_bed)
+        # fasta output
+        #contigs = pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=in.mt_table)
+        mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
+        gapped_fasta = mt_table_handle2gapped_fasta(mt_table_data = mt_table_data)
+        contigs = gapped_fasta2contigs(gapped_fasta = gapped_fasta)
+        FASTAoutput(vcf_dict = vcf_dict, ref_mt = params.ref_mt_fasta, fasta_out = output.single_fasta, contigs = contigs)
 
 rule index_VCF:
     input:
