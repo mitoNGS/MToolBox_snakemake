@@ -9,7 +9,7 @@
 # --dryrun
 
 DIR="$(dirname "$(readlink -f "$0")")"
-snakefile=${DIR}/Snakefile
+snakefile=${DIR}/snakefiles/haplogroup_assignment.snakefile
 
 # do you want the DAG?
 args=$(echo $@ | tr '[:upper:]' '[:lower:]')
