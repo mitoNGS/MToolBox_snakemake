@@ -1,0 +1,129 @@
+---
+title: "MToolBox report"
+runtime: shiny
+params:
+    date: !r Sys.Date()
+    #wd: getwd()
+output:
+    html_document:
+        toc: true
+        toc_float: true
+#       collapsed: false
+#       smooth_scroll: true
+    #template: flatly
+---
+
+```{r, echo = FALSE, results='hide', warning = FALSE, message = FALSE}
+library(reticulate)
+library(shiny)
+library(DT)
+library(xfun)
+
+# R -e "rmarkdown::render('skeleton.Rmd', output_format = 'html_document', output_file = 'MToolBox_report.html')"
+```
+## Per-sample statistics
+
+### Trimmomatic stats
+
+```{python, echo=FALSE, results='hide'}
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os, glob, sys
+import pandas as pd
+
+def clean_trimmomatic_percent(d):
+    """
+    (15.99%) --> 15.99
+    """
+    return d.replace("(", "").replace(")", "").replace("%", "")
+
+def get_original_dataset_file(dataset_name = None, datasets_tab = None):
+    sample, delimiter, library = dataset_name.rpartition("_")
+    file_R1 = getattr(datasets_tab.loc[(datasets_tab['sample'] == sample) & (datasets_tab['library'] == int(library))], "R1").to_string()
+    file_R2 = getattr(datasets_tab.loc[(datasets_tab['sample'] == sample) & (datasets_tab['library'] == int(library))], "R2").to_string()
+    return sample, library, file_R1, file_R2
+
+def parse_trimmomatic_log(filename = None, datasets_tab = None):
+    """
+    Parse trimmomatic log.
+    """
+    abs_counts = {}
+    dataset_name = os.path.split(filename)[1].replace("_trimmomatic.log", "")
+    abs_counts["dataset"] = dataset_name
+    sample, library, file_R1, file_R2 = get_original_dataset_file(dataset_name = dataset_name, \
+                                                                  datasets_tab = datasets_tab)
+    abs_counts["sample"] = sample
+    abs_counts["library"] = library
+    abs_counts["file_R1"] = file_R1
+    abs_counts["file_R2"] = file_R2
+    trim_handle = open(filename, 'r')
+    for i in trim_handle:
+        if i.startswith("Input Read Pairs"):
+            i = i.split()
+            abs_counts["input_reads"] = "{}".format(i[3])
+            abs_counts["both_surviving_count"] = "{}".format(i[6])
+            abs_counts["both_surviving_percent"] = "{}".format(clean_trimmomatic_percent(i[7]))
+            abs_counts["fwd_surviving_count"] = "{}".format(i[11])
+            abs_counts["fwd_surviving_percent"] = "{}".format(clean_trimmomatic_percent(i[12]))
+            abs_counts["rev_surviving_count"] = "{}".format(i[16])
+            abs_counts["rev_surviving_percent"] = "{}".format(clean_trimmomatic_percent(i[17]))
+            abs_counts["dropped_count"] = "{}".format(i[19])
+            abs_counts["dropped_percent"] = "{}".format(clean_trimmomatic_percent(i[20]))
+    return abs_counts
+
+analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
+
+trimmomatic_logs = glob.glob("logs/trimmomatic/*.log")
+# add header
+header = ["Sample", "Library", "R1", "R2", "Input reads", "Both surviving", "Both surviving percent", "Fwd only surviving", "Fwd only surviving percent", "Rev only surviving", "Rev only surviving percent", "Dropped", "Dropped percent"]
+
+table_out = open("table.csv", 'w')
+table_out.write(",".join(header)+"\n")
+
+table_string = ""
+for log in trimmomatic_logs:
+    abs_counts = parse_trimmomatic_log(filename = log, datasets_tab = datasets_tab)
+    table_string += "{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(abs_counts["sample"], \
+                                                        abs_counts["library"], \
+                                                        abs_counts["file_R1"], \
+                                                        abs_counts["file_R2"], \
+                                                        abs_counts["input_reads"], \
+                                                        abs_counts["both_surviving_count"], \
+                                                        abs_counts["both_surviving_percent"], \
+                                                        abs_counts["fwd_surviving_count"], \
+                                                        abs_counts["fwd_surviving_percent"], \
+                                                        abs_counts["rev_surviving_count"], \
+                                                        abs_counts["rev_surviving_percent"], \
+                                                        abs_counts["dropped_count"], \
+                                                        abs_counts["dropped_percent"])
+
+
+table_out.write(table_string)
+table_out.close()
+```
+
+```{r, echo = FALSE}
+trimmomatic_table <- read.csv("table.csv")
+new_colnames <- lapply(colnames(trimmomatic_table), function(x) gsub("\\.", "\\ ", x))
+datatable(trimmomatic_table, rownames = FALSE, colnames = new_colnames)
+```
+
+```{r, echo = FALSE, eval = FALSE}
+xfun::pkg_load2(c('base64enc', 'htmltools', 'mime'))
+xfun::embed_file('table.csv', text = paste("Download Trimmomatic stats in csv format"))
+```
+
+## Analysis
+
+```{r echo=FALSE}
+# sliderInput("num", "Choose a number",
+#             0, 100, 20)
+#
+# renderPlot({
+#     plot(seq(input$num))
+# })
+```
+
+## Conclusions
