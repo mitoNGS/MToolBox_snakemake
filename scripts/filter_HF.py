@@ -11,8 +11,6 @@ def to_list(obj):
         obj = [obj]
     return obj
 
-#hf_threshold = 0.20
-
 parser = argparse.ArgumentParser(description='Filter VCF file based on heteroplasmy frequency.', \
                                     add_help = False, \
                                     formatter_class=argparse.RawTextHelpFormatter)
@@ -20,8 +18,9 @@ parser = argparse.ArgumentParser(description='Filter VCF file based on heteropla
 group_required = parser.add_argument_group('required arguments')
 group_required.add_argument('--vcf-input', '-i', action="store", dest="vcf_input", help = "VCF file to be filtered")
 group_optional = parser.add_argument_group('optional arguments')
-group_optional.add_argument('--vcf-output', '-o', action="store", dest="vcf_output", help = "(default: <vcf_input>.<hf_threshold>.vcf)")
-group_optional.add_argument('--hf-threshold', '-t', action="store", dest="hf_threshold", type=float, default=0.20, help = "Must be <= 1 (default: %(default)s)")
+group_optional.add_argument('--vcf-output', '-o', action="store", dest="vcf_output", help = "(default: <vcf_input>__filt_<hf_lower_threshold>_<hf_upper_threshold>.vcf)")
+group_optional.add_argument('--hf-lower-threshold', '-l', action="store", dest="hf_lower_threshold", type=float, default=0.20, help = "Must be <= 1 (default: %(default)s)")
+group_optional.add_argument('--hf-upper-threshold', '-u', action="store", dest="hf_upper_threshold", type=float, default=1, help = "default: %(default)s")
 group_optional.add_argument("-h", "--help", action="help", help="show this help message and exit")
 
 args = parser.parse_args()
@@ -32,14 +31,16 @@ if args.vcf_input == None:
 else:
     vcf_input = args.vcf_input
 
-if args.hf_threshold > 1:
+if args.hf_lower_threshold > 1:
     parser.print_help()
     sys.exit("\nERROR: --hf-threshold must be <= 1. Exit.\n")
 else:
-    hf_threshold = args.hf_threshold
-    
+    hf_lower_threshold = args.hf_lower_threshold
+
+hf_upper_threshold = args.hf_upper_threshold
+
 if args.vcf_output == None:
-    vcf_output = args.vcf_input.replace(".vcf", "_filt{}.vcf".format(hf_threshold))
+    vcf_output = args.vcf_input.replace(".vcf", "__filt_{}_{}.vcf".format(hf_lower_threshold, hf_upper_threshold))
     print("VCF output is {}".format(vcf_output))
 
 VCF = vcf.Reader(filename = vcf_input)
@@ -63,10 +64,10 @@ for vcf_record in VCF:
             GT_filtered = []
             CILOW_filtered = []
             CIUP_filtered = []
-            if sum(to_list(data_dict['HF'])) < 1 - hf_threshold:
+            if sum(to_list(data_dict['HF'])) < 1 - hf_lower_threshold:
                 GT_filtered.append(0)
             for x, i in enumerate(to_list(data_dict['HF'])):
-                if i >= hf_threshold:
+                if i >= hf_lower_threshold and i <= hf_upper_threshold:
                     HF_filtered.append(i)
                     GT_filtered.append(GT[x+1]) # GT has REF too so the numbering is shifted
                     CILOW_filtered.append(to_list(data_dict['CILOW'])[x])
