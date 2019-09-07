@@ -18,3 +18,11 @@ map:
     gmap_remap_threads: 4
 
 mark_duplicates: False
+
+mtvcf_main_analysis:
+    # minumum distance from read end to keep in a mutation
+    tail:  5
+    # minimum QS for mutation
+    Q:    25
+    # minimum coverage depth for a mutation to be kept
+    minrd: 5

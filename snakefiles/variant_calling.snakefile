@@ -486,15 +486,22 @@ rule make_single_VCF:
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
         TMP = check_tmp_dir(config["tmp_dir"])
+        tail = config['mtvcf_main_analysis']['tail']
+        quality = config['mtvcf_main_analysis']['Q']
+        minrd = config['mtvcf_main_analysis']['minrd']
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
     #conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     run:
         # function (and related ones) from mtVariantCaller
-        # vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
         tmp_sam = os.path.split(input.merged_bam)[1].replace(".bam", ".sam")
         shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam = input.merged_bam, tmp_dir = params.TMP, tmp_sam = tmp_sam))
-        vcf_dict = mtvcf_main_analysis(sam_file = "{tmp_dir}/{tmp_sam}".format(tmp_dir = params.TMP, tmp_sam = tmp_sam), mtable_file = input.mt_table, name2 = wildcards.sample)
+        vcf_dict = mtvcf_main_analysis(sam_file = "{tmp_dir}/{tmp_sam}".format(tmp_dir = params.TMP, tmp_sam = tmp_sam), \
+                                        mtable_file = input.mt_table, \
+                                        name2 = wildcards.sample, \
+                                        tail = params.tail,
+                                        Q = params.quality,
+                                        minrd = params.minrd)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name = get_seq_name(params.ref_mt_fasta)

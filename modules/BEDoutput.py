@@ -84,7 +84,7 @@ def BEDoutput(VCF_RECORDS, seq_name="seq", bedfile="bed.bed"):
     #                                               ])))
     outBED.close()
 
-def FASTAoutput(vcf_dict = None, ref_mt = None, contigs = [], fasta_out = "fasta.fasta", hf = 0.8):
+def FASTAoutput(vcf_dict = None, ref_mt = None, contigs = [], fasta_out = "fasta.fasta", hf_max = 0.8, hf_min = 0.2):
     mut_events = vcf_dict
     crf = True
     if crf: f=open(fasta_out,'w')
@@ -100,13 +100,13 @@ def FASTAoutput(vcf_dict = None, ref_mt = None, contigs = [], fasta_out = "fasta
             #print "String seq is", string_seq
             nuc_index = i[0][0]
             dict_seq = {}
-            # the sequence string at 
+            # the sequence string at
             for nuc in string_seq:
                 dict_seq[nuc_index] = nuc
                 nuc_index += 1
             #print "original dict_seq is", dict_seq
             # add info for consensus dictionary
-            consensus_single = get_consensus_single(mut_events[list(mut_events.keys())[0]],hf=hf)
+            consensus_single = get_consensus_single(mut_events[list(mut_events.keys())[0]],hf_max=hf_max,hf_min=hf_min)
             #print consensus_single
             # alter dict_seq keys for the implementation
             # of the consensus information
@@ -121,7 +121,7 @@ def FASTAoutput(vcf_dict = None, ref_mt = None, contigs = [], fasta_out = "fasta
                 positions=df[0]
                 dup_positions = positions[positions.duplicated()].values
                 for x in dup_positions:
-                    d = df[df[0]==x][2] #check the mut type. If ins, report ins instead of del or mism 
+                    d = df[df[0]==x][2] #check the mut type. If ins, report ins instead of del or mism
                     if 'ins' in d.values:
                         idx = d[d!='ins'].index[0]
                         df.drop(df.index[[idx]],inplace=True)

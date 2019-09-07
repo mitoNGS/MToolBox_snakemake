@@ -4,11 +4,11 @@ from Bio import SeqIO
 import resource, sys, gzip, bz2, re, os
 
 def softclipping(i):
-	lseq = len(i[9])
-	sc = re.findall(r'(\d+)S', i[5])
-	sc = map(lambda x:int(x),sc)
-	sc = sum(sc)
-	return lseq, sc
+    lseq = len(i[9])
+    sc = re.findall(r'(\d+)S', i[5])
+    sc = map(lambda x:int(x),sc)
+    sc = sum(sc)
+    return lseq, sc
 
 def memory_usage_resource():
     """
@@ -89,7 +89,7 @@ def normS(s,ref):
     ss=''
     for i in ns:
         if i in '.,ACGTNacgtN<>*': ss+=i
-    return (ss.replace('.',ref)).replace(',',ref)
+    return ss
 
 def nuc(seq):
     d={'A':0,'C':0,'G':0,'T':0,'N':0}
@@ -150,6 +150,13 @@ def get_seq_name(fasta):
         seq_name = contig
     return seq_name
 
+def nuc_strand(values):
+    d={'A':0,'C':0,'G':0,'T':0,'N':0,'a':0,'c':0,'g':0,'t':0}
+    for i in values:
+        if i[0] in d: d[i[0]]+=i[1]
+        else: d['N']+=1
+    return d
+
 ### FORMAT CONVERTERS
 
 def pileup2mt_table(pileup=None, ref_fasta=None):
@@ -167,7 +174,7 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
         sys.exit("Sorry, but MToolBox at the moment only accepts single-contig reference mt genomes.")
     for contig, contig_seq in mt_genome.items():
         for pos, nt in enumerate(contig_seq.seq):
-            mtdna[pos+1] = (nt, ['#',(0,0,0,0),0,0.0])
+            mtdna[pos+1] = (nt, ['#',(0,0,0,0),0,0.0,(0,0,0,0,0,0,0,0)])
 
     # open input file
     f = open(pileup, 'r')
@@ -181,15 +188,28 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
         if len(l) == 6:
             ref,seq,qual=l[2],normS(re.sub(r1,"",l[4]),l[2]),l[5]
             s,q='',0
+            d={'A':0,'C':0,'G':0,'T':0,'N':0,'a':0,'c':0,'g':0,'t':0}
             for j in range(len(seq)):
                 if seq[j] not in '<>*' and ord(qual[j])-33 >= mqual:
-                    s+=seq[j].upper()
+                    if seq[j] == ".":
+                        d[ref.upper()]+=1
+                        s+=ref.upper()
+                    elif seq[j] == ",":
+                        d[ref.lower()]+=1
+                        s+=ref.upper()
+                    elif seq[j] in 'acgtACGT':
+                        d[seq[j]]+=1
+                        s+=seq[j].upper()
+                    else:
+                        pass
+                    #s+=seq[j].upper()
                     q+=(ord(qual[j])-33)
             try: mq=float(q)/len(s)
             except: mq=0.0
             dnuc=nuc(s)
             mfreq=freq(dnuc)
             lnuc=(dnuc['A'],dnuc['C'],dnuc['G'],dnuc['T'])
+            str_nuc =(d['A'],d['C'],d['G'],d['T'],d['a'],d['c'],d['g'],d['t'])
             cnuc='#'
             if len(s) >= cov: cnuc=mfreq
             #print pos,cnuc,s,dnuc
@@ -197,6 +217,7 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
             mtdna[pos][1][1]=lnuc
             mtdna[pos][1][2]=len(s)
             mtdna[pos][1][3]=mq
+            mtdna[pos][1][4]=str_nuc
         else:
             mtdna[pos][1][0]='#'
     f.close()
@@ -209,13 +230,14 @@ def write_mt_table(mt_table_data=None, mt_table_file=None):
     Writes out the mt_table file.
     """
     mt_table_handle = open(mt_table_file, 'w')
-    mt_table_handle.write('Position\tRefNuc\tConsNuc\tCov\tMeanQ\tBaseCount(A,C,G,T)\n')
+    mt_table_handle.write('Position\tRefNuc\tConsNuc\tCov\tMeanQ\tBaseCount(A,C,G,T)\tStrandCount(A,C,G,T,a,c,g,t)\n')
     assb,totb=0,0
     cop=0
     maxCval=1
     for i in range(len(mt_table_data)):
         #print i+1, mt_table_data[i+1]
         line=[str(i+1),mt_table_data[i+1][0],mt_table_data[i+1][1][0],str(mt_table_data[i+1][1][2]),"%.2f" %(mt_table_data[i+1][1][3]),str(mt_table_data[i+1][1][1])]
+        line=[str(i+1),mt_table_data[i+1][0],mt_table_data[i+1][1][0],str(mt_table_data[i+1][1][2]),"%.2f" %(mt_table_data[i+1][1][3]),str(mt_table_data[i+1][1][1]),str(mt_table_data[i+1][1][4])]
         mt_table_handle.write('\t'.join(line)+'\n')
         #aseq+=mt_table_data[i+1][1][0]
         # if variant is not #, contigs will have reference, otherwise the # that will be subsequently substituted with N
