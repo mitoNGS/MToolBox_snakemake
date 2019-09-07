@@ -3,6 +3,13 @@
 from Bio import SeqIO
 import resource, sys, gzip, bz2, re, os
 
+def softclipping(i):
+	lseq = len(i[9])
+	sc = re.findall(r'(\d+)S', i[5])
+	sc = map(lambda x:int(x),sc)
+	sc = sum(sc)
+	return lseq, sc
+
 def memory_usage_resource():
     """
     Function to get memory usage (in MB)
@@ -288,7 +295,12 @@ def gapped_fasta2contigs(gapped_fasta = None):
         contigs=[(cc,fseq[cc[0]-1:cc[1]+1])]
     return contigs
 
-def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
+def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None, softclipping = True):
+    """
+    Extract reads from SAM file.
+    Reads with softclipping > 1/3 of their length are discarded since could be potential non-reference NumtS.
+    """
+    sclipped = 0 # count of reads discarded because of softclipping > threshold (hardcoded 1/3)
     print('Extracting FASTQ from SAM...')
     mtoutsam=samfile
     mtoutfastq=gzip.GzipFile(outmt, 'wb')
@@ -306,6 +318,10 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
             continue
         l=(i.strip()).split('\t')
         if l[2]=='*': continue
+        lseq, sc = softclipping(l)
+        if sc > float(lseq)/3:
+            sclipped += 1
+            continue #if soft-clipped read greater than a third of read length, discard the read
         if len(dics) == 0:
             dics[l[0]]=[l]
         else:
@@ -337,3 +353,4 @@ def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None):
     mtoutfastq.close()
     mtoutfastq1.close()
     mtoutfastq2.close()
+    return sclipped
