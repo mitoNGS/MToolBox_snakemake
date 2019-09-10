@@ -298,6 +298,8 @@ def CIAC_LOW(cov,Covbase):
 	for heteroplasmic fraction with 95% of coverage probability,considering the
 	Agresti-Coull interval when n>40'''
 	z=1.96
+	if cov > Covbase:
+		Covbase = cov
 	n=Covbase
 	X=cov+(z*z)/2
 	N=n+(z*z)
@@ -315,6 +317,8 @@ def CIAC_UP(cov,Covbase):
 	for heteroplasmic fraction with 95% of coverage probability,considering the
 	Agresti-Coull interval when n>40'''
 	z=1.96
+	if cov > Covbase:
+		Covbase = cov
 	n=Covbase
 	X=cov+(z*z)/float(2)
 	N=n+(z*z)
@@ -621,7 +625,8 @@ def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5, Q=2
 					Variant=list(map(lambda x:Refbase+x,bases))
 					InsCov=list(map(lambda x:int(x),cov))
 					Covbase=int(Coverage[int(i)-1])
-					Covbase=Covbase+sum(InsCov)
+					if max(InsCov) > Covbase:
+						Covbase = max(InsCov)
 					QS=list(map(lambda x:round(float(x),2),qs))
 					hetfreq=list(map(lambda x:heteroplasmy(x,Covbase),InsCov))
 					if Covbase <=40:
@@ -651,7 +656,9 @@ def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5, Q=2
 							convert=list(map(lambda x:int(x), covlist))
 							Covbase.append(median(convert))
 						maxcovbase=max(Covbase)
-						Covbase=int(maxcovbase)+sum(DelCov)
+						Covbase=int(maxcovbase)
+						if max(DelCov) > Covbase:
+							Covbase = max(DelCov)
 						hetfreq=list(map(lambda x:heteroplasmy(x,Covbase),DelCov))
 						if Covbase <=40:
 							het_ci_low=list(map(lambda x: CIW_LOW(x, Covbase), hetfreq))
