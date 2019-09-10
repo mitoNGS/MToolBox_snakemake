@@ -485,9 +485,9 @@ rule make_single_VCF:
         single_fasta = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
-        TMP = check_tmp_dir(config["tmp_dir"])
-        tail = config['mtvcf_main_analysis']['tail']
-        quality = config['mtvcf_main_analysis']['Q']
+        TMP = check_tmp_dir(config["tmp_dir"]),
+        tail = config['mtvcf_main_analysis']['tail'],
+        quality = config['mtvcf_main_analysis']['Q'],
         minrd = config['mtvcf_main_analysis']['minrd']
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
     #conda: "envs/samtools_biopython.yaml"

@@ -10,6 +10,7 @@
 
 DIR="$(dirname "$(readlink -f "$0")")"
 snakefile=${DIR}/snakefiles/haplogroup_assignment.snakefile
+git_show=${DIR}/scripts/git_show.sh
 
 # do you want the DAG?
 args=$(echo $@ | tr '[:upper:]' '[:lower:]')
@@ -17,5 +18,6 @@ args=$(echo $@ | tr '[:upper:]' '[:lower:]')
 if [[ $args == *"dag"* ]]; then
     snakemake --dag -s ${snakefile} | dot -Tsvg
 else
+    bash ${git_show}
     snakemake -s ${snakefile} "$@"
 fi
