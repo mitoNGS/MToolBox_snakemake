@@ -12,6 +12,7 @@ import ast
 from collections import OrderedDict
 import vcf
 from Bio.bgzf import BgzfWriter
+from Bio import SeqIO
 import pandas as pd
 import scipy as sp
 from types import SimpleNamespace
