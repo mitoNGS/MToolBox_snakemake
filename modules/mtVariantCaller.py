@@ -855,6 +855,8 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 		sam = gzip.GzipFile(sam_file, mode = 'r')
 	else:
 		sam = open(sam_file, 'r')
+	
+	mismatch_dict = {}
 
 	x = 0 # alignment counter
 	# t = time.time()
@@ -873,7 +875,7 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 			POS = mut[0]
 			REF = mut[2]
 			allele = mut[3]
-			if pos_key in mismatch_dict:
+			if POS in mismatch_dict:
 				try:
 					# check if that allele has already been found for that position
 					#print(pos_key, mismatch_dict[pos_key].alleles)
