@@ -225,6 +225,21 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
 
 ### End of functions taken from assembleMTgenome
 
+def sam_cov_handle2gapped_fasta(sam_cov_data = None, ref_mt = None):
+    """
+    sam_cov_data is a dict {pos : DP}.
+    We currently assume ref is only 1 seq.
+    """
+    ref = SeqIO.index(ref_mt, 'fasta')
+    ref_seq = ref[list(ref.keys())[0]].seq
+    gapped_fasta = ""
+    for n in range(len(sam_cov_data)):
+        if sam_cov_data[n+1] >= cov:
+            gapped_fasta += ref_seq[n]
+        else:
+            gapped_fasta += "#"
+    return gapped_fasta
+
 def write_mt_table(mt_table_data=None, mt_table_file=None):
     """
     Writes out the mt_table file.

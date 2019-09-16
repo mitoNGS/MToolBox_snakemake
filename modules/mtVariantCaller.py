@@ -528,7 +528,7 @@ def s_encoding(s):
     elif type(s) == str:
         return s
 
-def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, name2=None, tail=5, Q=25, minrd=5):
+def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, name2=None, tail=5, Q=25, minrd=5, ref_mt = None):
 	#mtable = open(mtable_file, 'r')
 	if sam_file.endswith("gz"):
 		sam = gzip.GzipFile(sam_file, mode = 'r')
@@ -541,13 +541,20 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 	qs=''
 	refposleft=''
 	mate=''
-	#assembly mtDNA ref sequence from MT-table
+	# populate:
+	# - mtDNA: a list of bases in the reference mt genome
+	# - coverage: a list of DP as calculated by samtools depth
 	mtDNA=[]
 	Coverage=[]
-	for i in mtable:
-		if i[0].isdigit() == True:
-			mtDNA.append((i.split('\t')[1]).strip())
-			Coverage.append((i.split('\t')[3]).strip())
+	ref = SeqIO.index(ref_mt, 'fasta')
+	ref_seq = ref[list(ref.keys())[0]].seq
+	for n in range(len(coverage_data)):
+		Coverage.append(coverage_data[n+1])
+		mtDNA.append(ref_seq[n])
+	# for i in mtable:
+	# 	if i[0].isdigit() == True:
+	# 		mtDNA.append((i.split('\t')[1]).strip())
+	# 		Coverage.append((i.split('\t')[3]).strip())
 	mtDNAseq="".join(mtDNA)
 	#create list of the total depth per position across the mtDNA
 	# j = 0
