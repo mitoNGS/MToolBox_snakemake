@@ -89,6 +89,12 @@ pileup2mt_table:
     vmem: 2G
     stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
 
+bam2cov:
+    time: 3:00:00
+    threads: 1
+    vmem: 3G
+    stdout: logs/cluster_jobs/snakejob.{rule}.{wildcards.sample}.{wildcards.ref_genome_mt}.{wildcards.ref_genome_n}.out
+
 make_single_VCF:
     time: 3:00:00
     threads: 1
