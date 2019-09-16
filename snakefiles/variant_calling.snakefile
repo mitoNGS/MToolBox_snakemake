@@ -527,9 +527,10 @@ rule make_single_VCF:
                                         coverage_data = sam_cov_dict, \
                                         #mtable_file = input.mt_table, \
                                         name2 = wildcards.sample, \
-                                        tail = params.tail,
-                                        Q = params.quality,
-                                        minrd = params.minrd)
+                                        tail = params.tail, \
+                                        Q = params.quality, \
+                                        minrd = params.minrd, \
+                                        ref_mt = params.ref_mt_fasta)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name = get_seq_name(params.ref_mt_fasta)
