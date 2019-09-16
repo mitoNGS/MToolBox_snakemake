@@ -857,8 +857,8 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 		sam = open(sam_file, 'r')
 
 	x = 0 # alignment counter
-	t = time.time()
-	t0 = time.time()
+	# t = time.time()
+	# t0 = time.time()
 	for r in a:
 		r = r.split('\t')
 		r[1] = int(r[1])
