@@ -769,9 +769,12 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
     for sample in dict_of_dicts.keys():
         #gets variants found per sample
         val = dict_of_dicts[sample]
+        c = 0
         for variant in val:
             # variant[5] is SDP
+            #print("variant is:")
             #print(variant)
+            #try:
             # if the v. position was never encountered before, is heteroplasmic and is a deletion
             if variant[0] not in present_pos and max(variant[7])<1 and variant[-1]=='del':
                 allelecount=[1]*len(variant[1])
@@ -804,7 +807,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
             elif variant[0] not in present_pos and max(variant[7])>=1 and variant[-1]=='del':
                 allelecount=[1]*len(variant[1])
                 r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=variant[1], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP:SDP', sample_indexes={sample:''}, samples=[])
-                r._sample_indexes[sample]=[1,variant[2], variant[7], variant[8], variant[9], variant[5]]
+                r._sample_indexes[sample]=[[1],variant[2], variant[7], variant[8], variant[9], variant[5]]
                 r.samples.append(sample)
                 if len(variant[3])>1:
                     r.REF=r.REF*len(variant[3])
@@ -815,7 +818,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
             elif variant[0] not in present_pos and max(variant[7])>=1 and variant[-1]!='del':
                 allelecount=[1]*len(variant[3])
                 r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''}, samples=[])
-                r._sample_indexes[sample]=[1,variant[2], variant[7], variant[8],variant[9], variant[5]]
+                r._sample_indexes[sample]=[[1],variant[2], variant[7], variant[8],variant[9], variant[5]]
                 r.samples.append(sample)
                 if len(variant[3])>1:
                     r.REF=r.REF*len(variant[3])
@@ -840,7 +843,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     i._sample_indexes[sample][2].append(variant[7][x])
                                     i._sample_indexes[sample][3].append(variant[8][x])
                                     i._sample_indexes[sample][4].append(variant[9][x])
-                                    i._sample_indexes[sample][4].append(variant[5][x])
+                                    i._sample_indexes[sample][5].append(variant[5][x])
                                 elif variant[3][x] in i.ALT and variant[1][x] not in i.REF:
                                     i.INFO['AC'].append(1)
                                     i.ALT.append(variant[3][x])
@@ -853,7 +856,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     i._sample_indexes[sample][2].append(variant[7][x])
                                     i._sample_indexes[sample][3].append(variant[8][x])
                                     i._sample_indexes[sample][4].append(variant[9][x])
-                                    i._sample_indexes[sample][4].append(variant[5][x])
+                                    i._sample_indexes[sample][5].append(variant[5][x])
                                 else:
                                     i.REF.append(variant[1][x])
                                     #print i.REF, variant[1], i.ALT
@@ -867,7 +870,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     i._sample_indexes[sample][2].append(variant[7][x])
                                     i._sample_indexes[sample][3].append(variant[8][x])
                                     i._sample_indexes[sample][4].append(variant[9][x])
-                                    i._sample_indexes[sample][4].append(variant[5][x])
+                                    i._sample_indexes[sample][5].append(variant[5][x])
                                     #print i
                         #for multiple variants of a position in different individuals
                         elif sample not in i.samples and type(variant[1]) == type(list()):
@@ -936,7 +939,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     i._sample_indexes[sample][2].append(variant[7][hf_index])
                                     i._sample_indexes[sample][3].append(variant[8][hf_index])
                                     i._sample_indexes[sample][4].append(variant[9][hf_index])
-                                    i._sample_indexes[sample][4].append(variant[5][hf_index])
+                                    i._sample_indexes[sample][5].append(variant[5][hf_index])
                         else:
                             i.INFO['AN'] += 1
                             i.samples.append(sample)
@@ -980,7 +983,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     i._sample_indexes[sample][2].append(variant[7][0])
                                     i._sample_indexes[sample][3].append(variant[8][0])
                                     i._sample_indexes[sample][4].append(variant[9][0])
-                                    i._sample_indexes[sample][4].append(variant[5][0])
+                                    i._sample_indexes[sample][5].append(variant[5][0])
                                 else:
                                     i._sample_indexes.setdefault(sample,[genotype, variant[2], variant[7], variant[8], variant[9], variant[5]])
                                 #if a deletion, add a further reference base
@@ -1002,9 +1005,23 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     i._sample_indexes[sample][2].append(variant[7][0])
                                     i._sample_indexes[sample][3].append(variant[8][0])
                                     i._sample_indexes[sample][4].append(variant[9][0])
-                                    i._sample_indexes[sample][4].append(variant[5][0])
+                                    i._sample_indexes[sample][5].append(variant[5][0])
                                 else:
                                     i._sample_indexes.setdefault(sample,[genotype, variant[2], variant[7], variant[8], variant[9], variant[5]])
+        # except:
+        #     print("Error with:")
+        #     print(variant)
+        #     print("i._sample_indexes:")
+        #     print(i._sample_indexes)
+        #     print("Error:")
+        #     raise
+                #return VCF_RECORDS
+            # if c == 3:
+            #     print("Good entry:")
+            #     print(variant)
+            #     print("i._sample_indexes:")
+            #     print(i._sample_indexes)
+            # c += 1
     for r in VCF_RECORDS:
         if len(r.REF)>1:
             setref=set(r.REF)

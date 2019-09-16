@@ -241,8 +241,8 @@ rule sam2fastq:
     message:
         "Converting {input.outmt_sam} to FASTQ"
     run:
-        sclipped = sam2fastq(samfile = input.outmt_sam, outmt1 = output.outmt1, outmt2 = output.outmt2, outmt = output.outmt)
-        print("{} reads with soft-clipping > 1/3 of their length")
+        sclipped = sam2fastq(samfile = input.outmt_sam, outmt1 = output.outmt1, outmt2 = output.outmt2, outmt = output.outmt, do_softclipping = True)
+        print("{} reads with soft-clipping > 1/3 of their length".format(sclipped))
 
 rule map_nuclear_MT_SE:
     input:

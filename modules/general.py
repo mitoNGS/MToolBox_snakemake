@@ -317,7 +317,7 @@ def gapped_fasta2contigs(gapped_fasta = None):
         contigs=[(cc,fseq[cc[0]-1:cc[1]+1])]
     return contigs
 
-def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None, softclipping = True):
+def sam2fastq(samfile = None, outmt1 = None, outmt2 = None, outmt = None, do_softclipping = True):
     """
     Extract reads from SAM file.
     Reads with softclipping > 1/3 of their length are discarded since could be potential non-reference NumtS.
