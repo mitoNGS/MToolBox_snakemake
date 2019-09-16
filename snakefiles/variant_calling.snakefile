@@ -439,44 +439,64 @@ rule left_align_merged_bam:
             --filter_reads_with_N_cigar
         """
 
-rule bam2pileup:
+# rule bam2pileup:
+#     input:
+#         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
+#         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+#     output:
+#         pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
+#     params:
+#         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+#     message: "Generating pileup {output.pileup} from {input.merged_bam}"
+#     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2pileup.log"
+#     #conda: "envs/samtools_biopython.yaml"
+#     #group: "variant_calling"
+#     shell:
+#         """
+#         samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.merged_bam} &> {log}
+#         """
+#
+# rule pileup2mt_table:
+#     input:
+#         pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
+#         # pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
+#     output:
+#         mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
+#     params:
+#         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+#     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
+#     #conda: "envs/environment.yaml"
+#     #group: "variant_calling"
+#     run:
+#         mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
+#         write_mt_table(mt_table_data=mt_table_data, mt_table_file=output.mt_table)
+
+rule bam2cov:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+        #genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
-        pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-    params:
-        genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-    message: "Generating pileup {output.pileup} from {input.merged_bam}"
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2pileup.log"
+        bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov"
+    # params:
+    #     genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+    message: "Generating coverage file {output.bam_cov} from {input.merged_bam}"
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2cov.log"
     #conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     shell:
         """
-        samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.merged_bam} &> {log}
+        samtools depth \
+        -d 0 \
+        -a {input.merged_bam} > {output.bam_cov}
         """
-
-rule pileup2mt_table:
-    input:
-        pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-        # pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-    output:
-        mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
-    params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
-    message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
-    #conda: "envs/environment.yaml"
-    #group: "variant_calling"
-    run:
-        mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
-        write_mt_table(mt_table_data=mt_table_data, mt_table_file=output.mt_table)
 
 rule make_single_VCF:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
+        bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov",
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
-        mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt",
-        pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
+        #mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt",
+        #pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
         # mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     output:
@@ -496,8 +516,16 @@ rule make_single_VCF:
         # function (and related ones) from mtVariantCaller
         tmp_sam = os.path.split(input.merged_bam)[1].replace(".bam", ".sam")
         shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam = input.merged_bam, tmp_dir = params.TMP, tmp_sam = tmp_sam))
+        sam_cov_dict = {}
+        sam_cov = open(input.bam_cov, 'r')
+        for l in sam_cov:
+            ref, pos, cov = l.split()
+            sam_cov_dict[int(pos)] = int(cov)
+
+        sam_cov.close()
         vcf_dict = mtvcf_main_analysis(sam_file = "{tmp_dir}/{tmp_sam}".format(tmp_dir = params.TMP, tmp_sam = tmp_sam), \
-                                        mtable_file = input.mt_table, \
+                                        coverage_data = sam_cov_dict, \
+                                        #mtable_file = input.mt_table, \
                                         name2 = wildcards.sample, \
                                         tail = params.tail,
                                         Q = params.quality,

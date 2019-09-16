@@ -5,7 +5,7 @@ Written by Claudia Calabrese - claudia.calabrese23@gmail.com
 	and Domenico Simone - dome.simone@gmail.com
 """
 
-import sys, os, glob, math, gzip
+import sys, os, glob, math, gzip, fileinput
 #print sys.version
 import re
 import ast
@@ -14,6 +14,185 @@ import vcf
 from Bio.bgzf import BgzfWriter
 import pandas as pd
 import scipy as sp
+from types import SimpleNamespace
+
+# new functions for MD parsing
+
+def extract_mismatches(seq,qs,len_mism,position_in_read):
+    start = position_in_read-1
+    end = start+len_mism
+    #print start,end
+    mismatch_seq = seq[start:end]
+    mismatch_qs = qs[start:end]
+    mismatch_qs = list(map(lambda x:ord(x)-33,mismatch_qs))
+    return mismatch_seq,mismatch_qs
+
+def check_strand(mate):
+    #check strand
+    if mate & 16 == 16:
+        strand = '-'
+    else:
+        strand = '+'
+    return strand
+
+def parse_sam_row(row):
+    """
+    Given a SAM row (already splitted) eg
+
+    0           HWI-ST0866:195:D1J58ACXX:3:1108:15229:52423
+1                                                   163
+2                                           NC_001323.1
+3                                                     1
+4                                                    40
+5                                              47M3I50M
+6                                                     =
+7                                                   136
+8                                                   238
+9     AATTTTATTTTTTAACCTAACTCCCCTACTAAGTGTACCCCCCCTT...
+10    @@@FFFFFHHHHHGHH@GEGHJGIJICEGIGIIIJHHGHGHIGBHI...
+11                                               X2:i:0
+12                                         MD:Z:59T5A31
+13                                          RG:Z:sample
+14                                               NH:i:1
+15                                               HI:i:1
+16                                               NM:i:5
+17                                              SM:i:40
+18                                            XM:Z:100M
+19                                              XO:Z:CU
+20                                              XQ:i:40
+
+    will return:
+
+    md = '59T5A31'
+    leftmost = 0
+    new_seq = seq as in field 9
+    new_qs = qs as in field 10
+    strand = 163 (bitwise flag)
+    bases = ['59', '5', '31'] (bases as in MD)
+    nt = ['T', 'A'] (nt as in MD)
+    cigar_bases = ['47', '3', '50']
+    cigar_nt = ['M', 'I', 'M']
+    """
+    md = row[12].split(':')[2]
+    leftmost = row[3]-1
+    read_id = row[0]
+    seq = list(row[9])
+    qs = list(row[10])
+    strand = check_strand(int(row[1]))
+    bases = re.split('[a-zA-Z]',md)
+    bases = map(lambda x:x.strip('^'),bases)
+    bases = filter(None,bases)
+    bases = list(map(lambda x:int(x),bases))
+    nt = list(filter(None, re.split('[0-9]',md)))
+    cigar = row[5]
+    cigar_bases = list(filter(None, re.split('[a-zA-Z]',row[5])))
+    cigar_nt = list(filter(None, re.split('[0-9]',row[5])))
+    new_seq = seq
+    new_qs = qs
+    return md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt
+
+def read_length_from_cigar(cigar_bases, cigar_nt):
+    """
+    Cigar bases: ['S', 'M', 'D', 'M', 'I', 'M']
+    Cigar nt:    [10,  30,   5,  15,  10,  20]
+
+    The function will discard counts related to soft-clipped and deleted bases
+    to get the effective read length (eg to calculate the distance of a mismatch from the read end)
+    """
+    eff_read_length = 0
+    for x, i in enumerate(cigar_nt):
+        if i not in ['S', 'D']:
+            eff_read_length += int(cigar_bases[x])
+    return eff_read_length
+
+def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
+    """
+    Prints left for test
+    """
+    md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt = parsed_sam_row
+    # Calculate effective read length (cigar without S and D)
+    eff_read_length = read_length_from_cigar(cigar_bases, cigar_nt)
+    ins_pos_in_seq = 0
+    for n in range(len(cigar_nt)):
+        if cigar_nt[n] not in ['I','D','S','H']:
+            # if no indel or soft-/hard-clipping, the starting position in the MD is the same
+            ins_pos_in_seq+= int(cigar_bases[n])
+        elif cigar_nt[n] == 'I': # cut out from the read sequence and qs the bases representing the ins
+            # original version
+            # ins_len = len(cigar_bases[n])
+            ins_len = int(cigar_bases[n])
+            new_seq = new_seq[:ins_pos_in_seq]+new_seq[(ins_pos_in_seq+ins_len):]
+            new_qs = new_qs[:ins_pos_in_seq]+new_qs[(ins_pos_in_seq+ins_len):]
+        elif cigar_nt[n] == 'D': # insert in the read sequence and qs the bases representing the ins
+            ins_len = int(cigar_bases[n])
+            new_seq = new_seq[:ins_pos_in_seq]+["I"]+new_seq[ins_pos_in_seq:]
+            new_qs = new_qs[:ins_pos_in_seq]+["I"]+new_qs[ins_pos_in_seq:]
+        elif cigar_nt[n] == 'S':
+            if n == 0: #if the softclipping is at the beginning of the read
+                soft_clipped_bases = int(cigar_bases[n])
+                new_seq = new_seq[soft_clipped_bases:]
+                new_qs = new_qs[soft_clipped_bases:]
+            else:
+                soft_clipped_bases = int(cigar_bases[n])
+                diff = len(new_seq)-soft_clipped_bases
+                new_seq = new_seq[0:diff]
+                new_qs = new_qs[0:diff]
+        else:
+            pass
+    else:
+        pass
+    z_pos_evs = list(zip(bases, nt))
+    z_pos_evs_ref = []
+    z_pos_evs_read = []
+    for x,i in enumerate(z_pos_evs):
+        if x > 0:
+            z_pos_evs_read.append((i[0]+z_pos_evs_read[x-1][0]+len(z_pos_evs_read[x-1][1].replace('^', '')), i[1]))
+            z_pos_evs_ref.append((i[0]+z_pos_evs_ref[x-1][0]+1, i[1]))
+        else:
+            z_pos_evs_read.append((i[0], i[1]))
+            z_pos_evs_ref.append((i[0]+leftmost+1, i[1]))
+
+    z_pos_evs_ref = [i for i in z_pos_evs_ref if "^" not in i[1]]
+    #print(z_pos_evs_ref)
+    z_pos_evs_read = [i for i in z_pos_evs_read if "^" not in i[1]]
+    #print(z_pos_evs_read)
+    positions_ref = [i[0] for i in z_pos_evs_ref]
+    bases_ref = [i[1] for i in z_pos_evs_ref]
+    positions_read = [i[0] for i in z_pos_evs_read]
+    #print("position ref: {}".format(positions_ref))
+    #print("position read: {}".format(positions_read))
+    positions_ref_final = []
+    positions_read_final = []
+    all_ref = []
+    all_mism = []
+    all_qs = []
+    #print(positions_read)
+    #print(new_qs)
+    for x,t in enumerate(positions_read):
+        # filter out variants with qs < threshold
+        # found some cases where there is a mismatch in SC zone, this will raise an error
+        try:
+            if ord(new_qs[t])-33 >= minqs and t > tail and (eff_read_length-t) > tail:
+                positions_ref_final.append(positions_ref[x])
+                positions_read_final.append(positions_read[x])
+                all_ref.append(bases_ref[x])
+                all_mism.append(new_seq[t])
+                all_qs.append(ord(new_qs[t])-33)
+        except IndexError:
+            pass
+    return positions_ref_final, positions_read_final, all_ref, all_mism, all_qs, strand
+
+def allele_strand_counter(strand):
+    if strand == "+":
+        l = [1,0]
+    else:
+        l = [0,1]
+    return l
+
+def allele_strand_updater(l, allele_strand_count = []):
+    allele_strand_count_new = [sum(i) for i in zip(allele_strand_count, l)]
+    return allele_strand_count_new
+
 
 #######################################################
 
@@ -349,27 +528,13 @@ def s_encoding(s):
     elif type(s) == str:
         return s
 
-def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5, Q=25, minrd=5):
-	mtable = open(mtable_file, 'r')
+def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, name2=None, tail=5, Q=25, minrd=5):
+	#mtable = open(mtable_file, 'r')
 	if sam_file.endswith("gz"):
 		sam = gzip.GzipFile(sam_file, mode = 'r')
 	else:
 		sam = open(sam_file, 'r')
 
-	#sam = open(sam_file, 'r')
-	#mtable=[i.split('\t') for i in mtable]
-	#mtable.remove(mtable[0])
-	# sam=sam.readlines()
-	# sam=[i.split('\t') for i in sam]
-	# for i in sam:
-	# 	i.remove(i[1])
-	# 	i.remove(i[3])
-	#includes only values used for parsing
-	# c=0
-	# while c<len(sam):
-	# 	sam[c]=sam[c][0:9]
-	# 	c+=1
-	#assigns a null value to fields. NB: refpos is the leftmost position of the subject seq minus 1.
 	CIGAR=''
 	readNAME=''
 	seq=''
@@ -675,33 +840,110 @@ def mtvcf_main_analysis(mtable_file=None, sam_file=None, name2=None, tail=5, Q=2
 						strand = len(Refbase)*strand
 						dele=[(dels[0]-1), Refbase, Covbase, deletions, DelCov, strand, qs, hetfreq, het_ci_low, het_ci_up, 'del']
 						Indels[name2].append(dele)
+
+	##### Mismatch detection
+	print("\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2))
+	if sam_file.endswith("gz"):
+		sam = gzip.GzipFile(sam_file, mode = 'r')
+	else:
+		sam = open(sam_file, 'r')
+
+	x = 0 # alignment counter
+	t = time.time()
+	t0 = time.time()
+	for r in a:
+		r = r.split('\t')
+		r[1] = int(r[1])
+		r[3] = int(r[3])
+		r[4] = int(r[4])
+		r[7] = int(r[7])
+		r[8] = int(r[8])
+		positions_ref, positions_read, all_ref, all_mism, all_qs, strand = parse_mismatches_from_cigar_md(parse_sam_row(r))
+		if positions_ref == []: continue
+		#print(positions_ref, positions_read, all_mism, all_qs, strand)
+		for mut in zip(positions_ref, positions_read, all_ref, all_mism, all_qs):
+			POS = mut[0]
+			REF = mut[2]
+			allele = mut[3]
+			if pos_key in mismatch_dict:
+				try:
+					# check if that allele has already been found for that position
+					#print(pos_key, mismatch_dict[pos_key].alleles)
+					allele_index = mismatch_dict[POS].alleles.index(allele)
+					#print("Pos - allele already found")
+					mismatch_dict[POS].allele_DP[allele_index] += 1
+					#print(mismatch_dict[pos_key].allele_DP[allele_index])
+					mismatch_dict[POS].allele_strand_count[allele_index] = allele_strand_updater(l = allele_strand_counter(strand),
+																									allele_strand_count = mismatch_dict[POS].allele_strand_count[allele_index])
+				except:
+					allele_index = len(mismatch_dict[POS].alleles)
+					mismatch_dict[POS].alleles.append(allele)
+					mismatch_dict[POS].allele_DP.append(1)
+					mismatch_dict[POS].allele_strand_count.append(allele_strand_counter(strand))
+			else:
+				# DP needs to be parsed from bcftools/bedtools output
+				mismatch_dict[POS] = SimpleNamespace(POS=POS, \
+													REF=REF, \
+													DP=sam_cov_dict[POS], \
+													alleles=[allele], \
+													allele_DP=[1], \
+													allele_strand_count=[allele_strand_counter(strand)])
+
+	for POS in mismatch_dict:
+		good_alleles_index = [mismatch_dict[POS].allele_DP.index(i) \
+							for i in mismatch_dict[POS].allele_DP if i > 5]
+		mismatch_dict[POS].allele_DP = [mismatch_dict[POS].allele_DP[j] for j in good_alleles_index]
+		mismatch_dict[POS].allele_strand_count = [mismatch_dict[POS].allele_strand_count[j] for j in good_alleles_index]
+		mismatch_dict[POS].alleles = [mismatch_dict[POS].alleles[j] for j in good_alleles_index]
+
+	# for now the mismatch dict goes into the Subst dict
 	Subst={}
 	Subst[name2] = []
-	print("\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2))
-	mtable = open(mtable_file, 'r')
-	for i in mtable:
-		i = i.split('\t')
-		# skip header
-		if i[0].isdigit() == False:
-			continue
-		b=eval((i[-2]).strip())
-		c=eval((i[-1]).strip())
-		varnames2(b,c,i)
-		a=findmutations(A,C,G,T,Position,Ref,Cov,minrd,A_f,C_f,G_f,T_f,A_r,C_r,G_r,T_r)
-		if len(a) > 0:
-			hetfreq=list(map(lambda x:heteroplasmy(x,Cov),a[-2]))
-			if Cov<=40:
-				het_ci_low=list(map(lambda x: CIW_LOW(x,Cov),hetfreq))
-				het_ci_up=list(map(lambda x: CIW_UP(x,Cov),hetfreq))
-			else:
-				het_ci_low=list(map(lambda x: CIAC_LOW(x,Cov), a[-2]))
-				het_ci_up=list(map(lambda x: CIAC_UP(x,Cov), a[-2]))
-			a.append('PASS')
-			a.append(hetfreq)
-			a.append(het_ci_low)
-			a.append(het_ci_up)
-			a.append('mism')
-			Subst[name2].append(a)
+	for POS in mismatch_dict:
+		mismatch_dict[POS].hetfreq = list(map(lambda x:heteroplasmy(x, mismatch_dict[POS].DP), mismatch_dict[POS].allele_DP))
+		if mismatch_dict[POS].DP <= 40:
+			mismatch_dict[POS].het_ci_low=list(map(lambda x: CIW_LOW(x,mismatch_dict[POS].DP),mismatch_dict[POS].hetfreq))
+			mismatch_dict[POS].het_ci_up=list(map(lambda x: CIW_UP(x,mismatch_dict[POS].DP),mismatch_dict[POS].hetfreq))
+		else:
+			mismatch_dict[POS].het_ci_low=list(map(lambda x: CIAC_LOW(x,mismatch_dict[POS].DP),mismatch_dict[POS].allele_DP))
+			mismatch_dict[POS].het_ci_up=list(map(lambda x: CIAC_UP(x,mismatch_dict[POS].DP), mismatch_dict[POS].allele_DP))
+		# a = [Position, Ref, Cov, bases, var, strand]
+		a = [POS, \
+			mismatch_dict[POS].REF, \
+			mismatch_dict[POS].DP, \
+			mismatch_dict[POS].alleles, \
+			mismatch_dict[POS].allele_DP, \
+			mismatch_dict[POS].allele_strand_count, \
+			'PASS', \
+			mismatch_dict[POS].hetfreq, \
+			mismatch_dict[POS].het_ci_low, \
+			mismatch_dict[POS].het_ci_up,
+			'mism']
+		Subst[name2].append(a)
+	# #mtable = open(mtable_file, 'r')
+	# for i in mtable:
+	# 	i = i.split('\t')
+	# 	# skip header
+	# 	if i[0].isdigit() == False:
+	# 		continue
+	# 	b=eval((i[-2]).strip())
+	# 	c=eval((i[-1]).strip())
+	# 	varnames2(b,c,i)
+	# 	a=findmutations(A,C,G,T,Position,Ref,Cov,minrd,A_f,C_f,G_f,T_f,A_r,C_r,G_r,T_r)
+	# 	if len(a) > 0:
+	# 		hetfreq=list(map(lambda x:heteroplasmy(x,Cov),a[-2]))
+	# 		if Cov<=40:
+	# 			het_ci_low=list(map(lambda x: CIW_LOW(x,Cov),hetfreq))
+	# 			het_ci_up=list(map(lambda x: CIW_UP(x,Cov),hetfreq))
+	# 		else:
+	# 			het_ci_low=list(map(lambda x: CIAC_LOW(x,Cov), a[-2]))
+	# 			het_ci_up=list(map(lambda x: CIAC_UP(x,Cov), a[-2]))
+	# 		a.append('PASS')
+	# 		a.append(hetfreq)
+	# 		a.append(het_ci_low)
+	# 		a.append(het_ci_up)
+	# 		a.append('mism')
+	# 		Subst[name2].append(a)
 	Indels[name2].extend(Subst[name2])
 	return Indels # it's a dictionary
 
