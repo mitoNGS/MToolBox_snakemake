@@ -16,7 +16,7 @@ git_show=${DIR}/scripts/git_show.sh
 args=$(echo $@ | tr '[:upper:]' '[:lower:]')
 
 if [[ $args == *"dag"* ]]; then
-    snakemake --dag -s ${snakefile} | dot -Tsvg
+    snakemake --dag -s ${snakefile} "$@" | dot -Tsvg
 else
     bash ${git_show}
     snakemake -s ${snakefile} "$@"
