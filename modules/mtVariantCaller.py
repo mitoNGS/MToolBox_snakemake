@@ -73,8 +73,15 @@ def parse_sam_row(row):
     nt = ['T', 'A'] (nt as in MD)
     cigar_bases = ['47', '3', '50']
     cigar_nt = ['M', 'I', 'M']
+    
+    All SAM fields of interest are expected to be at specific position because they are mandatory,
+    except for MD which is an optional one and could be found:
+    - in position 12 if the SAM file has not been processed by samtools calmd
+    - at the end of the line if the SAM file has been processed by samtools calmd
     """
-    md = row[12].split(':')[2]
+    for field in row:
+        if field.startswith("MD"):
+        md = field.split(':')[2]
     leftmost = row[3]-1
     read_id = row[0]
     seq = list(row[9])
@@ -97,8 +104,8 @@ def read_length_from_cigar(cigar_bases, cigar_nt):
     Cigar bases: ['S', 'M', 'D', 'M', 'I', 'M']
     Cigar nt:    [10,  30,   5,  15,  10,  20]
 
-    The function will discard counts related to soft-clipped and deleted bases
-    to get the effective read length (eg to calculate the distance of a mismatch from the read end)
+    The function will compute the effective read length to discard MD variants in softclipped regions
+    and to calculate the distance of a mismatch from the read end
     """
     eff_read_length = 0
     for x, i in enumerate(cigar_nt):
@@ -108,7 +115,11 @@ def read_length_from_cigar(cigar_bases, cigar_nt):
 
 def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
     """
-    Prints left for test
+    Logic of this function is:
+
+    - MD flag reflect the **mapped portion of the read**  - no soft clipping no insertions (although some mutations in softclipped regions have been found);
+    - CIGAR flag reflects the absolute reads length - including soft clipping and insertions;
+    - The script first equals the length of the read to that of the mapped portion and then extracts the variants using the MD flag.
     """
     md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt = parsed_sam_row
     # Calculate effective read length (cigar without S and D)
@@ -184,6 +195,9 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
     return positions_ref_final, positions_read_final, all_ref, all_mism, all_qs, strand
 
 def allele_strand_counter(strand):
+    """
+    Initalize a strand counter instance for mismatch detection
+    """
     if strand == "+":
         l = [1,0]
     else:
@@ -191,6 +205,9 @@ def allele_strand_counter(strand):
     return l
 
 def allele_strand_updater(l, allele_strand_count = []):
+    """
+    Updates a strand counter instance for mismatch detection
+    """
     allele_strand_count_new = [sum(i) for i in zip(allele_strand_count, l)]
     return allele_strand_count_new
 
