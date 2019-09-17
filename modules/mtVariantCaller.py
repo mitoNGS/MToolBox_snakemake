@@ -81,7 +81,7 @@ def parse_sam_row(row):
     """
     for field in row:
         if field.startswith("MD"):
-        md = field.split(':')[2]
+            md = field.split(':')[2]
     leftmost = row[3]-1
     read_id = row[0]
     seq = list(row[9])
