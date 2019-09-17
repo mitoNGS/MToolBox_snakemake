@@ -23,9 +23,9 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries
 
 # fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
-datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
+analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#').drop_duplicates(keep='first', inplace=True)
+reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False).drop_duplicates(keep='first', inplace=True)
+datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#').drop_duplicates(keep='first', inplace=True)
 
 configfile: "config.yaml"
 res_dir = config["results"]
