@@ -114,7 +114,7 @@ def FASTAoutput(vcf_dict = None, ref_mt = None, contigs = [], fasta_out = "fasta
             #print "CONSENSUS SINGLE: ", consensus_single
             #check if there are repeated positions with different mut type
             if len(consensus_single) == 0:
-                print('no variants found in this contig {0}\n').format(x)
+                print('no variants found in this contig {0}\n'.format(x))
                 pass
             else:
                 df= pd.DataFrame(consensus_single)
