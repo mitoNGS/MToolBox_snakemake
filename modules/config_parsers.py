@@ -33,7 +33,7 @@ def get_genome_single_vcf_files(df, res_dir="results", ref_genome_mt = None):
             #                                                                                                             sample = getattr(row, "sample"), \
             #                                                                                                             ref_genome_mt = getattr(row, "ref_genome_mt"), \
             #                                                                                                             ref_genome_n = getattr(row, "ref_genome_n")))
-    return outpaths
+    return list(set(outpaths))
 
 # def get_sample_bamfiles(df, res_dir="results", sample = None, ref_genome_mt = None, ref_genome_n = None):
 #     outpaths = []
@@ -57,7 +57,7 @@ def get_sample_bamfiles(df, res_dir="results", sample = None, library = None, re
     outpaths = []
     for row in df.itertuples():
         if getattr(row, "sample") == sample:
-            #bam_file = 
+            #bam_file =
             bam_file = "{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.bam".format(sample = sample, library = getattr(row, "library"), ref_genome_mt = ref_genome_mt, ref_genome_n = ref_genome_n)
             out_folder = "OUT_{base}".format(base = bam_file.replace("_OUT-sorted.final.bam", ""))
             outpaths.append("{results}/{sample}/map/{out_folder}/{bam_file}".format(results = res_dir, bam_file = bam_file, sample = sample, out_folder = out_folder))
@@ -82,7 +82,7 @@ def get_genome_single_vcf_index_files(df, res_dir="results", ref_genome_mt = Non
             #                                                                                                             sample = getattr(row, "sample"), \
             #                                                                                                             ref_genome_mt = getattr(row, "ref_genome_mt"), \
             #                                                                                                             ref_genome_n = getattr(row, "ref_genome_n")))
-    return outpaths
+    return list(set(outpaths))
 
 def get_genome_vcf_files(df, res_dir="results/vcf"):
     outpaths = set()
