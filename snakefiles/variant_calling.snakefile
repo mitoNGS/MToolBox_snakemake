@@ -23,9 +23,9 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries
 
 # fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#').drop_duplicates(keep='first', inplace=True)
-reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False).drop_duplicates(keep='first', inplace=True)
-datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#').drop_duplicates(keep='first', inplace=True)
+analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
+datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
 
 configfile: "config.yaml"
 res_dir = config["results"]
@@ -439,6 +439,34 @@ rule left_align_merged_bam:
             --filter_reads_with_N_cigar
         """
 
+rule clip_bam:
+    input:
+        merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
+    output:
+        merged_bam_left_realigned_clipped = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.bam"
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam_clip.log"
+    message: "Clipping alignment ends {input.merged_bam_left_realigned} with bam trimBam"
+    run:
+        shell("bam trimBam \
+            {input.merged_bam_left_realigned} \
+            {output.merged_bam_left_realigned_clipped} \
+            10 \
+            -c")
+
+rule clip_bam_recalculate_MD:
+    input:
+        merged_bam_left_realigned_clipped = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.bam"
+    output:
+        merged_bam_left_realigned_clipped_newMD = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam"
+    params:
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
+    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam_clip_calmd.log"
+    message: "Recalculating MD string for clipped alignments {input.merged_bam_left_realigned_clipped} with bam trimBam"
+    run:
+        shell("samtools calmd -b \
+            {input.merged_bam_left_realigned_clipped} \
+            {params.ref_mt_fasta} 2> {log} 1> {output.merged_bam_left_realigned_clipped_newMD}")
+
 # rule bam2pileup:
 #     input:
 #         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
@@ -471,9 +499,11 @@ rule left_align_merged_bam:
 #         mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
 #         write_mt_table(mt_table_data=mt_table_data, mt_table_file=output.mt_table)
 
+#         name="some/file.txt" if config["condition"] else "other/file.txt"
 rule bam2cov:
     input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
+        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam" if config["trimBam"] \
+                        else "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
         #genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
         bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov"
@@ -492,7 +522,8 @@ rule bam2cov:
 
 rule make_single_VCF:
     input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
+        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam" if config["trimBam"] \
+                        else "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
         bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov",
         # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
         #mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt",

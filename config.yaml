@@ -19,6 +19,8 @@ map:
 
 mark_duplicates: False
 
+trimBam: False
+
 mtvcf_main_analysis:
     # minumum distance from read end to keep in a mutation
     tail:  5
