@@ -460,12 +460,16 @@ rule clip_bam_recalculate_MD:
         merged_bam_left_realigned_clipped_newMD = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam"
     params:
         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
+        TMP = check_tmp_dir(config["tmp_dir"])
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam_clip_calmd.log"
     message: "Recalculating MD string for clipped alignments {input.merged_bam_left_realigned_clipped} with bam trimBam"
     run:
         shell("samtools calmd -b \
             {input.merged_bam_left_realigned_clipped} \
-            {params.ref_mt_fasta} 2> {log} 1> {output.merged_bam_left_realigned_clipped_newMD}")
+            {params.ref_mt_fasta} 2> {log} 1> {params.TMP}/$(basename {output.merged_bam_left_realigned_clipped_newMD})")
+        shell("samtools sort -o {output.merged_bam_left_realigned_clipped_newMD} \
+            -T {params.TMP} \
+            {params.TMP}/$(basename {output.merged_bam_left_realigned_clipped_newMD}) &>> {log}")
 
 # rule bam2pileup:
 #     input:

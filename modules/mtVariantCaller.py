@@ -74,12 +74,18 @@ def parse_sam_row(row):
     cigar_bases = ['47', '3', '50']
     cigar_nt = ['M', 'I', 'M']
     
-    All SAM fields of interest are expected to be at specific position because they are mandatory,
+    All SAM fields of interest are expected to be at specific position because they are mandatory (among the first 11),
     except for MD which is an optional one and could be found:
     - in position 12 if the SAM file has not been processed by samtools calmd
     - at the end of the line if the SAM file has been processed by samtools calmd
     """
-    for field in row:
+    row[1] = int(row[1])
+    row[3] = int(row[3])
+    row[4] = int(row[4])
+    row[7] = int(row[7])
+    row[8] = int(row[8])
+    # Find MD field among optional fields
+    for field in row[11:]:
         if field.startswith("MD"):
             md = field.split(':')[2]
     leftmost = row[3]-1
@@ -872,57 +878,26 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 		sam = gzip.GzipFile(sam_file, mode = 'r')
 	else:
 		sam = open(sam_file, 'r')
-	
-	mismatch_dict = {}
 
+	mismatch_dict = mismatch_detection(sam, coverage_data)
 	x = 0 # alignment counter
 	# t = time.time()
 	# t0 = time.time()
-	for r in a:
-		r = r.split('\t')
-		r[1] = int(r[1])
-		r[3] = int(r[3])
-		r[4] = int(r[4])
-		r[7] = int(r[7])
-		r[8] = int(r[8])
-		positions_ref, positions_read, all_ref, all_mism, all_qs, strand = parse_mismatches_from_cigar_md(parse_sam_row(r))
-		if positions_ref == []: continue
-		#print(positions_ref, positions_read, all_mism, all_qs, strand)
-		for mut in zip(positions_ref, positions_read, all_ref, all_mism, all_qs):
-			POS = mut[0]
-			REF = mut[2]
-			allele = mut[3]
-			if POS in mismatch_dict:
-				try:
-					# check if that allele has already been found for that position
-					#print(pos_key, mismatch_dict[pos_key].alleles)
-					allele_index = mismatch_dict[POS].alleles.index(allele)
-					#print("Pos - allele already found")
-					mismatch_dict[POS].allele_DP[allele_index] += 1
-					#print(mismatch_dict[pos_key].allele_DP[allele_index])
-					mismatch_dict[POS].allele_strand_count[allele_index] = allele_strand_updater(l = allele_strand_counter(strand),
-																									allele_strand_count = mismatch_dict[POS].allele_strand_count[allele_index])
-				except:
-					allele_index = len(mismatch_dict[POS].alleles)
-					mismatch_dict[POS].alleles.append(allele)
-					mismatch_dict[POS].allele_DP.append(1)
-					mismatch_dict[POS].allele_strand_count.append(allele_strand_counter(strand))
-			else:
-				# DP needs to be parsed from bcftools/bedtools output
-				mismatch_dict[POS] = SimpleNamespace(POS=POS, \
-													REF=REF, \
-													DP=sam_cov_dict[POS], \
-													alleles=[allele], \
-													allele_DP=[1], \
-													allele_strand_count=[allele_strand_counter(strand)])
-
+	print("mismatch_dict length before filtering for allele_DP: {}".format(len(mismatch_dict)))
+	print(mismatch_dict[j] for j in list(mismatch_dict.keys())[:5])
 	for POS in mismatch_dict:
 		good_alleles_index = [mismatch_dict[POS].allele_DP.index(i) \
 							for i in mismatch_dict[POS].allele_DP if i > 5]
+		mismatch_dict[POS].alleles = [mismatch_dict[POS].alleles[j] for j in good_alleles_index]
+		# if this filters out all alleles, delete key from dict
+		# if len(mismatch_dict[POS].alleles) > 0:
 		mismatch_dict[POS].allele_DP = [mismatch_dict[POS].allele_DP[j] for j in good_alleles_index]
 		mismatch_dict[POS].allele_strand_count = [mismatch_dict[POS].allele_strand_count[j] for j in good_alleles_index]
-		mismatch_dict[POS].alleles = [mismatch_dict[POS].alleles[j] for j in good_alleles_index]
-
+		# else:
+			# del mismatch_dict[POS]
+	mismatch_dict = { POS : data for POS, data in mismatch_dict.items() if len(data.alleles) > 0}
+	print("mismatch_dict length after filtering for allele_DP: {}".format(len(mismatch_dict)))
+	print(mismatch_dict[j] for j in list(mismatch_dict.keys())[:5])
 	# for now the mismatch dict goes into the Subst dict
 	Subst={}
 	Subst[name2] = []
@@ -974,6 +949,41 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 	Indels[name2].extend(Subst[name2])
 	return Indels # it's a dictionary
 
+def mismatch_detection(sam, coverage_data):
+	mismatch_dict = {}
+	for r in sam:
+		r = r.split('\t')
+		positions_ref, positions_read, all_ref, all_mism, all_qs, strand = parse_mismatches_from_cigar_md(parse_sam_row(r))
+		if positions_ref == []: continue
+		#print(positions_ref, positions_read, all_mism, all_qs, strand)
+		for mut in zip(positions_ref, positions_read, all_ref, all_mism, all_qs):
+			POS = mut[0]
+			REF = mut[2]
+			allele = mut[3]
+			if POS in mismatch_dict:
+				try:
+					# check if that allele has already been found for that position
+					#print(pos_key, mismatch_dict[pos_key].alleles)
+					allele_index = mismatch_dict[POS].alleles.index(allele)
+					#print("Pos - allele already found")
+					mismatch_dict[POS].allele_DP[allele_index] += 1
+					#print(mismatch_dict[pos_key].allele_DP[allele_index])
+					mismatch_dict[POS].allele_strand_count[allele_index] = allele_strand_updater(l = allele_strand_counter(strand),
+																									allele_strand_count = mismatch_dict[POS].allele_strand_count[allele_index])
+				except:
+					allele_index = len(mismatch_dict[POS].alleles)
+					mismatch_dict[POS].alleles.append(allele)
+					mismatch_dict[POS].allele_DP.append(1)
+					mismatch_dict[POS].allele_strand_count.append(allele_strand_counter(strand))
+			else:
+				# DP needs to be parsed from bcftools/bedtools output
+				mismatch_dict[POS] = SimpleNamespace(POS=POS, \
+													REF=REF, \
+													DP=coverage_data[POS], \
+													alleles=[allele], \
+													allele_DP=[1], \
+													allele_strand_count=[allele_strand_counter(strand)])
+	return mismatch_dict
 ### END OF MAIN ANALYSIS
 
 #The dictionary with all the samples variations found
