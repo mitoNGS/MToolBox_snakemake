@@ -1395,7 +1395,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                 else:
                                     strandp.append(str(x))
                             SDP=",".join(strandp)
-                            individual=str(items[1][0])+':'+str(items[1][1])+':'+heteroplasmy+':'+confidence_interval_low+':'+confidence_interval_up+':'+SDP
+                            individual=str(items[1][0])+':'+str(items[1][1])+':'+str(heteroplasmy)+':'+str(confidence_interval_low)+':'+str(confidence_interval_up)+':'+str(SDP)
                         else:
                             heteroplasmy=str(items[1][2][0])
                             confidence_interval_low=str(items[1][3][0])
@@ -1404,7 +1404,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                 SDP=items[1][5][0][0]
                             else:
                                 SDP=str(items[1][5][0])
-                            individual=str(items[1][0])+':'+str(items[1][1])+':'+heteroplasmy+':'+confidence_interval_low+':'+confidence_interval_up+':'+SDP
+                            individual=str(items[1][0])+':'+str(items[1][1])+':'+str(heteroplasmy)+':'+str(confidence_interval_low)+':'+str(confidence_interval_up)+':'+str(SDP)
                         samples_per_position.append(individual)
                     else:
                         individual=str(items[1][0])
