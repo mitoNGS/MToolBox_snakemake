@@ -73,12 +73,13 @@ def parse_sam_row(row):
     nt = ['T', 'A'] (nt as in MD)
     cigar_bases = ['47', '3', '50']
     cigar_nt = ['M', 'I', 'M']
-    
+
     All SAM fields of interest are expected to be at specific position because they are mandatory (among the first 11),
     except for MD which is an optional one and could be found:
     - in position 12 if the SAM file has not been processed by samtools calmd
     - at the end of the line if the SAM file has been processed by samtools calmd
     """
+    row = [i.strip() for i in row]
     row[1] = int(row[1])
     row[3] = int(row[3])
     row[4] = int(row[4])
@@ -123,13 +124,14 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
     """
     Logic of this function is:
 
-    - MD flag reflect the **mapped portion of the read**  - no soft clipping no insertions (although some mutations in softclipped regions have been found);
+    - MD flag reflect the **mapped portion of the read**  - no soft clipping no insertions (although some mutations in softclipped regions have been
     - CIGAR flag reflects the absolute reads length - including soft clipping and insertions;
     - The script first equals the length of the read to that of the mapped portion and then extracts the variants using the MD flag.
     """
     md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt = parsed_sam_row
     # Calculate effective read length (cigar without S and D)
     eff_read_length = read_length_from_cigar(cigar_bases, cigar_nt)
+    #print("Effective read length: {}".format(eff_read_length))
     ins_pos_in_seq = 0
     for n in range(len(cigar_nt)):
         if cigar_nt[n] not in ['I','D','S','H']:
@@ -143,8 +145,8 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
             new_qs = new_qs[:ins_pos_in_seq]+new_qs[(ins_pos_in_seq+ins_len):]
         elif cigar_nt[n] == 'D': # insert in the read sequence and qs the bases representing the ins
             ins_len = int(cigar_bases[n])
-            new_seq = new_seq[:ins_pos_in_seq]+["I"]+new_seq[ins_pos_in_seq:]
-            new_qs = new_qs[:ins_pos_in_seq]+["I"]+new_qs[ins_pos_in_seq:]
+            new_seq = new_seq[:ins_pos_in_seq]+["I"]*ins_len+new_seq[ins_pos_in_seq:]
+            new_qs = new_qs[:ins_pos_in_seq]+["I"]*ins_len+new_qs[ins_pos_in_seq:]
         elif cigar_nt[n] == 'S':
             if n == 0: #if the softclipping is at the beginning of the read
                 soft_clipped_bases = int(cigar_bases[n])
@@ -157,18 +159,30 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
                 new_qs = new_qs[0:diff]
         else:
             pass
+        #print(n, cigar_nt[n], cigar_bases[n], ''.join(new_seq))
     else:
         pass
+    #print(''.join(new_seq))
+    # following rows in function
+    #bases = map(lambda x:x.strip('^'),bases)
+    #bases = filter(None,bases)
+    #bases = list(map(lambda x:int(x),bases))
+    # bases is the length of matches in MD
+    # nt is list of reference bases which are different from aligned read (also deleted)
+    #print("bases: {}".format(bases))
+    #print("nt   : {}".format(nt))
     z_pos_evs = list(zip(bases, nt))
     z_pos_evs_ref = []
     z_pos_evs_read = []
+    #print("z_pos_evs: {}".format(z_pos_evs))
     for x,i in enumerate(z_pos_evs):
         if x > 0:
             z_pos_evs_read.append((i[0]+z_pos_evs_read[x-1][0]+len(z_pos_evs_read[x-1][1].replace('^', '')), i[1]))
-            z_pos_evs_ref.append((i[0]+z_pos_evs_ref[x-1][0]+1, i[1]))
+            z_pos_evs_ref.append((i[0]+z_pos_evs_ref[x-1][0]+len(z_pos_evs_read[x-1][1].replace('^', '')), i[1]))
         else:
             z_pos_evs_read.append((i[0], i[1]))
             z_pos_evs_ref.append((i[0]+leftmost+1, i[1]))
+        #print("{x}, {i}, {z_pos_read}, {z_pos_ref}".format(x=x, i=i, z_pos_read=z_pos_evs_read, z_pos_ref=z_pos_evs_ref))
 
     z_pos_evs_ref = [i for i in z_pos_evs_ref if "^" not in i[1]]
     #print(z_pos_evs_ref)
@@ -190,12 +204,13 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
         # filter out variants with qs < threshold
         # found some cases where there is a mismatch in SC zone, this will raise an error
         try:
-            if ord(new_qs[t])-33 >= minqs and t > tail and (eff_read_length-t) > tail:
-                positions_ref_final.append(positions_ref[x])
-                positions_read_final.append(positions_read[x])
-                all_ref.append(bases_ref[x])
-                all_mism.append(new_seq[t])
-                all_qs.append(ord(new_qs[t])-33)
+            if ord(new_qs[t])-33 >= minqs:
+                if t >= tail and (eff_read_length-t) >= tail:
+                    positions_ref_final.append(positions_ref[x])
+                    positions_read_final.append(positions_read[x])
+                    all_ref.append(bases_ref[x])
+                    all_mism.append(new_seq[t])
+                    all_qs.append(ord(new_qs[t])-33)
         except IndexError:
             pass
     return positions_ref_final, positions_read_final, all_ref, all_mism, all_qs, strand
@@ -1394,7 +1409,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
                                     strandp.append(x[0])
                                 else:
                                     strandp.append(str(x))
-                            SDP=",".join(strandp)
+                            SDP=",".join([str(k) for k in strandp])
                             individual=str(items[1][0])+':'+str(items[1][1])+':'+str(heteroplasmy)+':'+str(confidence_interval_low)+':'+str(confidence_interval_up)+':'+str(SDP)
                         else:
                             heteroplasmy=str(items[1][2][0])
