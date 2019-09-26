@@ -513,6 +513,8 @@ rule bam2cov:
         bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov"
     # params:
     #     genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+    params:
+        quality = config['mtvcf_main_analysis']['Q'],
     message: "Generating coverage file {output.bam_cov} from {input.merged_bam}"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2cov.log"
     #conda: "envs/samtools_biopython.yaml"
@@ -521,6 +523,7 @@ rule bam2cov:
         """
         samtools depth \
         -d 0 \
+        -q {params.quality} \
         -a {input.merged_bam} > {output.bam_cov}
         """
 
