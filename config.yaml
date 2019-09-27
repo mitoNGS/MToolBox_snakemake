@@ -28,3 +28,4 @@ mtvcf_main_analysis:
     Q:    25
     # minimum coverage depth for a mutation to be kept
     minrd: 5
+    tail_mismatch: 5
