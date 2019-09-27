@@ -120,7 +120,7 @@ def read_length_from_cigar(cigar_bases, cigar_nt):
             eff_read_length += int(cigar_bases[x])
     return eff_read_length
 
-def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
+def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5, tail_mismatch = 5):
     """
     Logic of this function is:
 
@@ -205,7 +205,7 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs = 25, tail = 5):
         # found some cases where there is a mismatch in SC zone, this will raise an error
         try:
             if ord(new_qs[t])-33 >= minqs:
-                if t >= tail and (eff_read_length-t) >= tail:
+                if t >= tail_mismatch and (eff_read_length-t) >= tail_mismatch:
                     positions_ref_final.append(positions_ref[x])
                     positions_read_final.append(positions_read[x])
                     all_ref.append(bases_ref[x])
@@ -567,7 +567,7 @@ def s_encoding(s):
     elif type(s) == str:
         return s
 
-def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, name2=None, tail=5, Q=25, minrd=5, ref_mt = None):
+def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, name2=None, tail=5, Q=25, minrd=5, ref_mt = None, tail_mismatch=5):
 	#mtable = open(mtable_file, 'r')
 	if sam_file.endswith("gz"):
 		sam = gzip.GzipFile(sam_file, mode = 'r')
@@ -894,7 +894,7 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 	else:
 		sam = open(sam_file, 'r')
 
-	mismatch_dict = mismatch_detection(sam, coverage_data)
+	mismatch_dict = mismatch_detection(sam=sam, coverage_data=coverage_data, tail_mismatch=tail_mismatch)
 	x = 0 # alignment counter
 	# t = time.time()
 	# t0 = time.time()
@@ -964,11 +964,11 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None, nam
 	Indels[name2].extend(Subst[name2])
 	return Indels # it's a dictionary
 
-def mismatch_detection(sam, coverage_data):
+def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
 	mismatch_dict = {}
 	for r in sam:
 		r = r.split('\t')
-		positions_ref, positions_read, all_ref, all_mism, all_qs, strand = parse_mismatches_from_cigar_md(parse_sam_row(r))
+		positions_ref, positions_read, all_ref, all_mism, all_qs, strand = parse_mismatches_from_cigar_md(parse_sam_row(r), tail_mismatch = tail_mismatch)
 		if positions_ref == []: continue
 		#print(positions_ref, positions_read, all_mism, all_qs, strand)
 		for mut in zip(positions_ref, positions_read, all_ref, all_mism, all_qs):

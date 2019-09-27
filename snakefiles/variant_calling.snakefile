@@ -546,7 +546,8 @@ rule make_single_VCF:
         TMP = check_tmp_dir(config["tmp_dir"]),
         tail = config['mtvcf_main_analysis']['tail'],
         quality = config['mtvcf_main_analysis']['Q'],
-        minrd = config['mtvcf_main_analysis']['minrd']
+        minrd = config['mtvcf_main_analysis']['minrd'],
+        tail_mismatch = config['mtvcf_main_analysis']['tail_mismatch']
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
     #conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
@@ -568,7 +569,8 @@ rule make_single_VCF:
                                         tail = params.tail, \
                                         Q = params.quality, \
                                         minrd = params.minrd, \
-                                        ref_mt = params.ref_mt_fasta)
+                                        ref_mt = params.ref_mt_fasta, \
+                                        tail_mismatch = params.tail_mismatch)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name = get_seq_name(params.ref_mt_fasta)
