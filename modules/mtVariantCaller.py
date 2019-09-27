@@ -1113,7 +1113,7 @@ def VCFoutput(dict_of_dicts, reference = 'mt_genome', vcffile = 'sample', seq_na
             # if the v. position was never encountered before,is homoplasmic and is not a deletion
             elif variant[0] not in present_pos and max(variant[7])>=1 and variant[-1]!='del':
                 allelecount=[1]*len(variant[3])
-                r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP', sample_indexes={sample:''}, samples=[])
+                r = vcf.model._Record(CHROM=seq_name, POS=variant[0], ID='.', REF=[variant[1]], ALT=variant[3], QUAL='.', FILTER='PASS', INFO=OrderedDict([('AC',allelecount),('AN',1)]), FORMAT='GT:DP:HF:CILOW:CIUP:SDP', sample_indexes={sample:''}, samples=[])
                 r._sample_indexes[sample]=[[1],variant[2], variant[7], variant[8],variant[9], variant[5]]
                 r.samples.append(sample)
                 if len(variant[3])>1:
