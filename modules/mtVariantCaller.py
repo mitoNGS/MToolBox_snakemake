@@ -229,7 +229,9 @@ def allele_strand_updater(l, allele_strand_count = []):
     """
     Updates a strand counter instance for mismatch detection
     """
-    allele_strand_count_new = [sum(i) for i in zip(allele_strand_count, l)]
+    allele_strand_count_new = []
+    for x, i in enumerate(allele_strand_count):
+        allele_strand_count_new.append(i + l[x])
     return allele_strand_count_new
 
 
