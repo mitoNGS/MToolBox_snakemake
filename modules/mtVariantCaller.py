@@ -415,10 +415,16 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5):
 				qsL.append(ord(x)-33)
 			for x in qsRight:
 				qsR.append(ord(x)-33)
-			medL=median(qsL)
-			medR=median(qsR)
-			qsDel.append(medL)
-			qsDel.append(medR)
+			try:
+				medL=median(qsL)
+				qsDel.append(medL)
+			except:
+				pass
+			try:
+				medR=median(qsR)
+				qsDel.append(medR)
+			except:
+				pass
 		else:
 			qsDel='delete'
 		res=[]
