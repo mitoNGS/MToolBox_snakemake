@@ -25,11 +25,11 @@ MToolBox is hosted on `GitHub`_. You can get a copy by running this commands:
     # fetch repo
     git clone https://github.com/mitoNGS/MToolBox_snakemake.git
 
-The MToolBox repo comes with a setup script `install.sh`, which will:
+The MToolBox repo comes with a setup script ``install.sh``, which will:
 
-- install the `mtoolbox` conda environment
-- install the `bamUtils` suite (a third-party tool used in one of the steps of the pipeline)
-- create a command (`mtoolbox_activate`) which will be used to activate the `mtoolbox` conda environment and add the folders of MToolBox executables and utilities to your `PATH`.
+- install the ``mtoolbox`` conda environment with all the required dependencies
+- install the ``bamUtils`` suite (a third-party tool used in one of the steps of the pipeline which is not available as conda package)
+- create a command (``mtoolbox_activate``) which will be used to activate the MToolBox conda environment and add the folders of MToolBox executables and utilities to your ``PATH``.
 
 .. code-block:: bash
 
