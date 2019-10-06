@@ -1,4 +1,4 @@
-name: mtoolbox_r
+name: mtoolbox
 channels:
   - conda-forge
   - bioconda
@@ -26,10 +26,10 @@ dependencies:
   - botocore=1.12.35=py_0
   - bwidget=1.9.11=0
   - bzip2=1.0.6=h14c3975_1002
-  - ca-certificates=2019.6.16=hecc5488_0
+  - ca-certificates=2019.9.11=hecc5488_0
   - cachetools=2.1.0=py_0
   - cairo=1.14.12=h8948797_3
-  - certifi=2019.6.16=py36_1
+  - certifi=2019.9.11=py36_0
   - cffi=1.11.5=py36h9745a5d_1001
   - chardet=3.0.4=py36_1003
   - configargparse=0.13.0=py_1
@@ -49,6 +49,7 @@ dependencies:
   - freetype=2.9.1=he983fc9_1006
   - fribidi=1.0.5=h516909a_1002
   - ftputil=3.2=py36_0
+  - gatk-framework=3.6.24=5
   - gcc_impl_linux-64=7.3.0=habb00fd_1
   - gcc_linux-64=7.3.0=h553295d_8
   - gettext=0.19.8.1=hc5be6a0_1002
