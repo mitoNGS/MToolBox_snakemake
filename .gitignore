@@ -2,3 +2,14 @@
 */*.pyc
 */*/*.pyc
 
+bamUtil
+libStatGen
+data
+modules/GenomeAnalysisTK.jar
+logs
+envs/bcftools.yaml
+envs/env.all.yaml
+envs/environment.yaml
+envs/samtools_biopython.yaml
+.snakemake/
+MToolBox-variant-calling-*
