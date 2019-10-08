@@ -25,7 +25,7 @@ RUN apt-get install -y --no-install-recommends \
     conda update conda && \
 	# install MToolBox
     git clone https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
-    conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y \
+    conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y && \
 	# install bamUtils
     git clone https://github.com/statgen/bamUtil.git && cd bamUtil && \
     make cloneLib && make && make install INSTALLDIR=$(dirname $(which python)) && \
