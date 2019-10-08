@@ -25,15 +25,14 @@ RUN apt-get install -y --no-install-recommends \
     conda update conda && \
 	# install MToolBox
     git clone https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
-    conda env create -n mtoolbox -f envs/mtoolbox.yaml && \
+    conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y \
 	# install bamUtils
     git clone https://github.com/statgen/bamUtil.git && cd bamUtil && \
     make cloneLib && make && make install INSTALLDIR=$(dirname $(which python)) && \
     cd .. && rm -R libStatGen && rm -R bamUtil && \
-	# the mtoolbox conda env is activated by directly adding dir to PATH 
+	# the mtoolbox conda env is activated by directly adding dir to PATH
     echo "export PATH=/opt/conda/envs/mtoolbox/bin/:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH" >> /root/.bashrc && \
 	# fancy CLI prompt :)
     echo "export PS1=\"\[\e[0m\e[47m\e[1;30m\] :: MToolBox :: \[\e[0m\e[0m \[\e[1;34m\]\]\w\[\e[m\] \[\e[1;32m\]>>>\[\e[m\] \[\e[0m\]\"" >> /root/.bashrc
 
 CMD ["/bin/bash", "-l"]
-
