@@ -4,7 +4,7 @@
 # adapted from https://gist.githubusercontent.com/meren/65b1f1bfea1b53e87e10f025d1e4c29a/raw/b0a841c4be8873ba73faba217e798d3d9e207823/Dockerfile_v5.5.sh
 #FROM alpine:latest
 # replace FROM drtools/alpine-miniconda with 
-FROM alpine:3.6
+FROM alpine:latest
 MAINTAINER Alan Hoeng <alan.f.hoeng@gmail.com>
 
 # Inspired by :
@@ -22,11 +22,8 @@ RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/re
     libstdc++ \
     glib \
     tini@testing \
-    git \
-    build-base \
-    zlib-dev \
-    musl-dev \
-    pcc-libs-dev \
+    # musl-dev \
+    # pcc-libs-dev \
 #    libc-dev gcc g++ gnutls gnutls-dev gnutls-c++ \
     #https://github.com/sgerrand/alpine-pkg-glibc/issues/21
     && curl "https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub" -o /etc/apk/keys/sgerrand.rsa.pub \
@@ -41,7 +38,6 @@ RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/re
     && /usr/glibc-compat/bin/localedef -i en_US -f UTF-8 en_US.UTF-8 \
     && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc/usr/lib \
     && rm -rf glibc*apk /var/cache/apk/*
-
 
 # Configure environment
 ENV CONDA_DIR /opt/conda
@@ -78,45 +74,51 @@ RUN cd /tmp && \
 RUN conda upgrade -y pip && \
     conda config --add channels conda-forge && \
     conda clean --all
+# # 
+# # USER root
 # 
-# USER root
-
 # Configure container startup as root
 WORKDIR /home/$CONTAINER_USER/
 ENTRYPOINT ["/sbin/tini", "--"]
-#CMD [ "/bin/bash" ]
+# #CMD [ "/bin/bash" ]
+# 
+# # Switch back to drtools to avoid accidental container runs as root
+# USER $CONTAINER_USER
+# ########################################################################
+# 
+# ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+# ENV PATH=/opt/conda/bin:$PATH
+# #ENV CONFIGFLAGS $CONFIGFLAGS" -lz"
+# 
+# # upgrade OS
+# #RUN apt-get update --fix-missing
+# #RUN apk update
+# #RUN apt-get install -y locales
+# #RUN apt-get install -y --no-install-recommends \
+# ###### remains from ubuntu adapted to alpine
+# # RUN apk add \
+# #     dpkg build-base ca-certificates \
+# # #    dpkg build-essential ca-certificates \ on debian/ubuntu
+# #     wget bzip2 \
+# # #    git sudo make zlib1g-dev && \ on debian/ubuntu
+# #     git sudo make zlib bash && \
+# # 	# install miniconda and setup env
+# #     wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/anaconda.sh && \
+# #     /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+# #     rm ~/anaconda.sh && \
+# #     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+# #     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+# #     echo "conda activate base" >> ~/.bashrc && \
+# ######
+# #USER root
+# #RUN apk add --force-broken-world git
 
-# Switch back to drtools to avoid accidental container runs as root
-USER $CONTAINER_USER
-########################################################################
-
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-ENV PATH=/opt/conda/bin:$PATH
-#ENV CONFIGFLAGS $CONFIGFLAGS" -lz"
-
-# upgrade OS
-#RUN apt-get update --fix-missing
-#RUN apk update
-#RUN apt-get install -y locales
-#RUN apt-get install -y --no-install-recommends \
-###### remains from ubuntu adapted to alpine
-# RUN apk add \
-#     dpkg build-base ca-certificates \
-# #    dpkg build-essential ca-certificates \ on debian/ubuntu
-#     wget bzip2 \
-# #    git sudo make zlib1g-dev && \ on debian/ubuntu
-#     git sudo make zlib bash && \
-# 	# install miniconda and setup env
-#     wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/anaconda.sh && \
-#     /bin/bash ~/anaconda.sh -b -p /opt/conda && \
-#     rm ~/anaconda.sh && \
-#     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-#     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-#     echo "conda activate base" >> ~/.bashrc && \
-######
-#USER root
-#RUN apk add --force-broken-world git
-RUN conda update conda && \
+# 
+# RUN conda update conda && \
+USER root
+RUN apk add git \
+    build-base \
+    zlib-dev && \
     # install MToolBox
     #### comment to skip MToolBox installation
     git clone -b conda_env_slim https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
@@ -130,10 +132,13 @@ RUN conda update conda && \
     && sed -i "48s/debug//" ../libStatGen/Makefiles/Makefile.common \
     #&& sed -i "48s/profile//" ../libStatGen/Makefiles/Makefile.common \ 
     && make && make install INSTALLDIR=/opt/conda/envs/mtoolbox/bin \
-    && cd .. && rm -R libStatGen && rm -R bamUtil \
+    && cd .. && rm -R libStatGen && rm -R bamUtil && \
+    rm -rf /var/cache/apk/* && apk del --force-broken-world git build-base zlib-dev \
     # the mtoolbox conda env is activated by directly adding dir to PATH
     && echo "export PATH=/opt/conda/envs/mtoolbox/bin/:/home/$CONTAINER_USER/MToolBox_snakemake:/home/$CONTAINER_USER/MToolBox_snakemake/scripts:$PATH" >> /home/$CONTAINER_USER/.bash_profile \
     # fancy CLI prompt :)
     && echo "export PS1=\"\[\e[0m\e[47m\e[1;30m\] :: MToolBox :: \[\e[0m\e[0m \[\e[1;34m\]\]\w\[\e[m\] \[\e[1;32m\]>>>\[\e[m\] \[\e[0m\]\"" >> /home/$CONTAINER_USER/.bash_profile
+
+USER $CONTAINER_USER
 
 CMD ["/bin/bash", "-l"]

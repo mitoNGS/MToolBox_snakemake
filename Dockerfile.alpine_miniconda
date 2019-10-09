@@ -1,0 +1,145 @@
+# http://www.science.smith.edu/dftwiki/index.php/Tutorial:_Docker_Anaconda_Python_--_4#Exercise_5:_Creating_a_Container_with_Anaconda
+# https://github.com/ContinuumIO/docker-images/issues/89 for activation of conda env in docker
+# adapted from https://hub.docker.com/r/continuumio/anaconda3/dockerfile
+# adapted from https://gist.githubusercontent.com/meren/65b1f1bfea1b53e87e10f025d1e4c29a/raw/b0a841c4be8873ba73faba217e798d3d9e207823/Dockerfile_v5.5.sh
+#FROM alpine:latest
+FROM drtools/alpine-miniconda 
+#FROM alpine:latest
+MAINTAINER Alan Hoeng <alan.f.hoeng@gmail.com>
+
+# Inspired by :
+# * https://github.com/jupyter/docker-stacks
+# * https://github.com/CognitiveScale/alpine-miniconda
+# * https://github.com/show0k/alpine-jupyter-docker
+
+# ######################## RECREATE ALPINE_MINICONDA
+# # Install glibc and useful packages
+# RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+#     && apk --update add \
+#     bash \
+#     curl \
+#     ca-certificates \
+#     libstdc++ \
+#     glib \
+#     tini@testing \
+#     # musl-dev \
+#     # pcc-libs-dev \
+# #    libc-dev gcc g++ gnutls gnutls-dev gnutls-c++ \
+#     #https://github.com/sgerrand/alpine-pkg-glibc/issues/21
+#     && curl "https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub" -o /etc/apk/keys/sgerrand.rsa.pub \
+#     # && curl -L "http://nl.alpinelinux.org/alpine/edge/testing/x86_64/mingw-w64-crt-6.0.0-r0.apk" -o mingw-w64-crt-6.0.0-r0.apk \
+#     # && apk add mingw-w64-crt-6.0.0-r0.apk \
+#     && curl -L "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.23-r3/glibc-2.23-r3.apk" -o glibc.apk \
+#     && apk add glibc.apk \
+#     && curl -L "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.23-r3/glibc-bin-2.23-r3.apk" -o glibc-bin.apk \
+#     && apk add glibc-bin.apk \
+#     && curl -L "https://github.com/andyshinn/alpine-pkg-glibc/releases/download/2.25-r0/glibc-i18n-2.25-r0.apk" -o glibc-i18n.apk \
+#     && apk add --allow-untrusted glibc-i18n.apk \
+#     && /usr/glibc-compat/bin/localedef -i en_US -f UTF-8 en_US.UTF-8 \
+#     && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc/usr/lib \
+#     && rm -rf glibc*apk /var/cache/apk/*
+# 
+# # Configure environment
+# ENV CONDA_DIR /opt/conda
+# ENV PATH $CONDA_DIR/bin:$PATH
+# ENV SHELL /bin/bash
+# ENV CONTAINER_USER mtoolboxeur
+# ENV CONTAINER_UID 1000
+# ENV LC_ALL en_US.UTF-8
+# ENV LANG en_US.UTF-8
+# ENV LANGUAGE en_US.UTF-8
+# 
+# # Configure Miniconda
+# ENV MINICONDA_VER 4.5.1
+# ENV MINICONDA Miniconda3-$MINICONDA_VER-Linux-x86_64.sh
+# ENV MINICONDA_URL https://repo.continuum.io/miniconda/$MINICONDA
+# ENV MINICONDA_MD5_SUM 0c28787e3126238df24c5d4858bd0744
+# 
+# # Create user with UID=1000 and in the 'users' group
+# RUN adduser -s /bin/bash -u $CONTAINER_UID -D $CONTAINER_USER && \
+#     mkdir -p /opt/conda && \
+#     chown $CONTAINER_USER /opt/conda
+# 
+# USER $CONTAINER_USER
+# 
+# # Install conda
+# RUN cd /tmp && \
+#     mkdir -p $CONDA_DIR && \
+#     curl -L $MINICONDA_URL  -o miniconda.sh && \
+#     echo "$MINICONDA_MD5_SUM  miniconda.sh" | md5sum -c - && \
+#     /bin/bash miniconda.sh -f -b -p $CONDA_DIR && \
+#     rm miniconda.sh && \
+#     $CONDA_DIR/bin/conda install --yes conda==$MINICONDA_VER
+# 
+# RUN conda upgrade -y pip && \
+#     conda config --add channels conda-forge && \
+#     conda clean --all
+# # # 
+# # # USER root
+# # 
+# # Configure container startup as root
+# WORKDIR /home/$CONTAINER_USER/
+# ENTRYPOINT ["/sbin/tini", "--"]
+# # #CMD [ "/bin/bash" ]
+# # 
+# # # Switch back to drtools to avoid accidental container runs as root
+# # USER $CONTAINER_USER
+# # ########################################################################
+# # 
+# # ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+# # ENV PATH=/opt/conda/bin:$PATH
+# # #ENV CONFIGFLAGS $CONFIGFLAGS" -lz"
+# # 
+# # # upgrade OS
+# # #RUN apt-get update --fix-missing
+# # #RUN apk update
+# # #RUN apt-get install -y locales
+# # #RUN apt-get install -y --no-install-recommends \
+# # ###### remains from ubuntu adapted to alpine
+# # # RUN apk add \
+# # #     dpkg build-base ca-certificates \
+# # # #    dpkg build-essential ca-certificates \ on debian/ubuntu
+# # #     wget bzip2 \
+# # # #    git sudo make zlib1g-dev && \ on debian/ubuntu
+# # #     git sudo make zlib bash && \
+# # # 	# install miniconda and setup env
+# # #     wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/anaconda.sh && \
+# # #     /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+# # #     rm ~/anaconda.sh && \
+# # #     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+# # #     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+# # #     echo "conda activate base" >> ~/.bashrc && \
+# # ######
+# # #USER root
+# # #RUN apk add --force-broken-world git
+# 
+# # 
+# # RUN conda update conda && \
+USER root
+RUN apk --update add git \
+    build-base \
+    zlib-dev && \
+    # install MToolBox
+    #### comment to skip MToolBox installation
+    git clone -b conda_env_slim https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
+#    conda create -n mtoolbox python=3 && conda clean -a -y \
+    conda update conda && \
+    conda env create -n mtoolbox -f envs/mtoolbox.slim.yaml && conda clean -a -y \
+    # install bamUtils
+    && git clone https://github.com/statgen/bamUtil.git && cd bamUtil \
+    && make cloneLib \
+    # do not install the profile exec bc gcrt1.o is on vacation; btw also debug is ditched
+    && sed -i "48s/profile//" ../libStatGen/Makefiles/Makefile.common \
+    && sed -i "48s/debug//" ../libStatGen/Makefiles/Makefile.common \
+    #&& sed -i "48s/profile//" ../libStatGen/Makefiles/Makefile.common \ 
+    && make && make install INSTALLDIR=/opt/conda/envs/mtoolbox/bin \
+    && cd .. && rm -R libStatGen && rm -R bamUtil && \
+    rm -rf /var/cache/apk/* && apk del --force-broken-world git build-base zlib-dev \
+    # the mtoolbox conda env is activated by directly adding dir to PATH
+    && echo "export PATH=/opt/conda/envs/mtoolbox/bin/:/home/$CONTAINER_USER/MToolBox_snakemake:/home/$CONTAINER_USER/MToolBox_snakemake/scripts:$PATH" >> /home/$CONTAINER_USER/.bash_profile \
+    # fancy CLI prompt :)
+    && echo "export PS1=\"\[\e[0m\e[47m\e[1;30m\] :: MToolBox :: \[\e[0m\e[0m \[\e[1;34m\]\]\w\[\e[m\] \[\e[1;32m\]>>>\[\e[m\] \[\e[0m\]\"" >> /home/$CONTAINER_USER/.bash_profile
+
+USER $CONTAINER_USER
+
+CMD ["/bin/bash", "-l"]
