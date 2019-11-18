@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import pandas as pd
 from modules.mtVariantCaller import get_consensus_single
 
