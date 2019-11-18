@@ -1,11 +1,18 @@
 #!/usr/bin/env python
-
+import gzip
+import os
+import time
 import pandas as pd
 from sqlalchemy import create_engine
 from modules.general import get_SAM_header, memory_usage_resource
-import time, os, gzip
 
-def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksize = 100000, table_name = "outS", ext = ".sam.gz"):
+
+# TODO: ext is not used anywhere
+def read_sam_file_only_readID_chunks_intoSQL(samfile,
+                                             n_occurrences=1,
+                                             chunksize=100000,
+                                             table_name="outS",
+                                             ext=".sam.gz"):
     """
     Read a SAM file, then keep a list of IDs of reads occurring <n_occurrences> times.
     In the specific case of outS.sam and outP.sam files, these are the IDs of the reads we want
@@ -14,26 +21,26 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
     """
     n = n_occurrences
 
+    # TODO: in-memory db is really good?!
     # Create in-memory SQLite db
     engine = create_engine('sqlite://', echo=False)
     # samfile = path/to/out.sam --> table_name = out
     table_name = table_name
-    #table_name = samfile.split('/')[-1].replace(ext, "").upper().replace("-", "_")
 
     # Read the SAM file in chunks
     header_lines, comment_count = get_SAM_header(samfile)
     # function that reads a samfile and skips rows with unaligned reads
-    t = pd.read_table(samfile, \
-                      sep = '\t', \
-                      skiprows=comment_count, \
-                      chunksize=chunksize, \
-                      usecols=[0,2], \
-                      names = ['readID', 'RNAME'], \
-                      compression="infer", index_col = False)
+    t = pd.read_table(samfile,
+                      sep='\t',
+                      skiprows=comment_count,
+                      chunksize=chunksize,
+                      usecols=[0, 2],
+                      names=['readID', 'RNAME'],
+                      compression="infer",
+                      index_col=False)
 
     for chunk in t:
         elapsed = time.time()
-        #print("chunk")
         chunk = chunk.query('RNAME != "*"')
         chunk = chunk.drop(columns=['RNAME'])
         chunk.to_sql(table_name, con=engine, if_exists="append")
@@ -41,16 +48,25 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile, n_occurrences = 1, chunksi
 
     return engine, table_name
 
-def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt_fasta = None):
-    print("Processing {}".format(outS))
-    outS_sql, table_name_S = read_sam_file_only_readID_chunks_intoSQL(outS, table_name = "outS")
-    print("Processing {}".format(outP))
-    outP_sql, table_name_P = read_sam_file_only_readID_chunks_intoSQL(outP, table_name = "outP")
 
-    good_reads_S = pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 1".format(table_name=table_name_S), outS_sql, chunksize = 100000)
+# TODO: ref_mt_fasta is not used anywhere
+def filter_alignments(outmt=None, outS=None, outP=None, OUT=None, ref_mt_fasta=None):
+    print("Processing {}".format(outS))
+    outS_sql, table_name_S = read_sam_file_only_readID_chunks_intoSQL(outS,
+                                                                      table_name="outS")
+    print("Processing {}".format(outP))
+    outP_sql, table_name_P = read_sam_file_only_readID_chunks_intoSQL(outP,
+                                                                      table_name="outP")
+
+    good_reads_S = pd.read_sql_query(
+        "SELECT readID FROM {} GROUP BY readID HAVING COUNT(*) == 1".format(table_name_S),
+        outS_sql, chunksize=100000)
     print("SQL query on outS, memory: {} MB".format(memory_usage_resource()))
-    good_reads_P = pd.read_sql_query("SELECT readID FROM {table_name} GROUP BY readID HAVING COUNT(*) == 2".format(table_name=table_name_P), outP_sql, chunksize = 100000)
+    good_reads_P = pd.read_sql_query(
+        "SELECT readID FROM {} GROUP BY readID HAVING COUNT(*) == 2".format(table_name_P),
+        outP_sql, chunksize=100000)
     print("SQL query on outP, memory: {} MB".format(memory_usage_resource()))
+    # TODO: the following is not good for performance
     good_reads = pd.DataFrame()
     for c in good_reads_P:
         good_reads = good_reads.append(c)
@@ -61,27 +77,27 @@ def filter_alignments(outmt = None, outS = None, outP = None, OUT = None, ref_mt
     print("Total reads to extract alignments of: {}".format(len(good_reads)))
 
     samfile = outmt
-    tc = pd.read_table(samfile, \
-                       sep = '\t', \
-                       skiprows=get_SAM_header(samfile)[1], \
-                       chunksize=100000, \
-                       header=None, \
-                       engine="python", \
-                       names=["readID", "FLAG", "RNAME"] + list("QWERTYUIOPASDFGHJK"), \
-                       compression="infer", index_col = False)
+    tc = pd.read_table(samfile,
+                       sep='\t',
+                       skiprows=get_SAM_header(samfile)[1],
+                       chunksize=100000,
+                       header=None,
+                       engine="python",
+                       names=["readID", "FLAG", "RNAME"] + list("QWERTYUIOPASDFGHJK"),
+                       compression="infer",
+                       index_col=False)
 
     # open OUT.sam file and write SAM header from outS.sam (outP would be the same).
     OUT_uncompressed = OUT.replace(".gz", "")
-    f = open(OUT_uncompressed, 'w')
-    sss = gzip.open(outS, 'rb')
-    l = sss.readline().decode("utf-8")
-    while l[0] == "@":
-        if l.startswith("@PG") == False:
-            f.write(l)
+    with open(OUT_uncompressed, "w") as f:
+        sss = gzip.open(outS, 'rb')
         l = sss.readline().decode("utf-8")
-    f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"])+"\n")
+        while l[0] == "@":
+            if not l.startswith("@PG"):
+                f.write(l)
+            l = sss.readline().decode("utf-8")
+        f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"]) + "\n")
 
-    f.close()
 
     n_extracted_alignments = 0
     for chunk in tc:
