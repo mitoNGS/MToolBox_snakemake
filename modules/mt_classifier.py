@@ -1,18 +1,44 @@
 #!/usr/bin/env python
-
-import getopt, sys, re, os, glob, csv, shutil
-from modules.classifier import tree, NGclassify, consts, parse_mhcs, datatypes 
-#from modules.bioinf.seqs import SeqList
-import modules.io_modules.csv
-import modules.io_modules.old_table
-import modules.io_modules.serialize
+import click
+import csv
+import getopt
+import os
 import os.path
+import re
+import shutil
+import sys
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+from modules.classifier import tree, NGclassify, consts, parse_mhcs, datatypes
+# from modules.bioinf.seqs import SeqList
+
+
 # folder where to find data for haplogroup classification and functional annotation
-#data_file = os.path.dirname(sys.argv[0])
+# data_file = os.path.dirname(sys.argv[0])
+
+# TODO: what about the data_file argument?
+
+# TODO: this will become one of mtoolbox's subcommands
+@click.command()
+@click.option("--input_file", "-i", default="mtDNAassembly-contigs.fasta",
+              help="""Contig file (Default: mtDNAassembly-contigs.fasta)""")
+@click.option("--muscle_exec", "-m", default=shutil.which("muscle"),
+              help="""MUSCLE executable path (Default: MUSCLE installation 
+              PATH)""")
+@click.option("--basename", "-b", default="mtDNAassembly-contigs",
+              help="""Basename for output files (Default: mtDNAassembly-contigs)""")
+@click.option("--best_results", "-s", default="mt_classification_best_results.csv",
+              help="""File with most reliable haplogroup prediction 
+              (Default: mt_classification_best_results.csv)""")
+def mt_classifier(input_file, muscle_exec, basename, best_results):
+    """ Assign haplogroups to contigs and perform functional annotation. """
+    pass
+
+# TODO: this seems not working properly, leave it for later
+
 
 def usage():
     print("""\nAssigns haplogroup to contigs and performs functional annotation
