@@ -1,16 +1,37 @@
-import pandas as pd
-import os, re, sys, time, gzip, bz2, subprocess, shutil
-from Bio import SeqIO
+import bz2
+import gzip
+import os
+import re
 import resource
-import numpy as np
-#import sqlite3
-from sqlalchemy import create_engine
-from modules.mtVariantCaller import *
-from modules.BEDoutput import *
+import shutil
+import subprocess
+import sys
+import time
 
-from modules.config_parsers import *
-from modules.filter_alignments import *
-from modules.general import *
+from Bio import SeqIO
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine
+
+# TODO: this is bad!! import only what really needed
+#   for example: FASTAoutput is both in BEDoutput.py and mtVariantCaller.py!
+# from modules.config_parsers import *
+# from modules.filter_alignments import *
+# from modules.general import *
+from modules.BEDoutput import BEDoutput, FASTAoutput
+from modules.config_parsers import (
+    fastqc_filtered_outputs, fastqc_raw_outputs, get_bed_files, get_fasta_files,
+    get_genome_files, get_genome_single_vcf_files,
+    get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_fasta,
+    get_mt_genomes, get_sample_bamfiles
+)
+from modules.general import (
+    check_tmp_dir, get_seq_name, gapped_fasta2contigs,
+    mt_table_handle2gapped_fasta, pileup2mt_table, sam2fastq, write_mt_table
+)
+from modules.filter_alignments import filter_alignments
+from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
+
 
 source_dir = os.path.dirname(workflow.snakefile)
 
@@ -19,7 +40,9 @@ localrules: index_genome, merge_VCF, index_VCF, dict_genome
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-reference_tab = pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#').set_index("ref_genome_mt", drop=False)
+reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t",
+                               comment='#')
+                 .set_index("ref_genome_mt", drop=False))
 datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
 
 configfile: "config.yaml"
@@ -30,8 +53,10 @@ gmap_db_dir = config["map"]["gmap_db_dir"]
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
-    ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
-    ref_genome_n = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_n']))])
+    ref_genome_mt = '|'.join([re.escape(x)
+                              for x in list(set(analysis_tab['ref_genome_mt']))]),
+    ref_genome_n = '|'.join([re.escape(x)
+                             for x in list(set(analysis_tab['ref_genome_n']))])
 
 outpaths = get_mt_genomes(analysis_tab)
 
@@ -72,8 +97,10 @@ rule fastqc_raw:
 
 rule make_mt_gmap_db:
     input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}", \
-                            ref_genome_mt_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+                                                   ref_genome_mt_file=get_genome_files(reference_tab,
+                                                                                       wildcards.ref_genome_mt,
+                                                                                       "ref_genome_mt_file"))
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     params:
@@ -90,10 +117,14 @@ rule make_mt_gmap_db:
 
 rule make_mt_n_gmap_db:
     input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}", \
-                            ref_genome_mt_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
-        n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}", \
-                            ref_genome_n_file = get_genome_files(reference_tab, wildcards.ref_genome_mt, "ref_genome_n_file"))
+        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+                                                   ref_genome_mt_file=get_genome_files(reference_tab,
+                                                                                       wildcards.ref_genome_mt,
+                                                                                       "ref_genome_mt_file")),
+        n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
+                                                  ref_genome_n_file=get_genome_files(reference_tab,
+                                                                                     wildcards.ref_genome_mt,
+                                                                                     "ref_genome_n_file"))
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
@@ -217,7 +248,8 @@ rule sam2fastq:
     message:
         "Converting {input.outmt_sam} to FASTQ"
     run:
-        sam2fastq(samfile = input.outmt_sam, outmt1 = output.outmt1, outmt2 = output.outmt2, outmt = output.outmt)
+        sam2fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
+                  outmt2=output.outmt2, outmt=output.outmt)
 
 rule map_nuclear_MT_SE:
     input:
@@ -286,16 +318,16 @@ rule filtering_mt_alignments:
     output:
         sam = "results/{sample}/map/OUT_{dataset_basename}_{ref_genome_mt}_{ref_genome_n}/{dataset_basename}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     #conda: "envs/environment.yaml"
     threads: 1
     message: "Filtering alignments in file {input.outmt} by checking alignments in {input.outS} and {input.outP}"
     run:
-        filter_alignments(outmt = input.outmt, \
-                          outS = input.outS, \
-                          outP = input.outP, \
-                          OUT = output.sam, \
-                          ref_mt_fasta = params.ref_mt_fasta)
+        filter_alignments(outmt=input.outmt,
+                          outS=input.outS,
+                          outP=input.outP,
+                          OUT=output.sam,
+                          ref_mt_fasta=params.ref_mt_fasta)
 
 rule sam2bam:
     input:
@@ -355,7 +387,11 @@ rule mark_duplicates:
 
 rule merge_bam:
     input:
-        sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir="results", sample = wildcards.sample, ref_genome_mt = wildcards.ref_genome_mt, ref_genome_n = wildcards.ref_genome_n)
+        sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab,
+                                                            res_dir="results",
+                                                            sample=wildcards.sample,
+                                                            ref_genome_mt=wildcards.ref_genome_mt,
+                                                            ref_genome_n=wildcards.ref_genome_n)
     output:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
@@ -459,7 +495,11 @@ rule make_single_VCF:
         single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed",
         single_fasta = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")),
+        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
+            ref_genome_mt_file=get_mt_fasta(reference_tab,
+                                            wildcards.ref_genome_mt,
+                                            "ref_genome_mt_file")
+        ),
         TMP = check_tmp_dir(config["tmp_dir"])
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
     #conda: "envs/samtools_biopython.yaml"
@@ -468,19 +508,26 @@ rule make_single_VCF:
         # function (and related ones) from mtVariantCaller
         # vcf_dict = mtvcf_main_analysis(sam_file = input.sam, mtable_file = input.mt_table, name2 = wildcards.sample)
         tmp_sam = os.path.split(input.merged_bam)[1].replace(".bam", ".sam")
-        shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam = input.merged_bam, tmp_dir = params.TMP, tmp_sam = tmp_sam))
-        vcf_dict = mtvcf_main_analysis(sam_file = "{tmp_dir}/{tmp_sam}".format(tmp_dir = params.TMP, tmp_sam = tmp_sam), mtable_file = input.mt_table, name2 = wildcards.sample)
+        shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam=input.merged_bam,
+                                                                        tmp_dir=params.TMP,
+                                                                        tmp_sam=tmp_sam))
+        vcf_dict = mtvcf_main_analysis(sam_file="{tmp_dir}/{tmp_sam}".format(tmp_dir=params.TMP,
+                                                                             tmp_sam=tmp_sam),
+                                       mtable_file=input.mt_table, name2=wildcards.sample)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name = get_seq_name(params.ref_mt_fasta)
-        VCF_RECORDS = VCFoutput(vcf_dict, reference = wildcards.ref_genome_mt, seq_name = seq_name, vcffile = output.single_vcf)
-        BEDoutput(VCF_RECORDS, seq_name = seq_name, bedfile = output.single_bed)
+        VCF_RECORDS = VCFoutput(vcf_dict, reference=wildcards.ref_genome_mt,
+                                seq_name=seq_name, vcffile=output.single_vcf)
+        BEDoutput(VCF_RECORDS, seq_name=seq_name, bedfile=output.single_bed)
         # fasta output
         #contigs = pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=in.mt_table)
-        mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
-        gapped_fasta = mt_table_handle2gapped_fasta(mt_table_data = mt_table_data)
-        contigs = gapped_fasta2contigs(gapped_fasta = gapped_fasta)
-        FASTAoutput(vcf_dict = vcf_dict, ref_mt = params.ref_mt_fasta, fasta_out = output.single_fasta, contigs = contigs)
+        mt_table_data = pileup2mt_table(pileup=input.pileup,
+                                        ref_fasta=params.ref_mt_fasta)
+        gapped_fasta = mt_table_handle2gapped_fasta(mt_table_data=mt_table_data)
+        contigs = gapped_fasta2contigs(gapped_fasta=gapped_fasta)
+        FASTAoutput(vcf_dict=vcf_dict, ref_mt=params.ref_mt_fasta,
+                    fasta_out=output.single_fasta, contigs=contigs)
 
 rule index_VCF:
     input:
@@ -494,8 +541,10 @@ rule index_VCF:
 
 rule merge_VCF:
     input:
-        single_vcf_list = lambda wildcards: get_genome_single_vcf_files(analysis_tab, ref_genome_mt = wildcards.ref_genome_mt),
-        index_vcf = lambda wildcards: get_genome_single_vcf_index_files(analysis_tab, ref_genome_mt = wildcards.ref_genome_mt),
+        single_vcf_list = lambda wildcards: get_genome_single_vcf_files(analysis_tab,
+                                                                        ref_genome_mt=wildcards.ref_genome_mt),
+        index_vcf = lambda wildcards: get_genome_single_vcf_index_files(analysis_tab,
+                                                                        ref_genome_mt=wildcards.ref_genome_mt),
         #single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
         #index_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
     output:
