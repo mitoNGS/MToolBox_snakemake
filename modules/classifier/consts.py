@@ -599,15 +599,18 @@ TRS_TBL = {
           }
 """
 TRS_TBL = {
-           'A': 'G',
-           'G': 'A',
-           'C': 'T',
-           'T': 'C',
-			}
+    'A': 'G',
+    'G': 'A',
+    'C': 'T',
+    'T': 'C',
+}
 # aggiunte per gestire le transizioni/trasversioni nella reversione delle mutazioni
 PUR = ('A', 'G')
 PYR = ('T', 'C')
 
-ambiguity={'R':['A','G'],'Y':['C','T'],'S':['G','C'],'W':['A','T'],'K':['G','T'],'M':['A','C'],'B':['C','G','T'],'D':['A','G','T'],'H':['A','C','T'],'V':['A','C','G'],'N':['A','C','G','T']}
+ambiguity = {'R': ['A', 'G'], 'Y': ['C', 'T'], 'S': ['G', 'C'], 'W': ['A', 'T'],
+             'K': ['G', 'T'], 'M': ['A', 'C'], 'B': ['C', 'G', 'T'],
+             'D': ['A', 'G', 'T'], 'H': ['A', 'C', 'T'], 'V': ['A', 'C', 'G'],
+             'N': ['A', 'C', 'G', 'T']}
 
 transversions = {'A': ['C', 'T'], 'C': ['A', 'G'], 'T': ['A', 'G'], 'G': ['C', 'T']}

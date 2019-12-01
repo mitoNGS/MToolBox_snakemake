@@ -1,15 +1,27 @@
 #!/usr/bin/env python
+from typing import List, Optional
+
 import pandas as pd
+
 from modules.mtVariantCaller import get_consensus_single
 
 
-def get_BED_score(VCF_entry, x):
-    """ Return HF expressed as a percentage. """
-    return VCF_entry._sample_indexes[0][1][2][x] * 100
+# TODO: change module name
 
 
-def assignRGB(mut_type):
-    """ Return RGB color of the given mutation. """
+def assign_rgb(mut_type: Optional[str] = None) -> str:
+    """ Return the RGB color code related to the given mutation type.
+
+    Parameters
+    ----------
+    mut_type : str, None
+        Type of mutation [ins, del] (default: None).
+
+    Returns
+    -------
+    str
+        RGB color code.
+    """
     if mut_type == "ins":  # green
         return "0,255,0"
     elif mut_type == "del":  # red
@@ -18,27 +30,89 @@ def assignRGB(mut_type):
         return "0,0,255"
 
 
-def write_bed_header(bed_handle, seq_name="seq"):
-    bed_handle.write(('track name="{s} mt variants" '
-                      'description="{s} mitochondrial variants" '
-                      'viewLimits=0:100 useScore=1 '
-                      'itemRgb="On"\n').format(s=seq_name))
+# TODO: check docstring
+def get_bed_score(entry, x):
+    """ Return HF as a percentage.
+
+    Parameters
+    ----------
+    entry :
+        VCF entry to process?
+    x :
+        Who knows.
+
+    Returns
+    -------
+    clueless
+        Don't know.
+    """
+    return entry._sample_indexes[0][1][2][x] * 100
 
 
-def BEDoutput(VCF_RECORDS, seq_name="seq", bedfile="bed.bed"):
+def create_bed_header(seq_name: str = "seq") -> str:
+    """ Create the header for a BED file.
+
+    Parameters
+    ----------
+    seq_name : str
+        Sequence name?
+
+    Returns
+    -------
+    str
+        Formatted BED header.
+    """
+    header = ('track name="{s} mt variants" '
+              'description="{s} mitochondrial variants" '
+              'viewLimits=0:100 useScore=1 '
+              'itemRgb="On"\n').format(s=seq_name)
+    return header
+
+
+# def write_bed_header(bed_handle, seq_name: str = "seq"):
+#     """ Write the header for the given BED file.
+#
+#     Parameters
+#     ----------
+#     bed_handle :
+#         Input BED file.
+#     seq_name : str
+#         Sequence name?
+#     """
+#     bed_handle.write(('track name="{s} mt variants" '
+#                       'description="{s} mitochondrial variants" '
+#                       'viewLimits=0:100 useScore=1 '
+#                       'itemRgb="On"\n').format(s=seq_name))
+
+
+# TODO: check docstring
+def bed_output(vcf_records: List, seq_name: str = "seq",
+               bedfile: str = "bed.bed"):
+    """ Write a set of VCF records to a BED file.
+
+    Parameters
+    ----------
+    vcf_records : List
+        List of VCF records to write to BED.
+    seq_name : str
+        Sequence name? (default: seq).
+    bedfile : str
+        Output BED file name (default: bed.bed).
+    """
     with open(bedfile, "w") as out_bed:
-        write_bed_header(out_bed, seq_name=seq_name)
-        for r in VCF_RECORDS:
-
+        header = create_bed_header(seq_name=seq_name)
+        out_bed.write(header)
+        for r in vcf_records:
             for x, allele in enumerate(r.ALT):
                 if r.ALT[x] == r.REF[0]:
                     continue
 
                 START = r.POS + (len(r.REF[0]) - 1) - 1
                 END = START + 1
-                SCORE = get_BED_score(r, x)
+                SCORE = get_bed_score(r, x)
 
                 if r.TYPEVAR[x] == 'ins':
+                    # TODO: this goes into the docstring
                     # get starting position:
                     # - get the one from VCF, but it can be long > 1
                     #   since it could be the same for a deletion
@@ -50,7 +124,6 @@ def BEDoutput(VCF_RECORDS, seq_name="seq", bedfile="bed.bed"):
                     NAME = "{}.{}".format(END, allele.replace(r.REF[0], '', 1))
 
                 elif r.TYPEVAR[x] == 'del':
-
                     if START + 1 == END:
                         NAME = "{}d".format(END)
                     else:
@@ -58,17 +131,21 @@ def BEDoutput(VCF_RECORDS, seq_name="seq", bedfile="bed.bed"):
 
                 else:
                     NAME = "{}{}".format(r.POS, r.ALT[x])
-                out_bed.write("\t".join(map(lambda y: str(y),
-                                            [r.CHROM, START, END, NAME, SCORE, ".",
-                                             START, END, assignRGB(r.TYPEVAR[x])])
-                                        ) + "\n")
+
+                str_y = map(lambda y: str(y),
+                            [r.CHROM, START, END, NAME, SCORE, ".", START, END,
+                             assign_rgb(r.TYPEVAR[x])])
+                out_bed.write("\t".join(str_y) + "\n")
 
 
-# TODO: this will become one of the subcommands, other functions will be
-#   stored elsewhere
 # TODO: ref_mt is not used, is it necessary?
-def FASTAoutput(vcf_dict=None, ref_mt=None, contigs=[],
-                fasta_out="fasta.fasta", hf_max=0.8, hf_min=0.2):
+# TODO: better to switch position of hf_max and hf_min
+def fasta_output(vcf_dict: Optional[dict] = None, ref_mt=None,
+                 contigs: Optional[List] = None,
+                 fasta_out: str = "fasta.fasta",
+                 hf_max: float = 0.8, hf_min: float = 0.2):
+    if contigs is None:
+        contigs = []
     mut_events = vcf_dict
     # the following does not make sense as crf is always True,
     # converting to with clause

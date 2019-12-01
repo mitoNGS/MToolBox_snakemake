@@ -5,7 +5,11 @@ import os
 import re
 import resource
 import sys
+from typing import Union
+
 from Bio import SeqIO
+
+from modules.constants import CLEV, COV, DIUPAC, GLEN, MQUAL
 
 
 def softclipping(i):
@@ -28,7 +32,19 @@ def memory_usage_resource():
     return mem
 
 
-def s_encoding(s):
+def s_encoding(s: Union[bytes, str]) -> str:
+    """ Convert a bytes object to a string, or simply return the given string.
+
+    Parameters
+    ----------
+    s : Union[bytes, str]
+        Input element to convert.
+
+    Returns
+    -------
+    str
+        Input element converted to string (or itself if already string).
+    """
     if isinstance(s, bytes):
         return s.decode("utf-8")
     elif isinstance(s, str):
@@ -55,12 +71,8 @@ def get_SAM_header(samfile):
 
 
 def check_tmp_dir(fold):
+    """ Return the TMP env variable content, or the input folder otherwise."""
     return os.getenv("TMP") or fold
-    # if os.getenv("TMP"):
-    #     TMP = os.getenv("TMP")
-    # else:
-    #     TMP = fold
-    # return TMP
 
 
 # TODO: re expressions can be simplified
@@ -68,25 +80,6 @@ def check_tmp_dir(fold):
 r = re.compile("#+")
 r1 = re.compile("""\^.{1}""")
 rr = re.compile("[\+\-]{1}[0-9]+")
-
-# TODO: constants can be located elsewhere
-# variables which should be customisable
-mqual = 25
-clev = 0.80
-cov = 5
-glen = 10
-basename = 'mtDNAassembly'
-sexe = 'samtools'
-sversion = 0
-crf = 0
-crc = 0
-cru = 0
-pout = 0
-normb = 0
-addv = ''
-addd = ''
-hf = 0.8
-tail = 5
 
 
 # TODO: ref is not used anywhere
@@ -127,16 +120,11 @@ def ff(v, l):
     return 0
 
 
-# TODO: this can be simply imported from Bio
-dIUPAC = {'AG': 'R', 'CT': 'Y', 'GC': 'S', 'AT': 'W', 'GT': 'K', 'AC': 'M',
-          'CGT': 'B', 'AGT': 'D', 'ACT': 'H', 'ACG': 'V'}
-
-
 def getIUPAC(f):
     vv = ''.join([i[1] for i in f if i[0] > 0])
-    k = ff(vv, dIUPAC.keys())
+    k = ff(vv, DIUPAC.keys())
     if k != 0:
-        return dIUPAC[k]
+        return DIUPAC[k]
     else:
         return '#'
 
@@ -163,7 +151,7 @@ def freq(d):
         if i[0] == maxv[0][0]:
             maxv.append(i)
     if len(maxv) == 1:
-        if maxv[0][0] >= clev:
+        if maxv[0][0] >= CLEV:
             return maxv[0][1]
         else:
             return getIUPAC(f)
@@ -212,10 +200,8 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
                   "single-contig reference mt genomes."))
     for contig, contig_seq in mt_genome.items():
         for pos, nt in enumerate(contig_seq.seq):
-            # ma dio bestia, come si fa a capire una linea del genere?!
-            # e metteteli dei cazzo di spazi che non stiamo scrivendo gli SMS
-            # mtdna[pos+1] = (nt, ['#',(0,0,0,0),0,0.0,(0,0,0,0,0,0,0,0)])
-            mtdna[pos + 1] = (nt, ['#', (0, 0, 0, 0), 0, 0.0, (0, 0, 0, 0, 0, 0, 0, 0)])
+            mtdna[pos + 1] = (nt, ['#', (0, 0, 0, 0), 0, 0.0,
+                                   (0, 0, 0, 0, 0, 0, 0, 0)])
 
     # open input file
     with open(pileup, "r") as f:
@@ -227,12 +213,13 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
             l = (i.strip()).split('\t')
             pos = int(l[1])
             if len(l) == 6:
+                # TODO: update normS because l[2] is not used anywhere
                 ref, seq, qual = l[2], normS(re.sub(r1, "", l[4]), l[2]), l[5]
                 s, q = '', 0
                 d = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0,
                      'a': 0, 'c': 0, 'g': 0, 't': 0}
                 for j in range(len(seq)):
-                    if seq[j] not in '<>*' and ord(qual[j])-33 >= mqual:
+                    if seq[j] not in '<>*' and ord(qual[j])-33 >= MQUAL:
                         if seq[j] == ".":
                             d[ref.upper()] += 1
                             s += ref.upper()
@@ -256,7 +243,7 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
                 str_nuc = (d['A'], d['C'], d['G'], d['T'],
                            d['a'], d['c'], d['g'], d['t'])
                 cnuc = '#'
-                if len(s) >= cov:
+                if len(s) >= COV:
                     cnuc=mfreq
 
                 mtdna[pos][1][0] = cnuc
@@ -281,7 +268,7 @@ def sam_cov_handle2gapped_fasta(sam_cov_data=None, ref_mt=None):
     ref_seq = ref[list(ref.keys())[0]].seq
     gapped_fasta = ""
     for n in range(len(sam_cov_data)):
-        if sam_cov_data[n+1] >= cov:
+        if sam_cov_data[n+1] >= COV:
             gapped_fasta += ref_seq[n]
         else:
             gapped_fasta += "#"
@@ -297,12 +284,11 @@ def write_mt_table(mt_table_data=None, mt_table_file=None):
             ('Position\tRefNuc\tConsNuc\tCov\tMeanQ\tBaseCount(A,C,G,T)'
              '\tStrandCount(A,C,G,T,a,c,g,t)\n')
         )
+        # TODO: these are not used anywhere
         assb, totb = 0, 0
         cop = 0
         maxCval = 1
         for i in range(len(mt_table_data)):
-            # non lo so se sono normali queste cose dio biricchino
-            # line=[str(i+1),mt_table_data[i+1][0],mt_table_data[i+1][1][0],str(mt_table_data[i+1][1][2]),"%.2f" %(mt_table_data[i+1][1][3]),str(mt_table_data[i+1][1][1])]
             line = [str(i + 1),
                     mt_table_data[i + 1][0],
                     mt_table_data[i + 1][1][0],
@@ -320,9 +306,7 @@ def write_mt_table(mt_table_data=None, mt_table_file=None):
 
 
 def mt_table_handle2gapped_fasta(mt_table_data=None):
-    """
-    Generates gapped fasta (string) from mt_table.
-    """
+    """ Generate gapped fasta (string) from mt_table. """
     assb, totb = 0, 0
     cop = 0
     aseq = ''
@@ -349,13 +333,14 @@ def gapped_fasta2contigs(gapped_fasta=None):
 
         --> contigs = [((1, 19), 'ATGCTGTGATTACGTACTG'), ((30, 42), 'CAGTATGTGACGT')]
 
-    According to a minimum gap length threshold (glen). (1, 19) and (30, 42)
+    According to a minimum gap length threshold (GLEN). (1, 19) and (30, 42)
     indicate the start and end of contigs on the gapped_fasta
     (then, in turn, on the reference mt genome).
-    At the moment, gap length is hardcoded (glen = 10).
+    At the moment, gap length is hardcoded (GLEN = 10).
     """
     # TODO: re expression can be simplified (and imported from above)
     r = re.compile("#+")
+    # TODO: r1 and rr are not used anywhere
     r1 = re.compile("""\^.{1}""")
     rr = re.compile("[\+\-]{1}[0-9]+")
     gaps = []
@@ -363,7 +348,7 @@ def gapped_fasta2contigs(gapped_fasta=None):
     fseq = aseq.replace('#', 'N')
     for i in re.finditer(r, gapped_fasta):
         cc = (i.start() + 1, i.end())
-        if (cc[1]-cc[0])+1 >= glen:
+        if (cc[1]-cc[0])+1 >= GLEN:
             gaps.append(cc)
     contigs = []
     if len(gaps) != 0:
@@ -379,7 +364,7 @@ def gapped_fasta2contigs(gapped_fasta=None):
         contigs.sort()
     else:
         cc = (1, len(aseq))
-        contigs=[(cc, fseq[cc[0]-1:cc[1]+1])]
+        contigs = [(cc, fseq[cc[0]-1:cc[1]+1])]
     return contigs
 
 

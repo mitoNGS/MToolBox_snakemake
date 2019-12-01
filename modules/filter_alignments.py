@@ -2,30 +2,34 @@
 import gzip
 import os
 import time
+
 import pandas as pd
 from sqlalchemy import create_engine
+
 from modules.general import get_SAM_header, memory_usage_resource
 
 
-# TODO: ext is not used anywhere
+# TODO: ext and n_occurrences are not used anywhere
 def read_sam_file_only_readID_chunks_intoSQL(samfile,
                                              n_occurrences=1,
                                              chunksize=100000,
                                              table_name="outS",
                                              ext=".sam.gz"):
+    """ Read a SAM file, then keep a list of IDs of reads occurring
+        <n_occurrences> times.
+        In the specific case of outS.sam and outP.sam files, these are the IDs
+        of the reads we want to keep in the OUT.sam file.
+        Load the entries in a SQL db.
     """
-    Read a SAM file, then keep a list of IDs of reads occurring <n_occurrences> times.
-    In the specific case of outS.sam and outP.sam files, these are the IDs of the reads we want
-    to keep in the OUT.sam file.
-    Load the entries in a SQL db
-    """
+    # TODO: n and n_occurrences are not used anywhere
     n = n_occurrences
 
     # TODO: in-memory db is really good?!
     # Create in-memory SQLite db
     engine = create_engine('sqlite://', echo=False)
     # samfile = path/to/out.sam --> table_name = out
-    table_name = table_name
+    # TODO: what does this mean?
+    # table_name = table_name
 
     # Read the SAM file in chunks
     header_lines, comment_count = get_SAM_header(samfile)
@@ -44,13 +48,15 @@ def read_sam_file_only_readID_chunks_intoSQL(samfile,
         chunk = chunk.query('RNAME != "*"')
         chunk = chunk.drop(columns=['RNAME'])
         chunk.to_sql(table_name, con=engine, if_exists="append")
-        print("{} seconds, memory: {} MB".format(time.time()-elapsed, memory_usage_resource()))
+        print("{} seconds, memory: {} MB".format(time.time() - elapsed,
+                                                 memory_usage_resource()))
 
     return engine, table_name
 
 
 # TODO: ref_mt_fasta is not used anywhere
-def filter_alignments(outmt=None, outS=None, outP=None, OUT=None, ref_mt_fasta=None):
+def filter_alignments(outmt=None, outS=None, outP=None, OUT=None,
+                      ref_mt_fasta=None):
     print("Processing {}".format(outS))
     outS_sql, table_name_S = read_sam_file_only_readID_chunks_intoSQL(outS,
                                                                       table_name="outS")
@@ -98,7 +104,6 @@ def filter_alignments(outmt=None, outS=None, outP=None, OUT=None, ref_mt_fasta=N
             l = sss.readline().decode("utf-8")
         f.write("\t".join(["@RG", "ID:sample", "PL:illumina", "SM:sample"]) + "\n")
 
-
     n_extracted_alignments = 0
     for chunk in tc:
         chunk = chunk.query('RNAME != "*"')
@@ -106,7 +111,8 @@ def filter_alignments(outmt=None, outS=None, outP=None, OUT=None, ref_mt_fasta=N
         print("Chunk, memory: {} MB".format(memory_usage_resource()))
         n_extracted_alignments += len(OUT_chunk)
         # Append alignments to OUT.sam
-        OUT_chunk.to_csv(OUT_uncompressed, mode="a", header=False, sep="\t", index=False)
+        OUT_chunk.to_csv(OUT_uncompressed, mode="a", header=False, sep="\t",
+                         index=False)
 
     print("Compressing OUT.sam file")
     os.system("gzip {}".format(OUT_uncompressed))

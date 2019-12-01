@@ -2,48 +2,63 @@
 
 from modules.classifier import consts
 
+
 class BaseSNP(object):
     start = 0
+
     def __init__(self, start=None):
         if start:
             self.start = abs(int(start))
+
     def __eq__(self, other):
         return self.start == other.start
+
     def __str__(self):
         return "%s(%d)" % (self.mutation_type(), self.start)
+
     def __repr__(self):
         return str(self)
-    #Per valutare se la mutazione è revertita
+
+    # Per valutare se la mutazione è revertita
     def is_reverted(self, other):
         """Deve essere innanzitutto uguale la posizione della mutazione"""
         return self.start == other.start
+
     def mutation_type(self):
         return self.__class__.__name__
+
     def print_snp(self):
         return ''
+
     def print_table(self):
         return (self.start,)
 
+
 class Insertion(BaseSNP):
     seq = ''
+
     def __init__(self, element=None):
         if element:
             pos, seq = element.split('.')
             self.seq = seq.upper()
             super(Insertion, self).__init__(pos)
+
     def __eq__(self, other):
-        if not isinstance(other, Insertion): return False
+        if not isinstance(other, Insertion):
+            return False
         if super(Insertion, self).__eq__(other):
             return self.seq == other.seq
         else:
             return False
+
     def is_reverted(self, other):
         """
         Una inserzione revertita equivale ad una Delezione che ha come inizio
         la posizione dell'inserzione e come fine della delezione la posizione
         d'inserzione a cui va sommata la lunghezza della sequenza inserita
         """
-        if not isinstance(other, Deletion): return False
+        if not isinstance(other, Deletion):
+            return False
         if super(Insertion, self).is_reverted(other):
             if (self.start + len(self.seq)) == other.end:
                 return True
@@ -53,18 +68,23 @@ class Insertion(BaseSNP):
             return False
     #def pprint(self):
     #    return str(self) + " -> " + self.seq
+
     def pprint(self):
         return str(self.start) + "." + self.seq
+
     def print_snp(self):
         return super(Insertion, self).print_snp() + self.seq
+
     def print_table(self):
         return super(Insertion, self).print_table() + ('I', '', self.seq, 0, '')
+
     def __hash__(self):
         return hash((self.mutation_type(), self.start, self.seq))
 
 
 class Deletion(BaseSNP):
     end = 0
+
     def __init__(self, element=None):
         if element:
             if element.find('-') > -1:
@@ -74,12 +94,15 @@ class Deletion(BaseSNP):
                 end = element
             self.end = abs(int(end[:-1]))
             super(Deletion, self).__init__(start)
+
     def __eq__(self, other):
-        if not isinstance(other, Deletion): return False
+        if not isinstance(other, Deletion):
+            return False
         if super(Deletion, self).__eq__(other):
             return self.end == other.end
         else:
             return False
+
     def is_reverted(self, other):
         """
         Una delezione revertita equivale ad una Inserzione che ha come
@@ -90,7 +113,8 @@ class Deletion(BaseSNP):
         Nota: forse è inutile il check della lunghezza. Basterebbe fare
               un check sulla sequenza.
         """
-        if not isinstance(other, Insertion): return False
+        if not isinstance(other, Insertion):
+            return False
         if super(Deletion, self).is_reverted(other):
             if (other.start + len(other.seq)) == self.end:
                 return other.seq == consts.RCRS[self.start-1:self.end]
@@ -100,17 +124,22 @@ class Deletion(BaseSNP):
             return False
     #def pprint(self):
     #    return str(self) + " -> " + consts.RCRS[self.start-1:self.end]
+
     def pprint(self):
         if self.start == self.end:
             return str(self.start) + "d"
         else:
             return str(self.start) + "-" + str(self.end) + "d"
+
     def print_snp(self):
         return super(Deletion, self).print_snp() + 'end: ' + str(self.end)
+
     def print_table(self):
         return super(Deletion, self).print_table() + ('D', '', '', self.end, '')
+
     def __hash__(self):
         return hash((self.mutation_type(), self.start, self.end))
+
 
 class SNP_MixIn(object):
     """
@@ -127,6 +156,7 @@ class SNP_MixIn(object):
                     pass
         return False
     # NEWLY ADDED on Oct18 2013
+
     def pprint(self):
         if hasattr(self, 'ambiguity'):
             return str(self.start) + self.change + '(' + self.ambiguity + ')'
@@ -134,6 +164,7 @@ class SNP_MixIn(object):
             return str(self.start) + self.change
     #def pprint(self):
     #    return str(self) + " " + consts.RCRS[self.start-1] + " -> " + self.change
+
     def is_reverted(self, other):
         """
         La direzione delle due mutazioni è importante. la prima (quella
@@ -153,12 +184,16 @@ class SNP_MixIn(object):
             except AttributeError:
                 pass
         return False
+
     def print_snp(self):
         return super(SNP_MixIn, self).print_snp() + consts.RCRS[self.start-1] + ' -> ' + self.change
+
     def print_table(self):
         return super(SNP_MixIn, self).print_table() + ('S', self.change, '', 0, '')
+
     def __hash__(self):
         return hash((self.mutation_type(), self.start, self.change))
+
 
 class Transition(SNP_MixIn, BaseSNP):
     def __init__(self, element=None, start=0, change=''):
@@ -173,9 +208,11 @@ class Transition(SNP_MixIn, BaseSNP):
         except KeyError:
             print(self.start-1)
             pass
-    #il valore revertito dell'istanza Trs(100, 'A')->Trs(100,'G')
+
+    # il valore revertito dell'istanza Trs(100, 'A')->Trs(100,'G')
     def revert(self):
         return Transition(start=self.start, change=consts.TRS_TBL[self.change])
+
 
 class Transversion(SNP_MixIn, BaseSNP):
     def __init__(self, element=None):
@@ -192,8 +229,10 @@ class Transversion(SNP_MixIn, BaseSNP):
             print(self.start-1)
             pass
 
+
 class Unknown(SNP_MixIn, BaseSNP):
     pass
+
 
 class Retromutation(Transition):
     def __init__(self, element=None):
@@ -203,26 +242,36 @@ class Retromutation(Transition):
         else:
             super(Retromutation, self).__init__()
 
+
 class Haplogroup(object):
     def __init__(self, name, parent=None, pos_list=None):
         self.parent = parent
         self.pos_list = [x for x in pos_list]
         self.name = name
+
     def __contains__(self, item):
         return item in self.pos_list
+
     def __eq__(self, other):
-        if not issubclass(other.__class__, Haplogroup): return False
-        if self.parent == other.parent and self.pos_list == other.pos_list: return True
+        if not issubclass(other.__class__, Haplogroup):
+            return False
+        if self.parent == other.parent and self.pos_list == other.pos_list:
+            return True
         return False
+
     def __ne__(self, other):
         return not self.__eq__(other)
+
     def __str__(self):
         return "%s(%d)" % (self.name, len(self.pos_list))
+
     def __repr__(self):
         return str(self)
+
     def __iter__(self):
         for x in self.pos_list:
             yield x
+
 
 class MetaGroup(Haplogroup):
     def __init__(self, name, parent=None, pos_list=None):
@@ -234,33 +283,44 @@ class MetaGroup(Haplogroup):
         else:
             raise TypeError('Tipo di metagruppo non riconosciuto')
         self.pos_list = pos_list
+
     def _sep(self, groups, sep="'"):
         suffix = groups.split(sep)
         prefix = suffix[0][:-1]
         suffix[0] = suffix[0][-1]
         return prefix, suffix
+
     def _apix_sep(self, groups):
         prefix, suffix = self._sep(groups, "'")
         return tuple(prefix+x for x in suffix)
+
     def _line_sep(self, groups):
         prefix, suffix = self._sep(groups, "-")
         start = consts.CHARS.index(suffix[0])
         end = consts.CHARS.index(suffix[1]) + 1
         return tuple(prefix+consts.CHARS[x] for x in range(start, end))
+
     def __contains__(self, item):
-        #se ci si chiede se un aplogruppo fa parte di questo metagruppo
+        # se ci si chiede se un aplogruppo fa parte di questo metagruppo
+        # TODO: change this
         if isinstance(item, (str, unicode)):
             return item in self.groups
         else:
             #gli altri casi al momento cotemplano esclusivamente gli interi
             return super(MetaGroup, self).__contains__(item)
+
     def __eq__(self, other):
-        if not issubclass(other.__class__, MetaGroup): return False
-        if not super(MetaGroup, self).__eq__(other): return False
-        if self.groups == other.groups: return True
+        if not issubclass(other.__class__, MetaGroup):
+            return False
+        if not super(MetaGroup, self).__eq__(other):
+            return False
+        if self.groups == other.groups:
+            return True
         return False
+
     def __ne__(self, other):
         return not self.__eq__(other)
+
 
 class Retromutated(object):
     """
@@ -268,53 +328,64 @@ class Retromutated(object):
     """
     mutations = []
     start = None
+
     def __init__(self, anc, desc):
         self.mutations = [anc, desc]
         self.start = anc.start
+
     def __eq__(self, other):
         """
         Funziona solo se il termine a sinistra è Retomutated
         """
         return other in self.mutations
+
     def __ne__(self, other):
         return not self.__eq__(other)
+
     def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, ','.join( str(x) for x in self.mutations))
+        return "%s(%s)" % (self.__class__.__name__, ','.join(str(x)
+                                                             for x in self.mutations))
+
     def __repr__(self):
         return str(self)
+
 
 class Sequence(object):
     name = None
     seq = None
+
     def __init__(self, name, seq):
         self.name = name
         self.seq = seq
 
+
 def detect_feature(element):
     value = None
-    #delezione
+    # delezione
     if element[-1] == 'd':
         value = Deletion(element)
-    #inserzione
+    # inserzione
     elif element.find('.') > -1:
         value = Insertion(element)
-    #Trasversione
+    # Trasversione
     elif element[-1].upper() in consts.DNA:
         value = Transversion(element)
-    #Retromutazione
+    # Retromutazione
     elif element[-1] == '!':
         value = Retromutation(element) 
     else:
-        #gli altri casi sono Transizioni
+        # gli altri casi sono Transizioni
         value = Transition(element)
     return value
 
+
 def detect_haplotype(element):
-    #i "meta" aplogruppi contengono i caratteri "-" o "'"
+    # i "meta" aplogruppi contengono i caratteri "-" o "'"
     if "'" in element or "-" in element:
         return MetaGroup
     else:
         return Haplogroup
+
 
 if __name__ == '__main__':
     print("This is the modules.classifier.datatypes module.")
