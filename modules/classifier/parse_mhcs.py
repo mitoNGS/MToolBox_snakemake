@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
 # eventually to be included in consts.py (just for the lulz)
 
 """
@@ -35,10 +38,11 @@ script workflow:
     recode_haplo = {'C':'M', 'E':'M', 'Q':'M', 'Z':'M', 'O':'N', 'S':'N', 'Y':'N', 'P':'R', 'HV':'R0', 'V':'R0'}
 """
 from modules.classifier import NGclassify, datatypes
-import os
 
 # haplogroups not having their own MHCSs that should be matched with a upper level MHCS:
-recode_haplo = {'C':'M', 'E':'M', 'Q':'M', 'Z':'M', 'O':'N', 'S':'N', 'Y':'N', 'P':'R', 'HV':'R0', 'V':'R0'}
+recode_haplo = {'C': 'M', 'E': 'M', 'Q': 'M', 'Z': 'M', 'O': 'N', 'S': 'N',
+                'Y': 'N', 'P': 'R', 'HV': 'R0', 'V': 'R0'}
+
 
 def align_sequence(sequence, rif=None):
     if rif is None:
@@ -49,10 +53,9 @@ def align_sequence(sequence, rif=None):
     print("-"*30)
     return seq_diff
 
+
 def subparse2mhcs(best_haplo, mhcs_dict):
-    # print "best_haplo is", best_haplo
-    # print "best_haplo starts with", best_haplo[0]
-    # print "best_haplo starts with", best_haplo[:2]
+    # TODO: this can be simplified
     if best_haplo[0] == 'H':
         if best_haplo[:2] == 'H1':
             name = 'H1'
@@ -102,7 +105,8 @@ def subparse2mhcs(best_haplo, mhcs_dict):
         seq = None
     return name, seq
 
-def parse2mhcs_dict(infile, mhcs_dict = {}):
+
+def parse2mhcs_dict(infile, mhcs_dict={}):
     """
     Parse the MHCS tab, whose format is
         
@@ -118,6 +122,7 @@ def parse2mhcs_dict(infile, mhcs_dict = {}):
     for row in inhandle:
         mhcs_dict[row[0].replace('_MHCS', '')] = row[1]
     return mhcs_dict
+
 
 def which_mhcs_lite(best_haplo, mhcs_dict):
     """
@@ -139,6 +144,7 @@ def which_mhcs_lite(best_haplo, mhcs_dict):
         # specific criteria for getting MHCS
         name, seq = subparse2mhcs(best_haplo,mhcs_dict)
     return name
+
 
 def which_mhcs(best_haplo, mhcs_dict):
     """
