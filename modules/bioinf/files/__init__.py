@@ -4,10 +4,12 @@ Legge i file contenuti nella directory e inizializza i formati di file
 supportati in lettura/scrittura
 """
 
+# TODO: no buono
+
 import os, imp
 
 plugins = set()
-for plugin in os.listdir(os.path.join(os.path.dirname(__file__),'.')):
+for plugin in os.listdir(os.path.join(os.path.dirname(__file__), '.')):
     if plugin.find('.py') != -1:
         plugins.add(plugin[:plugin.find('.py')])
 plugins.remove('__init__')

@@ -15,6 +15,7 @@ FILE_FASTA = 'fasta'
 FILETYPE = 0
 ERR_FILE_NOT_EXIST = "file %s doesn't exists"
 
+
 def check_fasta(fname):
     """
     Rudimentale controllo, vede se il primo byte è un >
@@ -25,6 +26,7 @@ def check_fasta(fname):
     """
     if not os.path.isfile(fname):
         raise ValueError(ERR_FILE_NOT_EXIST % fname)
+    # TODO: replace using with
     f = open(fname, 'U')
     if f.read(1) == '>':
         f.close()
@@ -32,6 +34,7 @@ def check_fasta(fname):
     else:
         f.close()
         return False
+
 
 def load_fasta(fname, addFunc):
     """
@@ -48,7 +51,7 @@ def load_fasta(fname, addFunc):
         raise ValueError(ERR_FILE_NOT_EXIST % fname)
     cur_name = ""
     last_name = ""
-    extras = {"filetype":FILE_FASTA}
+    extras = {"filetype": FILE_FASTA}
     nseq = 0
     # Better use ''.join(list) than seq+=seq, it's faster
     cur_seq = []
@@ -73,19 +76,19 @@ def load_fasta(fname, addFunc):
             if len(cur_name) > 1:
                 if 'gi_index' in extras:
                     del extras['gi_index']
-                #caso ncbi/ebi fasta
+                # caso ncbi/ebi fasta
                 if cur_name[0][1:] == 'gi':
-                    #per aggiungere l'indice ncbi
+                    # per aggiungere l'indice ncbi
                     extras['gi_index'] = cur_name[1]
-                    #ncbi extended fasta, prendere solo il quarto elemento per il nome
+                    # ncbi extended fasta, prendere solo il quarto elemento per il nome
                     cur_name = cur_name[3].split('.')[0].upper()
                 elif cur_name[0][1:] == 'embl':
                     cur_name = cur_name[1].upper()
                 else:
                     cur_name = cur_name[0][1:]
             else:
-                #fasta classico, prende tutti i caratteri tranne il primo ">"
-                #e il whitespace a destra
+                # fasta classico, prende tutti i caratteri tranne il primo ">"
+                # e il whitespace a destra
                 cur_name = cur_name[0][1:].rstrip()
         else:
             cur_seq.append(line.rstrip())
@@ -94,11 +97,12 @@ def load_fasta(fname, addFunc):
         # portion of the sequence at EOF
         if nseq != 0:
             if cur_name != last_name:
-                addFunc(cur_name,''.join(cur_seq), **extras)
+                addFunc(cur_name, ''.join(cur_seq), **extras)
         # case in which only one sequence is present
         else:
-            addFunc(cur_name,''.join(cur_seq), **extras)
+            addFunc(cur_name, ''.join(cur_seq), **extras)
     f.close()
+
 
 def write_fasta(fname, iterFunc, twidth=TEXT_WRAP_DEFAULT):
     """
@@ -111,6 +115,7 @@ def write_fasta(fname, iterFunc, twidth=TEXT_WRAP_DEFAULT):
     @type twidth: int
     @param twidth: numero massimo di caratteri per riga
     """
+    # TODO: replace using with
     f = open(fname, 'w')
     for name, seq in iterFunc():
         seqLen = len(seq)

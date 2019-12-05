@@ -29,25 +29,26 @@ ToDo:
 
 __deprecated__ = "Composition.getCompositionRange Composition.calcComp"
 
-from modules.bioinf.utils import autoprop
-import modules.bioinf.seqs
 from math import sqrt
 
-#: dizionario contenente i tipi di composizione usati
-comp_types = {'dna':
-                {'A': 0, 'C': 0, 'T': 0, 'G': 0, 'U': 0, '-': 0,
-                 'R': 0, 'Y': 0, 'K': 0, 'M': 0, 'S': 0, 'W': 0,
-                 'B': 0, 'D': 0, 'H': 0, 'V': 0, 'N': 0
-                },
-              'aa':
-                {
-                 'A': 0, 'C': 0, 'D': 0, 'E': 0, 'F': 0, 'G': 0, 'H': 0, 'I': 0,
-                 'K': 0, 'L': 0, 'M': 0, 'N': 0, 'O': 0, 'P': 0, 'Q': 0, 'R': 0,
-                 'S': 0, 'T': 0, 'U': 0, 'V': 0, 'W': 0, 'Y': 0, '-': 0
-                }
-             }
+from modules.bioinf.utils import autoprop
 
-class Composition(object):
+#: dizionario contenente i tipi di composizione usati
+comp_types = {
+    'dna':
+        {'A': 0, 'C': 0, 'T': 0, 'G': 0, 'U': 0, '-': 0,
+         'R': 0, 'Y': 0, 'K': 0, 'M': 0, 'S': 0, 'W': 0,
+         'B': 0, 'D': 0, 'H': 0, 'V': 0, 'N': 0},
+    'aa':
+        {'A': 0, 'C': 0, 'D': 0, 'E': 0, 'F': 0, 'G': 0, 'H': 0, 'I': 0,
+         'K': 0, 'L': 0, 'M': 0, 'N': 0, 'O': 0, 'P': 0, 'Q': 0, 'R': 0,
+         'S': 0, 'T': 0, 'U': 0, 'V': 0, 'W': 0, 'Y': 0, '-': 0}
+}
+
+# TODO: these classes need to be fixed (methods interleaved with statements)
+
+
+class Composition:
     """
     Classe che calcola/contiene la composizione di un allineamento.
     
@@ -55,10 +56,11 @@ class Composition(object):
     
     @attention: L{SeqList} DEVE avere sequenze tuute della stessa lunghezza  
     """
-    __metaclass__ = autoprop #: la mia bella metaclasse (scopiazzata)
+    __metaclass__ = autoprop  # la mia bella metaclasse (scopiazzata)
     
     #: il tipo di composizione da usare
     _comp_type = comp_types['dna']
+
     def _set_comp_type(self, type='dna'):
         """
         Imposta il tipo di composizione, usare una di quelle definite da
@@ -69,7 +71,9 @@ class Composition(object):
                        supportati
         """
         self._comp_type = comp_types[type]
-    _alg = None #: l'allineamento di cui calcolare la composizione
+
+    _alg = None  #: l'allineamento di cui calcolare la composizione
+
     def _set_alg(self, alg):
         """
         Imposta l'allineamento da utilizzare
@@ -79,15 +83,17 @@ class Composition(object):
         @warning: non ci sono controlli sulla validita' di alg al momento
         """
         self._alg = alg
+
     def _get_alg(self):
         """
         Restituisce l'allineamento utilizzato
         """
         return self._alg
     
-    _starts = None #: lista/tupla delle posizioni d'inizio
-    _ends = None #: lista/tupla delle posizioni di fine
-    _seq_lists = None #: lista/tupla contenente gli elenchi di sequenze
+    _starts = None  #: lista/tupla delle posizioni d'inizio
+    _ends = None  #: lista/tupla delle posizioni di fine
+    _seq_lists = None  #: lista/tupla contenente gli elenchi di sequenze
+
     def set_ranges(self, starts=None, ends=None, seq_lists=None):
         """
         Imposta i la/le regione/i su cui calcolare la composizione e le relative
@@ -145,15 +151,15 @@ class Composition(object):
                             elemento, quest'ultima contenente gli indici delle
                             sequenze su cui calcolare la composizione
         """
-        #se entrambi sono None (o vuoti) allora setta dei valori totali
+        # se entrambi sono None (o vuoti) allora setta dei valori totali
         if not (starts and ends):
             self._starts = (0,)
             self._ends = ( self._alg.seq_len, )
         else:
             self._starts = starts
             self._ends = ends
-        #se non sono state specificate le sequenze su cui agire, si sottintende
-        #tutte quelle dell'allineamento
+        # se non sono state specificate le sequenze su cui agire, si sottintende
+        # tutte quelle dell'allineamento
         if not seq_lists:
             if starts:
                 self._seq_lists = ( range(len(self._alg)), ) * len(starts)
@@ -172,7 +178,7 @@ class Composition(object):
             return
         if not (self._starts and self._ends and self._seq_lists):
             self.set_ranges()
-        #mandiamo il calcolo
+        # mandiamo il calcolo
         self._calc_comp()
     calcComp = calc_comp
     
@@ -190,7 +196,7 @@ class Composition(object):
         comp_type = self._comp_type
         self._comp = []
         for start, end, seq_list in zip(starts, ends, seq_lists):
-            #costruisce una lista di valori di composizione vuoti
+            # costruisce una lista di valori di composizione vuoti
             comp = [comp_type.copy() for idx in range(end-start)]
             list_len = len(seq_list)
             for idx in seq_list:
@@ -214,6 +220,7 @@ class Composition(object):
         """
         self._check_comp()
         return [site for site in self]
+
     _doc_comp = 'Get Alignment composition'
     
     def get_comp_range(self, spos=None, epos=None):
@@ -232,14 +239,15 @@ class Composition(object):
         @rtype: generator
         @return: la composizione dell'allineamento
         """
-        #la vecchia regex prevedeva dei controlli spos ed epos se fossero uguali a zero
-        #la situazione cambia leggermente se si usano slice ed i valori direttamente
-        #per cui se sono uguali a 0 si vuole l'intero range che viene dato con [None:None]
+        # la vecchia regex prevedeva dei controlli spos ed epos se fossero uguali a zero
+        # la situazione cambia leggermente se si usano slice ed i valori direttamente
+        # per cui se sono uguali a 0 si vuole l'intero range che viene dato con [None:None]
         self._check_comp()
         if spos == epos == 0:
             spos = epos = None
         for site in self._comp[spos:epos]:
             yield site
+
     getCompositionRange = get_comp_range
 
     def __iter__(self):
@@ -264,6 +272,7 @@ class Composition(object):
             return len(self._comp)
         else:
             return 0
+
     # indexing and slicing
     def __getitem__(self, item):
         if isinstance(item, (int, long)):
@@ -273,6 +282,7 @@ class Composition(object):
         else:
             raise TypeError
 
+
 class NucComposition(Composition):
     """
     Classe che contiene l'inizializzazione del tipo di composizione a B{dna}
@@ -280,7 +290,8 @@ class NucComposition(Composition):
     def __init__(self):
         """L'inizializzazione viene lasciata che non si sa mai"""
         self._set_comp_type('dna')
-    
+
+
 class AaComposition(Composition):
     """
     Classe che contiene l'inizializzazione del tipo di composizione a B{aa}
@@ -288,7 +299,8 @@ class AaComposition(Composition):
     def __init__(self):
         self._set_comp_type('aa')
 
-class Statistics(object):
+
+class Statistics:
     """
     Accetta un oggetto che supporta il protocollo di iterazione, e a ogni
     iterazione restituirà un oggetto L{Sequence} oppure una stringa (che verrà
@@ -296,20 +308,27 @@ class Statistics(object):
     """
     __metaclass__ = autoprop #: la mia bella metaclasse (scopiazzata)
     _stats = {}
+
     def __init__(self, seqs=None, seq_type='dna'):
         self._seqs = seqs
         self._seq_type = seq_type
+
     def _set_comp_type(self, comp_type):
         self._comp_type = comp_type
+
     def _get_comp_type(self):
         return self._comp_type
+
     def _set_seqs(self, seqs):
         self._seqs = seqs
+
     def _get_seqs(self):
         return self._seqs
+
     def calc_len(self):
         self.calc_avg_len()
         self.calc_dev_len()
+
     def calc_avg_len(self):
         """
         Lunghezza media delle sequenze
@@ -319,6 +338,7 @@ class Statistics(object):
             average += len(seq)
         average = average / float(len(self._seqs))
         self._stats['avg_len'] = average
+
     def calc_dev_len(self):
         """
         Calcolo della deviazione standard dalla lunghezza media
@@ -333,9 +353,11 @@ class Statistics(object):
         #il resto dei calcoli
         std_dev = sqrt(sum(values) / len(self._seqs))
         self._stats['dev_len'] = std_dev
+
     def calc_comp(self):
         self.calc_avg_comp()
         self.calc_dev_comp()
+
     def calc_avg_comp(self):
         """
         Composizione media dei nucleotidi
@@ -354,6 +376,7 @@ class Statistics(object):
             if comp[c] > 0:
                 comp[c] = comp[c] / length
         self._stats['avg_comp'] = comp
+
     def calc_dev_comp(self):
         """
         calcolo della deviazione standard della composizione nucleotidica
@@ -374,9 +397,12 @@ class Statistics(object):
             if comp[c] > 0:
                 comp[c] = sqrt(comp[c] / len(self._seqs))
         self._stats['dev_comp'] = comp
+
     def calc_min_len(self):
         self._stats['min_len'] = min([ len(x) for x in self._seqs ])
+
     def calc_max_len(self):
         self._stats['max_len'] = max([ len(x) for x in self._seqs ])
+
     def _get_stats(self):
         return self._stats

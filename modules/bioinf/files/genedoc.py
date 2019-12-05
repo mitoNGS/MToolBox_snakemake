@@ -10,6 +10,7 @@ FILE_GENEDOC = 'genedoc'
 FILETYPE = 0
 ERR_FILE_NOT_EXIST = "file %s doesn't exists"
 
+
 def check_genedoc(fname):
     """
     Rudimentale controllo, vede se i primi 3 byte sono GDC
@@ -27,6 +28,7 @@ def check_genedoc(fname):
     else:
         f.close()
         return False
+
 
 def load_genedoc(fname, addFunc):
     """
@@ -47,20 +49,22 @@ def load_genedoc(fname, addFunc):
     head_gdc = head_info = head_seqs = False
     for line in f:
         # Set block being analysed
-        if line[0:3] == 'GDC': # Don't know what this data represent, will add code if necessary
+        if line[0:3] == 'GDC':  # Don't know what this data represent, will add code if necessary
             head_gdc = True
-        elif line.lstrip()[:5] == 'Name:': # don't know if 1st space is necessary or not, so...
-            head_info = True; head_gdc = False
+        elif line.lstrip()[:5] == 'Name:':  # don't know if 1st space is necessary or not, so...
+            head_info = True
+            head_gdc = False
         elif line[0:2] == '//':
-            head_seqs = True; head_info = False
+            head_seqs = True
+            head_info = False
         # Add info according to block
-        if line == '\n': # skip blank lines
+        if line == '\n':  # skip blank lines
             pass
         elif head_gdc:
-            head.append(line) # just add this data for later
+            head.append(line)  # just add this data for later
         elif head_info:
             tmp = line.split()
-            if tmp[0] == 'Name:': # may be first line after 'GDC'
+            if tmp[0] == 'Name:':  # may be first line after 'GDC'
                 seqs[tmp[1].lower()] = []
         elif head_seqs:
             #  GeneDoc saves gaps as '.'

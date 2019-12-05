@@ -2,12 +2,14 @@
 """
 Non mi ricordo neanche QUANTO funzioni evitare in ogni caso
 """
-
-import os, time, datetime
-import re #amiche mie... salvatemi voi!
+import datetime
+import os
+import re
+import time
 
 FILE_NCBI_FLAT = 'ncbi_flat'
-FILETYPE = 1 #e' una vera e propria entry che contiene molte informazioni
+FILETYPE = 1  # e' una vera e propria entry che contiene molte informazioni
+
 
 def check_ncbi_flat(fname):
     """
@@ -17,6 +19,7 @@ def check_ncbi_flat(fname):
     
     @raise ValueError: nel caso il file non esista
     """
+    # TODO: fix this
     if not os.path.isfile(fname):
         raise ValueError(ERR_FILE_NOT_EXIST % fname)
     f = open(fname, 'U')
@@ -80,6 +83,7 @@ source_rex = {'organism': organism}
 ref_rex    = {'authors': authors, 'title': title, 'journal': journal, 'pubmed': pubmed}
 feat_rex   = {'genes': f_genes, 'info': f_info}
 
+
 def load_ncbi_flat(fname, addFunc):
     """
     Carica un file ncbi flat entry
@@ -101,13 +105,14 @@ def load_ncbi_flat(fname, addFunc):
     feat_info = []
     source_info = []
     origin_info = []
-    seq_info = {'source': source_info, 'reference': ref_info, 'features': feat_info, 'origin': origin_info}
+    seq_info = {'source': source_info, 'reference': ref_info, 'features':
+                feat_info, 'origin': origin_info}
     for line in f:
         match = None
         field = None
         for key, rex in root_rex.iteritems():
             match = rex.search(line)
-            if match != None:
+            if match is not None:
                 field = key
                 in_source = in_ref = in_feat = in_origin = False
                 last_field = ''
@@ -118,19 +123,22 @@ def load_ncbi_flat(fname, addFunc):
             last_feat = source_info[-1]
         elif field == 'reference':
             in_ref = True
-            ref_info.append( {'index': int(match.group(1)), 'covers': (int(match.group(3)), int(match.group(4)))} )
+            ref_info.append({'index': int(match.group(1)),
+                             'covers': (int(match.group(3)),
+                                        int(match.group(4)))})
             last_feat = ref_info[-1]
         elif field == 'features':
             in_feat = True
             last_feat = last_field = None
         elif field == 'origin':
             in_origin = True
-        #non vanno su altre righe
+        # non vanno su altre righe
         elif field == 'locus':
-            #convertire la data in oggetto datetime e controllare che fare di 'bp'
+            # convertire la data in oggetto datetime e controllare che fare di 'bp'
             seq_info[field] = {'name': match.group(1), 'length': int(match.group(2)),
                                'seqtype': match.group(4), 'molecule': match.group(5),
-                               'date': datetime.date(*(time.strptime(match.group(7),'%d-%b-%Y')[:3]))}
+                               'date': datetime.date(*(time.strptime(match.group(7),
+                                                                     '%d-%b-%Y')[:3]))}
         elif field == 'definition':
             seq_info[field] = match.group(1)
         elif field == 'accession':
@@ -186,7 +194,8 @@ def load_ncbi_flat(fname, addFunc):
                             break
                     if field == 'genes':
                         pos = match.group(4).split(',')
-                        feat_info.append( {'pos':pos, 'type':match.group(1), 'complement': True if match.group(2) else False})
+                        feat_info.append({'pos': pos, 'type': match.group(1),
+                                          'complement': True if match.group(2) else False})
                         last_feat = feat_info[-1]
                     elif field == 'info':
                         if match.group(2).isdigit():
@@ -210,4 +219,5 @@ def load_ncbi_flat(fname, addFunc):
                 feat_info = []
                 source_info = []
                 origin_info = []
-                seq_info = {'source': source_info, 'reference': ref_info, 'features': feat_info, 'origin': origin_info}
+                seq_info = {'source': source_info, 'reference': ref_info,
+                            'features': feat_info, 'origin': origin_info}

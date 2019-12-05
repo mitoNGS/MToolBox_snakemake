@@ -7,12 +7,14 @@ i file scritti non presenta nell'header il numero di sequenze contenute
 nel file, per cui potrebbe presentare problemi nel caricamento in un altro
 programma
 """
-import os, re
+import os
+import re
 
 FILE_PHYLIP = 'phylip'
 FILETYPE = 0
 ERR_FILE_NOT_EXIST = "file %s doesn't exists"
-RE_HEADER=re.compile("(\d+) +(\d+)")
+RE_HEADER = re.compile("(\d+) +(\d+)")
+
 
 def check_phylip(fname):
     """
@@ -54,7 +56,7 @@ def load_phylip(fname, addFunc):
     f = open(fname, 'U')
     header = f.readline()
     tmp = RE_HEADER.match(header)
-    #inutilizzati
+    # inutilizzati
     tot_seq = tmp.group(1)
     tot_len = tmp.group(2)
     # main loop to read file's sequences into an Alignment Object
@@ -62,9 +64,10 @@ def load_phylip(fname, addFunc):
         name = line[:10].rstrip(' ')
         seq = line[10:].strip().upper()
         addFunc(name, seq, **extras)
-        #inutilizzato
+        # inutilizzato
         nseq += 1
     f.close()
+
 
 def write_phylip(fname, iterFunc):
     """

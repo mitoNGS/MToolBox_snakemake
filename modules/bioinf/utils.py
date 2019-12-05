@@ -1,19 +1,15 @@
 # coding=utf8
-from random import choice, seed, randint, sample
+from random import choice, randint, sample
 
 #: tabella usata per le transizioni
-trs_tbl = {
-           'A': 'G',
-           'G': 'A',
-           'C': 'T',
-           'T': 'C'
-          }
+trs_tbl = {'A': 'G', 'G': 'A', 'C': 'T', 'T': 'C'}
 
 #: purine e pirimidine
-pur = ('A','G')
-pyr = ('T','C')
+pur = ('A', 'G')
+pyr = ('T', 'C')
 
 __deprecated__ = "genRandSeq"
+
 
 class autoprop(type):
     """
@@ -34,7 +30,8 @@ class autoprop(type):
             doc  = getattr(cls, '_doc_%s' % name, None)
             setattr(cls, name, property(fget=fget, fset=fset, doc=doc))
 
-def gen_rand_seq(length, comp={'A':0.25, 'G':0.25, 'C':0.25, 'T':0.25}):
+
+def gen_rand_seq(length, comp=None):
     """
     Genera una sequenza nucleotidica casuale
     
@@ -55,18 +52,21 @@ def gen_rand_seq(length, comp={'A':0.25, 'G':0.25, 'C':0.25, 'T':0.25}):
     @note: I valori di A, C, T, G sono in percentuale
     @note: Non viene fatto un controllo, ma la loro somma deve dare 1
     """
-
+    if comp is None:
+        comp = {'A': 0.25, 'G': 0.25, 'C': 0.25, 'T': 0.25}
     nuc = ''.join([ str(x) * int(100 * comp[x]) for x in comp])
     #nuc = ['A'] * int(100 * A) + ['C'] * int(100 * C) +\
           #['T'] * int(100 * T) + ['G'] * int(100 * G)
     #inutile?
     #seed(tuple(nuc*randint(0,randint(3000, 15000))))
     seq = []
-    for x in xrange(0, length):
+    for x in range(0, length):
         seq.append(choice(nuc))
     return ''.join(seq)
 
+
 genRandSeq = gen_rand_seq
+
 
 def rand_seq_nuc(seq, sost_rate=0.25, trs_rate=0.75):
     """
@@ -90,12 +90,12 @@ def rand_seq_nuc(seq, sost_rate=0.25, trs_rate=0.75):
     @note: le ambiguità non vengono cambiate
     """
     
-    #trasformarla in lista ci permette di sostituire velocemente i valori
-    #nel caso seq sia una stringa 
+    # trasformarla in lista ci permette di sostituire velocemente i valori
+    # nel caso seq sia una stringa
     seq = list(seq)
     
-    #il totale delle sostituzioni da eseguire
-    sost = set(sample(xrange(len(seq)), int(len(seq)*sost_rate)))
+    # il totale delle sostituzioni da eseguire
+    sost = set(sample(range(len(seq)), int(len(seq)*sost_rate)))
     trs = set(sample(sost, int(len(sost)*trs_rate)))
     tsv = sost - trs
     
@@ -112,6 +112,7 @@ def rand_seq_nuc(seq, sost_rate=0.25, trs_rate=0.75):
             seq[idx] = choice(pur)
     
     return ''.join(seq)
+
 
 def rand_seq_del(seq, del_rate=0.05, del_char='-'):
     """
@@ -132,7 +133,7 @@ def rand_seq_del(seq, del_rate=0.05, del_char='-'):
     @return: sequenza di nucleotidi
     """
     
-    del_pos = sample(xrange(len(seq)), int(len(seq)*del_rate))
+    del_pos = sample(range(len(seq)), int(len(seq)*del_rate))
     
     seq = list(seq)
     
@@ -147,7 +148,9 @@ def rand_seq_del(seq, del_rate=0.05, del_char='-'):
     
     return ''.join(seq).replace('#','')
 
-def rand_alg(alg_len, seq_len, del_rate=None, gen_rand_seq_args=None, rand_seq_nuc_args=None):
+
+def rand_alg(alg_len, seq_len, del_rate=None, gen_rand_seq_args=None,
+             rand_seq_nuc_args=None):
     """
     Crea un allineamento casuale, di cui la prima è quella generata da L{gen_rand_seq},
     mentre le altre hanno due passaggi: prima rand_seq_nuc e poi L{rand_seq_del}
@@ -175,10 +178,10 @@ def rand_alg(alg_len, seq_len, del_rate=None, gen_rand_seq_args=None, rand_seq_n
     else:
         seq = gen_rand_seq(seq_len)
     
-    #restituiamo la prima come riferimento
+    # restituiamo la prima come riferimento
     yield seq
     
-    for x in xrange(alg_len - 1):
+    for _ in range(alg_len - 1):
         if rand_seq_nuc_args:
             seq_new = rand_seq_nuc(seq, **rand_seq_nuc_args)
         else:
@@ -186,6 +189,7 @@ def rand_alg(alg_len, seq_len, del_rate=None, gen_rand_seq_args=None, rand_seq_n
         if del_rate:
             seq_new = rand_seq_del(seq_new, del_rate)
         yield seq_new
+
 
 def rand_list(list_len, seq_max_len, seq_min_len=None, gen_rand_seq_args=None):
     """
@@ -197,7 +201,7 @@ def rand_list(list_len, seq_max_len, seq_min_len=None, gen_rand_seq_args=None):
     l'altro parametro è un dizionario che passa la composizione nucletidica
     alla funzione gen_rand_seq
     """
-    for x in xrange(list_len):
+    for _ in range(list_len):
         
         if gen_rand_seq_args:
             seq = gen_rand_seq(seq_max_len, gen_rand_seq_args)
@@ -214,7 +218,8 @@ SNP_TRS = 0
 SNP_TSV = 1
 SNP_DEL = 2
 SNP_INS = 3
-TRANSITIONS = {'A':'G','G':'A','C':'T','T':'C'}
+TRANSITIONS = {'A': 'G', 'G': 'A', 'C': 'T', 'T': 'C'}
+
 
 class BadNucleotideError(Exception):
     """
@@ -223,6 +228,7 @@ class BadNucleotideError(Exception):
     In pratica quando il nucleotide da controllare è un'ambiguità
     """
     pass
+
 
 def snp_to_seq(ref, snps):
     """
@@ -263,10 +269,10 @@ def snp_to_seq(ref, snps):
     for pos, ctype, data in snps:
         if ctype == SNP_TRS:
             if data:
-                #nel caso sia stato specificato un cambio
+                # nel caso sia stato specificato un cambio
                 ref[pos] = data
             else:
-                #cambio automatico
+                # cambio automatico
                 try:
                     ref[pos] = TRANSITIONS[ref[pos]]
                 except KeyError:
@@ -280,4 +286,3 @@ def snp_to_seq(ref, snps):
         elif ctype == SNP_INS:
             ref.insert(pos, data.upper())
     return ''.join(ref)
-        
