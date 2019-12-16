@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 import click
 import collections
 import copy
@@ -6,9 +7,8 @@ import vcf
 
 
 def to_list(obj):
-    """
-    If there is only one variant allele, the vcf module will parse it as
-    string, not list. This function converts these instances in lists.
+    """ If there is only one variant allele, the vcf module will parse it as
+        string, not list. This function converts these instances to lists.
     """
     if not isinstance(obj, list):
         obj = [obj]

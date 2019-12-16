@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 import bz2
 import gzip
 import os
@@ -8,25 +9,26 @@ import sys
 from typing import Union
 
 from Bio import SeqIO
+from Bio.Seq import reverse_complement
 
 from modules.constants import CLEV, COV, DIUPAC, GLEN, MQUAL
 
 
-def softclipping(i):
-    lseq = len(i[9])
-    sc = re.findall(r'(\d+)S', i[5])
-    sc = map(lambda x: int(x), sc)
-    sc = sum(sc)
-    return lseq, sc
+def memory_usage_resource() -> float:
+    """ Get the current memory usage.
 
+    Returns
+    -------
+    mem : float
+        The memory usage in MB.
 
-def memory_usage_resource():
-    """ Function to get memory usage (in MB).
+    Notes
+    -----
     Source: http://fa.bianp.net/blog/2013/different-ways-to-get-memory-consumption-or-lessons-learned-from-memory_profiler/
     """
     rusage_denom = 1024.
     if sys.platform == 'darwin':
-        # ... it seems that in OSX the output is different units ...
+        # it seems that in OSX the output is different units
         rusage_denom = rusage_denom * rusage_denom
     mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
     return mem
@@ -49,6 +51,17 @@ def s_encoding(s: Union[bytes, str]) -> str:
         return s.decode("utf-8")
     elif isinstance(s, str):
         return s
+    else:
+        raise TypeError("input not recognised (need to provide"
+                        " a str or bytes instance)")
+
+
+def softclipping(i):
+    lseq = len(i[9])
+    sc = re.findall(r'(\d+)S', i[5])
+    sc = map(lambda x: int(x), sc)
+    sc = sum(sc)
+    return lseq, sc
 
 
 def get_SAM_header(samfile):
@@ -71,7 +84,7 @@ def get_SAM_header(samfile):
 
 
 def check_tmp_dir(fold):
-    """ Return the TMP env variable content, or the input folder otherwise."""
+    """ Return the TMP env variable content, or the input folder otherwise. """
     return os.getenv("TMP") or fold
 
 
@@ -127,13 +140,6 @@ def getIUPAC(f):
         return DIUPAC[k]
     else:
         return '#'
-
-
-def rev(seq):
-    # TODO: this can be simply imported from Bio
-    d = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'N'}
-    s = ''.join([d[x] for x in seq])
-    return s[::-1]
 
 
 def freq(d):
@@ -416,18 +422,18 @@ def sam2fastq(samfile=None, outmt1=None, outmt2=None, outmt=None,
                 if len(ll) == 1:
                     strand, seq, qual = int(ll[0][1]) & 16, ll[0][9], ll[0][10]
                     if strand == 16:
-                        seq, qual = rev(seq), qual[::-1]
+                        seq, qual = reverse_complement(seq), qual[::-1]
                     entry = '\n'.join(['@' + ll[0][0], seq, '+', qual]) + '\n'
                     mtoutfastq.write(entry.encode("utf-8"))
                 else:
                     strand, seq, qual = int(ll[0][1]) & 16, ll[0][9], ll[0][10]
                     if strand == 16:
-                        seq, qual = rev(seq), qual[::-1]
+                        seq, qual = reverse_complement(seq), qual[::-1]
                     entry = '\n'.join(['@' + ll[0][0], seq, '+', qual]) + '\n'
                     mtoutfastq1.write(entry.encode("utf-8"))
                     strand, seq, qual = int(ll[1][1]) & 16, ll[1][9], ll[1][10]
                     if strand == 16:
-                        seq, qual = rev(seq), qual[::-1]
+                        seq, qual = reverse_complement(seq), qual[::-1]
                     entry = '\n'.join(['@' + ll[1][0], seq, '+', qual]) + '\n'
                     mtoutfastq2.write(entry.encode("utf-8"))
                 # create new dics with new read ID
