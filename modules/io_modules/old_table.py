@@ -1,9 +1,5 @@
-# encoding=utf8
-
-# import sys
-# if '..' not in sys.path:
-#     sys.path.append('..')
-
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 from modules.classifier import tree
 
 

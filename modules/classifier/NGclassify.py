@@ -58,7 +58,7 @@ def get_snps(rif, inc, start_pos=0, gap='-'):
                 # SNP
                 # Transizione
                 if ((x in consts.PUR and y in consts.PUR) or
-                    (x in consts.PYR and y in consts.PYR)):
+                        (x in consts.PYR and y in consts.PYR)):
                     mut = datatypes.Transition(pos_a-n_gaps+1)
                     # Nel caso il genoma di riferimento non sia Anderson
                     mut.change = y
@@ -76,7 +76,7 @@ def get_snps(rif, inc, start_pos=0, gap='-'):
                             # it's not equal to ref sequence
                             if i != x:
                                 if ((x in consts.PUR and i in consts.PUR) or
-                                    (x in consts.PYR and i in consts.PYR)):
+                                        (x in consts.PYR and i in consts.PYR)):
                                     mut = datatypes.Transition(pos_a-n_gaps+1)
                                     # Nel caso il genoma di riferimento non sia Anderson
                                     mut.change = i

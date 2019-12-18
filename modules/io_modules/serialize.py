@@ -1,20 +1,18 @@
-# encoding=utf8
-
-import pickle as cPickle
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+import pickle
 
 from modules.classifier import datatypes
-# if '..' not in sys.path:
-#     sys.path.append('..')
 
 
 def save_tree_to_file(tree_class, fname):
     f = open(fname, 'wb')
-    cPickle.dump(tree_class, f, cPickle.HIGHEST_PROTOCOL)
+    pickle.dump(tree_class, f, pickle.HIGHEST_PROTOCOL)
 
 
 def load_tree_from_file(fname):
     f = open(fname, 'rb')
-    return cPickle.load(f)
+    return pickle.load(f)
 
 
 def load_fasta_file(fname):

@@ -1,35 +1,40 @@
-# encoding=utf8
-import sys
-#print sys.path
-# TODO: these modules??
-import consts, datatypes, subprocess, parse_marge #, io_modules.serialize, sys
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 from collections import OrderedDict
+import subprocess
+import sys
 
-rsrs_seq = consts.RCRS # actually it's RSRS
+from .consts import ambiguity, DNA, PUR, PYR, RCRS
+from .datatypes import (
+    Deletion, Insertion, Sequence, Transition, Transversion, Unknown
+)
+from .parse_mhcs import which_mhcs_lite
+
+rsrs_seq = RCRS  # actually it's RSRS
+
 
 def get_snps_from_vcf_dict(vcf_dict, ref_seq=rsrs_seq):
     mutations = []
     for snp in vcf_dict:
         if snp[-1] == 'del':
             # [8270, [8271, 8272, 8273, 8274, 8275, 8276, 8277, 8278, 8279], 'del']
-            mut = datatypes.Deletion("%d-%dd" % (snp[1][0], snp[1][-1]))
+            mut = Deletion("%d-%dd" % (snp[1][0], snp[1][-1]))
         elif snp[-1] == 'mism':
             # [73, ['G'], 'mism'] ma in realtà vorrei
             # [73, ['A', 'G'], 'mism'] dove 'A' sarebbe il nt in RSRS, 'G' la mutazione
             ref = ref_seq[snp[0]-1]
             var = snp[1][0]
-            # print snp[0]-1, ref, var
-            # print (ref in consts.PUR and var in consts.PUR) or (ref in consts.PYR and var in consts.PYR)
-            if (ref in consts.PUR and var in consts.PUR) or (ref in consts.PYR and var in consts.PYR):
-                mut = datatypes.Transition(snp[0])
-            elif (ref in consts.PUR and var in consts.PYR) or (ref in consts.PYR and var in consts.PUR):
-                mut = datatypes.Transversion("%d%c" % (snp[0], var))
+
+            if (ref in PUR and var in PUR) or (ref in PYR and var in PYR):
+                mut = Transition(snp[0])
+            elif (ref in PUR and var in PYR) or (ref in PYR and var in PUR):
+                mut = Transversion("%d%c" % (snp[0], var))
             else:
-                mut = datatypes.Unknown(snp[0])
+                mut = Unknown(snp[0])
                 mut.change = var
         elif snp[-1] == 'ins':
             # [309, ['CCT'], 'ins']
-            mut = datatypes.Insertion("%d.%s" % (snp[0], snp[1]))
+            mut = Insertion("%d.%s" % (snp[0], snp[1]))
             pass
         mutations.append(mut)
     return mutations
@@ -48,37 +53,34 @@ def get_snps(rif, inc, start_pos=0, gap='-'):
             if x != gap and y != gap:
                 # SNP
                 # Transizione
-                if (x in consts.PUR and y in consts.PUR) or (x in consts.PYR and y in consts.PYR):
-                    mut = datatypes.Transition(pos_a-n_gaps + 1)
-                    #Nel caso il genoma di riferimento non sia Anderson
+                if (x in PUR and y in PUR) or (x in PYR and y in PYR):
+                    mut = Transition(pos_a-n_gaps + 1)
+                    # Nel caso il genoma di riferimento non sia Anderson
                     mut.change = y
-                    #mut.refsequence = rif
                     mutations.append(mut)
                 # Trasversione
-                elif (x in consts.PUR and y in consts.PYR) or (x in consts.PYR and y in consts.PUR):
-                    mut = datatypes.Transversion("%d%c" % (pos_a-n_gaps + 1, y))
-                    #mut.refsequence = rif
+                elif (x in PUR and y in PYR) or (x in PYR and y in PUR):
+                    mut = Transversion("%d%c" % (pos_a-n_gaps + 1, y))
                     mutations.append(mut)
                 # Ambiguity
-                elif y in consts.ambiguity.keys():
-                    for i in consts.ambiguity[y]:
-                        if i != x: # retain mutation defined by ambiguity only if it's not equal to ref sequence
-                            if (x in consts.PUR and i in consts.PUR) or (x in consts.PYR and i in consts.PYR):
-                                mut = datatypes.Transition(pos_a-n_gaps + 1)
-                                #Nel caso il genoma di riferimento non sia Anderson
+                elif y in ambiguity.keys():
+                    for i in ambiguity[y]:
+                        # retain mutation defined by ambiguity only if it's
+                        # not equal to ref sequence
+                        if i != x:
+                            if (x in PUR and i in PUR) or (x in PYR and i in PYR):
+                                mut = Transition(pos_a - n_gaps + 1)
+                                # Nel caso il genoma di riferimento non sia Anderson
                                 mut.change = i
                                 mut.ambiguity = y
-                                #mut.refsequence = rif
                                 mutations.append(mut)
-                            elif (x in consts.PUR and i in consts.PYR) or (x in consts.PYR and i in consts.PUR):
-                                mut = datatypes.Transversion("%d%c" % (pos_a-n_gaps + 1, i))
+                            elif (x in PUR and i in PYR) or (x in PYR and i in PUR):
+                                mut = Transversion("%d%c" % (pos_a-n_gaps + 1, i))
                                 mut.ambiguity = y
-                                #mut.refsequence = rif
                                 mutations.append(mut)
                 # Non identificabile: N o altre ambiguità
                 else:
-                    mut = datatypes.Unknown(pos_a-n_gaps+1)
-                    #mut.refsequence = rif
+                    mut = Unknown(pos_a-n_gaps+1)
                     mut.change = y
                     mutations.append(mut)
                 
@@ -93,8 +95,8 @@ def get_snps(rif, inc, start_pos=0, gap='-'):
                     x = rif[pos_a]
                     y = inc[pos_a]
                 except IndexError:
-                    # caso limite: l'inserzione e' di lunghezza 1 alla fine dell'allineamento
-                    #print "pos_a:", pos_a, "n_gaps:", n_gaps, "len(rif)", len(rif), "x:", x, "y:", y, "len(inc)", len(inc)
+                    # caso limite: l'inserzione e' di lunghezza 1 alla fine
+                    # dell'allineamento
                     x = rif[pos_a-1]
                     y = inc[pos_a-1]
                 while pos_a < alg_len-1 and ((x == gap and y != gap) or (x == y == gap)):
@@ -106,8 +108,7 @@ def get_snps(rif, inc, start_pos=0, gap='-'):
                     y = inc[pos_a]
                 if pos_a == alg_len - 1:
                     pos_a += 1
-                mut = datatypes.Insertion("%d.%s" % (pos_i, ''.join(ins_seq)))
-                #mut.refsequence = rif
+                mut = Insertion("%d.%s" % (pos_i, ''.join(ins_seq)))
                 mutations.append(mut)
             elif y == gap and x != gap:
                 # Delezione
@@ -122,14 +123,14 @@ def get_snps(rif, inc, start_pos=0, gap='-'):
                         x = rif[pos_a]
                         y = inc[pos_a]
                     if pos_a == alg_len - 1: pos_a += 1
-                mut = datatypes.Deletion("%d-%dd" % (pos_d, pos_a-n_gaps))
+                mut = Deletion("%d-%dd" % (pos_d, pos_a-n_gaps))
                 mutations.append(mut)
         else:
             # accrocchio per permettere di associare quelle riconosciute come retromutazioni nel'albero con quelle che poi in rCRS sono presenti
-            #mutations.append(datatypes.Retromutation("%d!" % (pos_a-n_gaps+1,)))
             pos_a += 1
             # basta controllarne uno, si sa che sono uguali
-            if x == gap: n_gaps += 1
+            if x == gap:
+                n_gaps += 1
     return mutations
 
 
@@ -148,15 +149,14 @@ def compare_mutations(h_pos_list, s_pos_list, start=None, end=None):
     missing_haplo_pos = sorted([x for x in h_pos_list if x not in s_pos_list],
                                key=lambda x: x.start)
     # cerca poi se NON ci sono le retromutazioni nella lista
-    #matched += sum(1 for x in [y for y in h_pos_list if isinstance(y, datatypes.Retromutation)] if x not in s_pos_list)
-    
-    #------accrocchio da modificare
-    #eliminare dal conto le posizioni retromutate
-    #bisogna tener conto delle posizioni Retromutated
-    #retrom = [y for y in h_pos_list if isinstance(y, (datatypes.Retromutation, datatypes.Retromutated))]
-    #mut_pos = [x.start for x in s_pos_list]
-    #matched += sum(1 for x in retrom if x.start not in mut_pos)
-    #--------------
+
+    # ------accrocchio da modificare
+    # eliminare dal conto le posizioni retromutate
+    # bisogna tener conto delle posizioni Retromutated
+    # retrom = [y for y in h_pos_list if isinstance(y, (datatypes.Retromutation, datatypes.Retromutated))]
+    # mut_pos = [x.start for x in s_pos_list]
+    # matched += sum(1 for x in retrom if x.start not in mut_pos)
+    # --------------
 
     return matched, raw_len, len(h_pos_list), missing_haplo_pos
 
@@ -193,17 +193,16 @@ def align_sequences(rif, inc):  # muscle
     alg_split = alg.split('>')[1:]
     rif_alg = ''.join(alg_split[0].split()[1:]).upper()
     inc_alg = ''.join(alg_split[1].split()[1:]).upper()
-    return (alg, datatypes.Sequence(rif.name, rif_alg),
-            datatypes.Sequence(inc.name, inc_alg))
+    return (alg, Sequence(rif.name, rif_alg), Sequence(inc.name, inc_alg))
 
-#Alcune Sequenze non Vengono correttamente allineate da Muscle, sarebbe da implementare anche mafft?
-#def align_sequences_mafft(rif, inc):
-#    mafft = subprocess.Popen(['mafft'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
-#    alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq, inc.name, inc.seq))[0]
-#    alg_split = alg.split('>')[1:]
-#    rif_alg = ''.join(alg_split[0].split()[1:]).upper()
-#    inc_alg = ''.join(alg_split[1].split()[1:]).upper()
-#    return alg, datatypes.Sequence(rif.name, rif_alg), datatypes.Sequence(inc.name, inc_alg)
+# Alcune Sequenze non Vengono correttamente allineate da Muscle, sarebbe da implementare anche mafft?
+# def align_sequences_mafft(rif, inc):
+#     mafft = subprocess.Popen(['mafft'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+#     alg = muscle.communicate(">%s\n%s\n>%s\n%s\n" % (rif.name, rif.seq, inc.name, inc.seq))[0]
+#     alg_split = alg.split('>')[1:]
+#     rif_alg = ''.join(alg_split[0].split()[1:]).upper()
+#     inc_alg = ''.join(alg_split[1].split()[1:]).upper()
+#     return alg, datatypes.Sequence(rif.name, rif_alg), datatypes.Sequence(inc.name, inc_alg)
 
 
 # TODO: check if these are class or instance variables
@@ -222,8 +221,8 @@ class SequenceDiff(object):
 
     def __init__(self, mit=True):
         if mit:
-            self.ignore_position.extend([datatypes.Deletion("3107d"),
-                                         datatypes.Deletion("523-524d")])
+            self.ignore_position.extend([Deletion("3107d"),
+                                         Deletion("523-524d")])
 
     def gen_diff(self, rif=None, obj=None):
         # temporaneo, per i casi in cui viene dato a parte l'allineamento
@@ -238,17 +237,14 @@ class SequenceDiff(object):
                     del self.diff_list[self.diff_list.index(i)]
                     print('_'*30)
                     print("**** Deleting SNP: %s" % i.pprint())
-            #for pos in self.diff_list:
-            #    if pos.start == self.ignore_position.start: print "ok raw"
-            #    if pos == self.ignore_position: print "ok"
 
     def find_segment(self):
         if not self.rif is None:
-            b_idx = min(self.obj.seq.find(x) for x in consts.DNA)
+            b_idx = min(self.obj.seq.find(x) for x in DNA)
             # funge fino a quando il blocco non contiene dei gap
             #e_idx = self.obj.seq.find('-', b_idx)
             tmp = ''.join(reversed(self.obj.seq))
-            e_idx = len(self.obj.seq) - min(tmp.find(x) for x in consts.DNA)
+            e_idx = len(self.obj.seq) - min(tmp.find(x) for x in DNA)
             b_idx = len(self.rif.seq[:b_idx].replace('-', ''))
             e_idx = len(self.rif.seq[:e_idx].replace('-', ''))
             self.start = b_idx
@@ -304,12 +300,13 @@ class HaplogroupStats(object):
 
 class Classify(object):
     """
-    Problema coi segmenti. Le delezioni che cadono in quel punto non vengono considerate (non di interesse)
+    Problema coi segmenti. Le delezioni che cadono in quel punto non vengono
+    considerate (non di interesse)
     """
-    #TODO
-    #controllare il problema dell'inizializzazione di questo tipo di variabili in una class
-    #stat_list = []
-    #haplo_stats = {}
+    # TODO
+    # controllare il problema dell'inizializzazione di questo tipo di variabili in una class
+    # stat_list = []
+    # haplo_stats = {}
     # MEMO
     # matched: Nph
     # tot: Nph_exp
@@ -331,13 +328,10 @@ class Classify(object):
             self.haplo_stats[haplo_name] = (matched, tot, raw_tot)
             self.stat_list.append(HaplogroupStats(haplo_name, matched, tot, raw_tot))
             self.missing_haplo_pos[haplo_name] = missing_haplo_pos
-        # else:
-            # print haplo_name, "got no match"
 
     def classify_by_tree(self, haplo_tree, seq_diff, filt=True):
         """Classifica un SeqDiff usando un albero creato in precedenza"""
         for haplo_name in haplo_tree:
-            #print haplo_name
             if filt:
                 h_pos_list = haplo_tree.get_filtered_positions(haplo_name)
             else:
@@ -347,16 +341,11 @@ class Classify(object):
 
     def classify90(self):
         """Generate haplo_stats for which Nph/Nph_exp > 0.89, sorted for decreasing P_Hg"""
-        # test code, start
-        # print dict((key, value) for key, value in self.haplo_stats.iteritems())
-        # test code, end
         self.haplo_stats90 = dict((key, value) for key, value in self.haplo_stats.iteritems()
                                   if value[0]/float(value[1]) > 0.89)
-        # print "haplo_stats90 first stage: ", self.haplo_stats90
         self.haplo_stats90 = OrderedDict(sorted(self.haplo_stats90.items(),
                                                 key=lambda x: x[1][0]/float(x[1][1]),
                                                 reverse=True))
-        # print "haplo_stats90 second stage: ", self.haplo_stats90
         return self.haplo_stats90
 
     def best_predictions(self):
@@ -368,11 +357,8 @@ class Classify(object):
         outfile.write("Sequence Name,Predicted Haplogroup,N,Nph,Nph_tot,Nph_exp,P_Hg\n")
         seq_name = self.seq_diff.obj.name
         seq_snps = len(self.seq_diff.diff_list)
-        #print seq_name, seq_snps
         for haplo in self.haplo_stats:
             count, total, raw_tot = self.haplo_stats[haplo]
-            #print haplo, count, total, raw_tot
-            #print self.haplo_stats[haplo]
             if total > 0:
                 outfile.write("%s,%s,%d,%d,%d,%d,%.3f\n" % (seq_name, haplo, seq_snps,
                                                             count, raw_tot, total,
@@ -405,8 +391,6 @@ class Classify(object):
         return self.genome
 
     def prediction_sorting(self):
-        #print "start is", self.seq_diff.start
-        #print "end is", self.seq_diff.end
         s = self.get_genome_state()
         if s == "complete":
             t = "complete"
@@ -425,34 +409,32 @@ class Classify(object):
                     self.haplo_stats_sorted.items()))
         else:
             t = "incomplete"
-            # apply sorting: take res with P_Hg > 90,then the one(s) with highest Nph is/are the best
+            # apply sorting: take res with P_Hg > 90,then the one(s) with
+            # highest Nph is/are the best
             if self.classify90():
                 # print "got 90"
                 self.haplo_stats_sorted = self.classify90()
                 self.haplo_stats_sorted = OrderedDict(sorted(self.haplo_stats_sorted.items(),
                                                              key=lambda x: x[1][0],
                                                              reverse=True))
-                #self.haplo_best = OrderedDict(filter(lambda x: x[1][0] == self.haplo_stats_sorted.items()[0][1][0], self.haplo_stats_sorted.items()))
                 # TODO: see above
                 self.haplo_best = OrderedDict(filter(lambda x: (x[1][0],x[1][0]/float(x[1][1])) == (self.haplo_stats_sorted.items()[0][1][0],self.haplo_stats_sorted.items()[0][1][0]/float(self.haplo_stats_sorted.items()[0][1][1])), self.haplo_stats_sorted.items()))
 
             # cases with no P_Hg >= 0.9, just take the haplogroup(s) with the highest P_Hg
             else:
-                # print "got no 90"
                 self.haplo_stats_sorted = OrderedDict(sorted(self.haplo_stats.items(),
                                                              key=lambda x: x[1][0]/float(x[1][1]),
                                                              reverse=True))
                 self.haplo_best = OrderedDict(filter(lambda x: x[1][0]/float(x[1][1]), self.haplo_stats_sorted.items()))
-            #self.haplo_best = self.best_predictions()
         return self.haplo_stats_sorted, self.haplo_best
 
     def get_marges(self, marge_dict):
-        # print "marges (non set) are ", [parse_marge.which_marge_lite(i[0], marge_dict) for i in self.haplo_best]
         print("hidden best is", self.haplo_best)
         best_list = [i for i in self.haplo_best]
         print("best_list is", best_list)
-        self.marges = set([parse_marge.which_marge_lite(i, marge_dict)
+        # TODO: I guess the following is parse_mhcs.which_mhcs_lite()
+        #   instead of parse_marge.which_marge_lite()
+        self.marges = set([which_mhcs_lite(i, marge_dict)
                            for i in best_list])
         print("marges are ", self.marges)
         return self.marges
-        

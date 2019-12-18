@@ -115,6 +115,8 @@ def filter_positions(haplogroup, reverse=True):
 #
 # dizionario {start : [eventi associati]} (per ogni aplogruppo)
 
+
+# TODO: overrides built-in dict!!!
 def dict(pos_list):
     rev_pos_list = copy(pos_list)
     rev_pos_list.reverse()

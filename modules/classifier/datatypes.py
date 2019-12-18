@@ -1,9 +1,9 @@
-# encoding=utf8
-
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 from modules.classifier import consts
 
 
-class BaseSNP(object):
+class BaseSNP:
     start = 0
 
     def __init__(self, start=None):
@@ -66,8 +66,6 @@ class Insertion(BaseSNP):
                 return False
         else:
             return False
-    #def pprint(self):
-    #    return str(self) + " -> " + self.seq
 
     def pprint(self):
         return str(self.start) + "." + self.seq
@@ -122,8 +120,6 @@ class Deletion(BaseSNP):
                 return False
         else:
             return False
-    #def pprint(self):
-    #    return str(self) + " -> " + consts.RCRS[self.start-1:self.end]
 
     def pprint(self):
         if self.start == self.end:
@@ -141,7 +137,7 @@ class Deletion(BaseSNP):
         return hash((self.mutation_type(), self.start, self.end))
 
 
-class SNP_MixIn(object):
+class SNP_MixIn:
     """
     Contiene metodi condivisi dalle classi che dichiarano uno SNP
     
@@ -162,8 +158,6 @@ class SNP_MixIn(object):
             return str(self.start) + self.change + '(' + self.ambiguity + ')'
         else:
             return str(self.start) + self.change
-    #def pprint(self):
-    #    return str(self) + " " + consts.RCRS[self.start-1] + " -> " + self.change
 
     def is_reverted(self, other):
         """
@@ -178,8 +172,8 @@ class SNP_MixIn(object):
         """
         if super(SNP_MixIn, self).is_reverted(other):
             try:
-                #è revertita solo sel il cambio nell'altra mutazione è uguale
-                #ad anderson
+                # è revertita solo sel il cambio nell'altra mutazione è uguale
+                # ad anderson
                 return consts.RCRS[self.start-1] == other.change
             except AttributeError:
                 pass
@@ -202,7 +196,7 @@ class Transition(SNP_MixIn, BaseSNP):
                 super(Transition, self).__init__(element)
                 self.change = consts.TRS_TBL[consts.RCRS[self.start-1]]
             else:
-                #nel caso si voglia modificare dopo i cambi
+                # nel caso si voglia modificare dopo i cambi
                 super(Transition, self).__init__(start)
                 self.change = change
         except KeyError:
@@ -218,7 +212,8 @@ class Transversion(SNP_MixIn, BaseSNP):
     def __init__(self, element=None):
         try:
             if element:
-                #changed since it returned an error. changed according to similar definition in Transition class.
+                # changed since it returned an error. changed according to
+                # similar definition in Transition class.
                 #super(Transversion, self).__init__(element[:-1])
                 super(Transversion, self).__init__(element[:-1])
                 self.change = element[-1].upper()
@@ -243,7 +238,7 @@ class Retromutation(Transition):
             super(Retromutation, self).__init__()
 
 
-class Haplogroup(object):
+class Haplogroup:
     def __init__(self, name, parent=None, pos_list=None):
         self.parent = parent
         self.pos_list = [x for x in pos_list]
@@ -306,7 +301,7 @@ class MetaGroup(Haplogroup):
         if isinstance(item, (str, unicode)):
             return item in self.groups
         else:
-            #gli altri casi al momento cotemplano esclusivamente gli interi
+            # gli altri casi al momento cotemplano esclusivamente gli interi
             return super(MetaGroup, self).__contains__(item)
 
     def __eq__(self, other):
@@ -322,7 +317,7 @@ class MetaGroup(Haplogroup):
         return not self.__eq__(other)
 
 
-class Retromutated(object):
+class Retromutated:
     """
     Contiene una coppia di mutazioni che si possono escludere (retromutata)
     """
@@ -350,7 +345,7 @@ class Retromutated(object):
         return str(self)
 
 
-class Sequence(object):
+class Sequence:
     name = None
     seq = None
 

@@ -38,6 +38,7 @@ script workflow:
     recode_haplo = {'C':'M', 'E':'M', 'Q':'M', 'Z':'M', 'O':'N', 'S':'N', 'Y':'N', 'P':'R', 'HV':'R0', 'V':'R0'}
 """
 from modules.classifier import NGclassify, datatypes
+from modules.classifier.consts import RCRS
 
 # haplogroups not having their own MHCSs that should be matched with a upper level MHCS:
 recode_haplo = {'C': 'M', 'E': 'M', 'Q': 'M', 'Z': 'M', 'O': 'N', 'S': 'N',
@@ -46,7 +47,7 @@ recode_haplo = {'C': 'M', 'E': 'M', 'Q': 'M', 'Z': 'M', 'O': 'N', 'S': 'N',
 
 def align_sequence(sequence, rif=None):
     if rif is None:
-        rif = datatypes.Sequence('RSRS', consts.RCRS)
+        rif = datatypes.Sequence('RSRS', RCRS)
     seq_diff = NGclassify.SequenceDiff()
     print("Aligning sequence {}".format(sequence.name))
     seq_diff.gen_diff(rif, datatypes.Sequence(sequence.name, str(sequence.seq)))
@@ -165,6 +166,7 @@ def which_mhcs(best_haplo, mhcs_dict):
         # specific criteria for getting mhcs
         name, seq = subparse2mhcs(best_haplo,mhcs_dict)
     return datatypes.Sequence(name, seq)
+
 
 """
 # mhcs_dict is generated here --> add to consts module

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# encoding=utf8
+# -*- coding: UTF-8 -*-
 
 # tenere presente:
 # - i numeri alla cui sinistra non c'è un aplogruppo, vanno considerati come
@@ -8,10 +8,6 @@
 # - la notazione N1'5 indica che le posizioni elencate sono da considerarsi per gli aplogruppi N1 ed N5
 # - L1-6 indica che le posizioni elencate vanno considerate per L1, L2, ..., L6
 # - un ! alla destra di una posizione indica una retromutazione, per cui il nucleotide sarà uguale ad rCRS
-
-# import sys
-# if '..' not in sys.path:
-#     sys.path.append('..')
 
 from modules.classifier import datatypes
 
@@ -32,7 +28,8 @@ def detect_haploname(element):
 
 
 def find_level(line):
-    """ Restituisce il livello della linea (conta le caselle vuote a sinistra). """
+    """ Restituisce il livello della linea (conta le caselle vuote a sinistra).
+    """
     count = 0
     for x in line:
         if not x.strip():
@@ -82,7 +79,8 @@ def parse_csv(file_handle, aplo_list=None, parent=None):
             raise ValueError
         except IndexError as e:
             print("WARNING: La riga:", n + 1,
-                  "è vuota oppure contiene una posizione maggiore della lunghezza di rCRS - ",
+                  "è vuota oppure contiene una posizione maggiore della "
+                  "lunghezza di rCRS - ",
                   "(", str(e), ") - ", line)
         aplo_list.append(value)  
     return aplo_list
