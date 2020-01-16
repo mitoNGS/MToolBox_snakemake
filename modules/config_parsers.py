@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
+from typing import List
 
+import pandas as pd
 from snakemake.io import expand
 
 
@@ -148,8 +150,17 @@ def get_genome_files(df, ref_genome_mt, field):
     return expand(df.loc[ref_genome_mt, field])
 
 
-def get_mt_genomes(df):
-    return list(set(df['ref_genome_mt']))
+def get_mt_genomes(df: pd.DataFrame) -> List[str]:
+    """ Return a list of unique mt genome identifiers from the
+    given dataframe.
+
+    Args:
+        df: input pandas DataFrame
+
+    Returns:
+        list of str
+    """
+    return df["ref_genome_mt"].unique().tolist()
 
 
 def get_mt_fasta(df, ref_genome_mt, field):
@@ -157,12 +168,26 @@ def get_mt_fasta(df, ref_genome_mt, field):
 
 
 # TODO: infolder and ext are not used anywhere
-def fastqc_raw_outputs(datasets_tab, analysis_tab=None,
-                       infolder="data/reads", outfolder="results/fastqc_raw",
-                       ext=".fastq.gz"):
+def fastqc_raw_outputs(datasets_tab: pd.DataFrame,
+                       analysis_tab: pd.DataFrame,
+                       infolder="data/reads",
+                       outfolder: str = "results/fastqc_raw",
+                       ext=".fastq.gz") -> List[str]:
+    """ Return a list of output filenames where FastQC results
+    will be stored.
+
+    Args:
+        datasets_tab: input pandas DataFrame with fastq filenames
+        analysis_tab: input pandas DataFrame with analysis details
+        outfolder: output directory where FastQC results will be
+            saved
+
+    Returns:
+        list of str paths
+    """
     fastqc_out = []
-    for i, l in datasets_tab.iterrows():
-        if l["sample"] in list(analysis_tab["sample"]):
+    for _, l in datasets_tab.iterrows():
+        if l["sample"] in analysis_tab["sample"].tolist():
             fastqc_out.append(
                 os.path.join(
                     outfolder,
