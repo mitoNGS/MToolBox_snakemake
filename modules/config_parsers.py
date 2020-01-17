@@ -167,24 +167,28 @@ def get_mt_fasta(df, ref_genome_mt, field):
     return df.loc[df['ref_genome_mt'] == ref_genome_mt, field][0]
 
 
-# TODO: infolder and ext are not used anywhere
-def fastqc_raw_outputs(datasets_tab: pd.DataFrame,
-                       analysis_tab: pd.DataFrame,
-                       infolder="data/reads",
-                       outfolder: str = "results/fastqc_raw",
-                       ext=".fastq.gz") -> List[str]:
+def fastqc_outputs(datasets_tab: pd.DataFrame,
+                   analysis_tab: pd.DataFrame,
+                   out: str = "raw") -> List[str]:
     """ Return a list of output filenames where FastQC results
     will be stored.
 
     Args:
         datasets_tab: input pandas DataFrame with fastq filenames
         analysis_tab: input pandas DataFrame with analysis details
-        outfolder: output directory where FastQC results will be
-            saved
+        out: either 'raw' or 'filtered', determines the output
+            folder where FastQC results will be stored
 
     Returns:
         list of str paths
     """
+    if out == "raw":
+        outfolder = "results/fastqc_raw"
+    elif out == "filtered":
+        outfolder = "results/fastqc_filtered"
+    else:
+        raise ValueError(f"{out} is not a valid argument")
+
     fastqc_out = []
     for _, l in datasets_tab.iterrows():
         if l["sample"] in analysis_tab["sample"].tolist():
@@ -202,32 +206,11 @@ def fastqc_raw_outputs(datasets_tab: pd.DataFrame,
                         sample=l["sample"], library=l["library"])
                 )
             )
-    return fastqc_out
-
-
-# TODO: infolder and ext are not used anywhere
-def fastqc_filtered_outputs(datasets_tab, analysis_tab=None,
-                            infolder="data/reads",
-                            outfolder="results/fastqc_filtered",
-                            ext="_001.fastq.gz"):
-    fastqc_out = []
-    for i, l in datasets_tab.iterrows():
-        if l["sample"] in list(analysis_tab["sample"]):
-            fastqc_out.append(
-                os.path.join(
-                    outfolder,
-                    "{sample}_{library}_qc_R1_fastqc.html".format(
-                        sample=l["sample"], library=l["library"])
-                )
-            )
-            fastqc_out.append(
-                os.path.join(
-                    outfolder,
-                    "{sample}_{library}_qc_R2_fastqc.html".format(
-                        sample=l["sample"], library=l["library"])))
-            fastqc_out.append(
-                os.path.join(
-                    outfolder,
-                    "{sample}_{library}_qc_U_fastqc.html".format(
-                        sample=l["sample"], library=l["library"])))
+            if out == "filtered":
+                fastqc_out.append(
+                    os.path.join(
+                        outfolder,
+                        "{sample}_{library}_qc_U_fastqc.html".format(
+                            sample=l["sample"],
+                            library=l["library"])))
     return fastqc_out

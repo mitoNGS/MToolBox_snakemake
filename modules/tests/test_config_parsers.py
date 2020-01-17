@@ -6,7 +6,7 @@ import unittest
 
 import pandas as pd
 
-from ..config_parsers import fastqc_raw_outputs, get_mt_genomes
+from ..config_parsers import fastqc_outputs, get_mt_genomes
 
 ANALYSIS_TAB = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -19,14 +19,20 @@ DATASETS_TAB = os.path.join(
     "datasets.tab"
 )
 FASTQC_OUT = [
-    "results/fastqc_raw/5517_hypo_1.R1_fastqc.html", 
-    "results/fastqc_raw/5517_hypo_1.R2_fastqc.html", 
-    "results/fastqc_raw/5517_hypo_2.R1_fastqc.html", 
-    "results/fastqc_raw/5517_hypo_2.R2_fastqc.html", 
-    "results/fastqc_raw/5517_liver_1.R1_fastqc.html", 
-    "results/fastqc_raw/5517_liver_1.R2_fastqc.html", 
-    "results/fastqc_raw/5517_liver_2.R1_fastqc.html", 
-    "results/fastqc_raw/5517_liver_2.R2_fastqc.html"
+    "{}/5517_hypo_1.R1_fastqc.html",
+    "{}/5517_hypo_1.R2_fastqc.html",
+    "{}/5517_hypo_2.R1_fastqc.html",
+    "{}/5517_hypo_2.R2_fastqc.html",
+    "{}/5517_liver_1.R1_fastqc.html",
+    "{}/5517_liver_1.R2_fastqc.html",
+    "{}/5517_liver_2.R1_fastqc.html",
+    "{}/5517_liver_2.R2_fastqc.html"
+]
+FASTQC_OUT_FILT = FASTQC_OUT + [
+    "{}/5517_hypo_1_qc_U_fastqc.html",
+    "{}/5517_hypo_2_qc_U_fastqc.html",
+    "{}/5517_liver_1_qc_U_fastqc.html",
+    "{}/5517_liver_2_qc_U_fastqc.html",
 ]
 
 
@@ -48,10 +54,35 @@ class TestConfigParsers(unittest.TestCase):
         # Then
         self.assertEqual(expected, result)
 
-    def test_fastqc_raw_outputs(self):
-        # Given/When
-        result = fastqc_raw_outputs(datasets_tab=self.datasets_tab,
-                                    analysis_tab=self.analysis_tab)
+    def test_fastqc_outputs_raw(self):
+        # Given
+        expected = [el.format("results/fastqc_raw")
+                    for el in FASTQC_OUT]
+
+        # When
+        result = fastqc_outputs(datasets_tab=self.datasets_tab,
+                                analysis_tab=self.analysis_tab,
+                                out="raw")
 
         # Then
-        self.assertEqual(FASTQC_OUT, result)
+        self.assertEqual(expected, result)
+
+    def test_fastqc_outputs_filtered(self):
+        # Given
+        expected = [el.format("results/fastqc_filtered")
+                    for el in FASTQC_OUT_FILT]
+
+        # When
+        result = fastqc_outputs(datasets_tab=self.datasets_tab,
+                                analysis_tab=self.analysis_tab,
+                                out="filtered")
+
+        # Then
+        self.assertEqual(sorted(expected), sorted(result))
+
+    def test_fastqc_outputs_error(self):
+        # Given/When
+        with self.assertRaises(ValueError):
+            fastqc_outputs(datasets_tab=self.datasets_tab,
+                           analysis_tab=self.analysis_tab,
+                           out="test")

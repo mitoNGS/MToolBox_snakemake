@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 # from modules.general import *
 from modules.BEDoutput import bed_output, fasta_output
 from modules.config_parsers import (
-    fastqc_filtered_outputs, fastqc_raw_outputs, get_bed_files, get_fasta_files,
+    fastqc_outputs, get_bed_files, get_fasta_files,
     get_genome_files, get_genome_single_vcf_files,
     get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_fasta,
     get_mt_genomes, get_sample_bamfiles
@@ -64,8 +64,12 @@ target_inputs = [outpaths]
 
 rule all:
     input:
-        fastqc_raw_outputs(datasets_tab, analysis_tab=analysis_tab),
-        fastqc_filtered_outputs(datasets_tab, analysis_tab=analysis_tab),
+        fastqc_outputs(datasets_tab,
+                       analysis_tab=analysis_tab,
+                       out="raw"),
+        fastqc_outputs(datasets_tab,
+                       analysis_tab=analysis_tab,
+                       out="filtered"),
         get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
         get_fasta_files(analysis_tab)
