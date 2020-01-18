@@ -94,18 +94,44 @@ def get_genome_single_vcf_index_files(df, res_dir="results", ref_genome_mt=None)
     return list(set(outpaths))
 
 
-def get_genome_vcf_files(df, res_dir="results/vcf"):
+def get_genome_vcf_files(df: pd.DataFrame,
+                         res_dir: str = "results/vcf") -> List[str]:
+    """ Return a list of output filenames where VCF files
+    will be stored.
+
+    Args:
+        df: input pandas DataFrame
+        res_dir: output directory name
+
+    Returns:
+        list of paths
+    """
     outpaths = set()
+    # TODO: this is inefficient as it goes through every row and
+    #   then removes duplicates, there is a better way for this
     for row in df.itertuples():
-        outpaths.add("{results}/{ref_genome_mt}_{ref_genome_n}.vcf".format(
-            results=res_dir,
-            ref_genome_mt=getattr(row, "ref_genome_mt"),
-            ref_genome_n=getattr(row, "ref_genome_n")))
-    outpaths = list(outpaths)
-    return outpaths
+        outpaths.add(
+            "{results}/{ref_genome_mt}_{ref_genome_n}.vcf".format(
+                results=res_dir,
+                ref_genome_mt=row.ref_genome_mt,
+                ref_genome_n=row.ref_genome_n
+            )
+        )
+    return list(outpaths)
 
 
-def get_bed_files(df, res_dir="results"):
+def get_bed_files(df: pd.DataFrame,
+                  res_dir: str = "results") -> List[str]:
+    """ Return a list of output filenames where BED files
+    will be stored.
+
+    Args:
+        df: input pandas DataFrame
+        res_dir: output directory name
+
+    Returns:
+        list of paths
+    """
     outpaths = []
     for row in df.itertuples():
         outpaths.append(
@@ -113,13 +139,25 @@ def get_bed_files(df, res_dir="results"):
              "{ref_genome_mt}_{ref_genome_n}.bed").format(
                 results=res_dir,
                 sample=getattr(row, "sample"),
-                ref_genome_mt=getattr(row, "ref_genome_mt"),
-                ref_genome_n=getattr(row, "ref_genome_n")))
-
+                ref_genome_mt=row.ref_genome_mt,
+                ref_genome_n=row.ref_genome_n
+            )
+        )
     return outpaths
 
 
-def get_fasta_files(df, res_dir="results"):
+def get_fasta_files(df: pd.DataFrame,
+                    res_dir: str = "results") -> List[str]:
+    """ Return a list of output filenames where fasta files
+    will be stored.
+
+    Args:
+        df: input pandas DataFrame
+        res_dir: output directory name
+
+    Returns:
+        list of paths
+    """
     outpaths = []
     for row in df.itertuples():
         outpaths.append(
@@ -127,9 +165,10 @@ def get_fasta_files(df, res_dir="results"):
              "{ref_genome_mt}_{ref_genome_n}.fasta").format(
                 results=res_dir,
                 sample=getattr(row, "sample"),
-                ref_genome_mt=getattr(row, "ref_genome_mt"),
-                ref_genome_n=getattr(row, "ref_genome_n")))
-
+                ref_genome_mt=row.ref_genome_mt,
+                ref_genome_n=row.ref_genome_n
+            )
+        )
     return outpaths
 
 
@@ -177,10 +216,10 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
         datasets_tab: input pandas DataFrame with fastq filenames
         analysis_tab: input pandas DataFrame with analysis details
         out: either 'raw' or 'filtered', determines the output
-            folder where FastQC results will be stored
+            directory where FastQC results will be stored
 
     Returns:
-        list of str paths
+        list of paths
     """
     if out == "raw":
         outfolder = "results/fastqc_raw"
@@ -190,27 +229,39 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
         raise ValueError(f"{out} is not a valid argument")
 
     fastqc_out = []
-    for _, l in datasets_tab.iterrows():
-        if l["sample"] in analysis_tab["sample"].tolist():
+    samples = analysis_tab["sample"].tolist()
+    for row in datasets_tab.itertuples():
+        # TODO: using getattr for the sample column since sample
+        #   is already a method name in pandas dataframes, possibly
+        #   need to change that column name
+        if getattr(row, "sample") in samples:
             fastqc_out.append(
                 os.path.join(
                     outfolder,
                     "{sample}_{library}.R1_fastqc.html".format(
-                        sample=l["sample"], library=l["library"])
+                        sample=getattr(row, "sample"),
+                        library=row.library
+                    )
                 )
             )
             fastqc_out.append(
                 os.path.join(
                     outfolder,
                     "{sample}_{library}.R2_fastqc.html".format(
-                        sample=l["sample"], library=l["library"])
+                        sample=getattr(row, "sample"),
+                        library=row.library
+                    )
                 )
             )
             if out == "filtered":
                 fastqc_out.append(
                     os.path.join(
                         outfolder,
-                        "{sample}_{library}_qc_U_fastqc.html".format(
-                            sample=l["sample"],
-                            library=l["library"])))
+                        ("{sample}_{library}"
+                         "_qc_U_fastqc.html").format(
+                            sample=getattr(row, "sample"),
+                            library=row.library
+                        )
+                    )
+                )
     return fastqc_out
