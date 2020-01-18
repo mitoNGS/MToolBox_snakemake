@@ -39,11 +39,11 @@ source_dir = os.path.dirname(workflow.snakefile)
 localrules: index_genome, merge_VCF, index_VCF, dict_genome
 
 # fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t",
+analysis_tab = pd.read_table("data/analysis.tab", sep="\t", comment='#')
+reference_tab = (pd.read_table("data/reference_genomes.tab", sep="\t",
                                comment='#')
                  .set_index("ref_genome_mt", drop=False))
-datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
+datasets_tab = pd.read_table("data/datasets.tab", sep="\t", comment='#')
 
 configfile: "config.yaml"
 res_dir = config["results"]

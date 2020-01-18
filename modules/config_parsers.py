@@ -96,8 +96,7 @@ def get_genome_single_vcf_index_files(df, res_dir="results", ref_genome_mt=None)
 
 def get_genome_vcf_files(df: pd.DataFrame,
                          res_dir: str = "results/vcf") -> List[str]:
-    """ Return a list of output filenames where VCF files
-    will be stored.
+    """ Return a list of output filenames where VCF files will be stored.
 
     Args:
         df: input pandas DataFrame
@@ -122,8 +121,7 @@ def get_genome_vcf_files(df: pd.DataFrame,
 
 def get_bed_files(df: pd.DataFrame,
                   res_dir: str = "results") -> List[str]:
-    """ Return a list of output filenames where BED files
-    will be stored.
+    """ Return a list of output filenames where BED files will be stored.
 
     Args:
         df: input pandas DataFrame
@@ -148,8 +146,7 @@ def get_bed_files(df: pd.DataFrame,
 
 def get_fasta_files(df: pd.DataFrame,
                     res_dir: str = "results") -> List[str]:
-    """ Return a list of output filenames where fasta files
-    will be stored.
+    """ Return a list of output filenames where fasta files will be stored.
 
     Args:
         df: input pandas DataFrame
@@ -185,7 +182,19 @@ def get_haplo_prediction_files(df, res_dir="results"):
     return outpaths
 
 
-def get_genome_files(df, ref_genome_mt, field):
+def get_genome_files(df: pd.DataFrame,
+                     ref_genome_mt: str,
+                     field: str) -> List[str]:
+    """ Return a list of output filenames where fna files will be stored.
+
+    Args:
+        df: input pandas DataFrame
+        ref_genome_mt: wildcard from snakefile
+        field: column name
+
+    Returns:
+        list of paths
+    """
     return expand(df.loc[ref_genome_mt, field])
 
 
@@ -209,8 +218,7 @@ def get_mt_fasta(df, ref_genome_mt, field):
 def fastqc_outputs(datasets_tab: pd.DataFrame,
                    analysis_tab: pd.DataFrame,
                    out: str = "raw") -> List[str]:
-    """ Return a list of output filenames where FastQC results
-    will be stored.
+    """ Return a list of output filenames where FastQC results will be stored.
 
     Args:
         datasets_tab: input pandas DataFrame with fastq filenames
