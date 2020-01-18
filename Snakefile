@@ -52,11 +52,15 @@ log_dir = config["log_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 
 wildcard_constraints:
-    sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
-    ref_genome_mt = '|'.join([re.escape(x)
-                              for x in list(set(analysis_tab['ref_genome_mt']))]),
-    ref_genome_n = '|'.join([re.escape(x)
-                             for x in list(set(analysis_tab['ref_genome_n']))])
+    sample = '|'.join(
+        [re.escape(x) for x in analysis_tab['sample'].unique().tolist()]
+    ),
+    ref_genome_mt = '|'.join(
+        [re.escape(x) for x in analysis_tab['ref_genome_mt'].unique().tolist()]
+    ),
+    ref_genome_n = '|'.join(
+        [re.escape(x) for x in analysis_tab['ref_genome_n'].unique().tolist()]
+    )
 
 outpaths = get_mt_genomes(analysis_tab)
 
