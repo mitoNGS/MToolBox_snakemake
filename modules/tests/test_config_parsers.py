@@ -6,7 +6,11 @@ import unittest
 
 import pandas as pd
 
-from ..config_parsers import fastqc_outputs, get_mt_genomes
+from ..config_parsers import (
+    fastqc_outputs, get_bed_files, get_fasta_files,
+    get_genome_vcf_files, get_mt_genomes,
+
+)
 
 ANALYSIS_TAB = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -86,3 +90,39 @@ class TestConfigParsers(unittest.TestCase):
             fastqc_outputs(datasets_tab=self.datasets_tab,
                            analysis_tab=self.analysis_tab,
                            out="test")
+
+    def test_get_genome_vcf_files(self):
+        # Given
+        expected = ["results/vcf/NC_001323.1_GCF_000002315.5.vcf"]
+
+        # When
+        result = get_genome_vcf_files(df=self.analysis_tab)
+
+        # Then
+        self.assertEqual(expected, result)
+
+    def test_get_bed_files(self):
+        # Given
+        expected = [
+            "results/5517_hypo/5517_hypo_NC_001323.1_GCF_000002315.5.bed",
+            "results/5517_liver/5517_liver_NC_001323.1_GCF_000002315.5.bed"
+        ]
+
+        # When
+        result = get_bed_files(df=self.analysis_tab)
+
+        # Then
+        self.assertEqual(expected, result)
+
+    def test_get_fasta_files(self):
+        # Given
+        expected = [
+            "results/5517_hypo/5517_hypo_NC_001323.1_GCF_000002315.5.fasta",
+            "results/5517_liver/5517_liver_NC_001323.1_GCF_000002315.5.fasta"
+        ]
+
+        # When
+        result = get_fasta_files(df=self.analysis_tab)
+
+        # Then
+        self.assertEqual(expected, result)
