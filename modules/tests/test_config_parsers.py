@@ -7,7 +7,7 @@ import unittest
 import pandas as pd
 
 from ..config_parsers import (
-    fastqc_outputs, get_bed_files, get_fasta_files,
+    fastqc_outputs, get_bed_files, get_genome_files, get_fasta_files,
     get_genome_vcf_files, get_mt_genomes,
 
 )
@@ -21,6 +21,11 @@ DATASETS_TAB = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "data",
     "datasets.tab"
+)
+REFERENCE_TAB = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "data",
+    "reference_genomes.tab"
 )
 FASTQC_OUT = [
     "{}/5517_hypo_1.R1_fastqc.html",
@@ -43,10 +48,10 @@ FASTQC_OUT_FILT = FASTQC_OUT + [
 class TestConfigParsers(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.analysis_tab = pd.read_table(ANALYSIS_TAB, sep="\t",
-                                          comment="#")
-        self.datasets_tab = pd.read_table(DATASETS_TAB, sep="\t",
-                                          comment="#")
+        self.analysis_tab = pd.read_table(ANALYSIS_TAB, sep="\t", comment="#")
+        self.datasets_tab = pd.read_table(DATASETS_TAB, sep="\t", comment="#")
+        self.reference_tab = (pd.read_table(REFERENCE_TAB, sep="\t", comment='#')
+                              .set_index("ref_genome_mt", drop=False))
 
     def test_get_mt_genomes(self):
         # Given
@@ -123,6 +128,18 @@ class TestConfigParsers(unittest.TestCase):
 
         # When
         result = get_fasta_files(df=self.analysis_tab)
+
+        # Then
+        self.assertEqual(expected, result)
+
+    def test_get_genome_files(self):
+        # Given
+        expected = ["GCF_000002315.5_GRCg6a_genomic_mt.fna"]
+
+        # When
+        result = get_genome_files(df=self.reference_tab,
+                                  ref_genome_mt="NC_001323.1",
+                                  field="ref_genome_mt_file")
 
         # Then
         self.assertEqual(expected, result)
