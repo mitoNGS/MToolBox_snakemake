@@ -27,7 +27,7 @@ from modules.config_parsers import (
 )
 from modules.general import (
     check_tmp_dir, get_seq_name, gapped_fasta2contigs,
-    mt_table_handle2gapped_fasta, pileup2mt_table, sam2fastq, write_mt_table
+    mt_table_handle2gapped_fasta, pileup2mt_table, sam_to_fastq, write_mt_table
 )
 from modules.filter_alignments import filter_alignments
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
@@ -255,8 +255,8 @@ rule sam2fastq:
     message:
         "Converting {input.outmt_sam} to FASTQ"
     run:
-        sam2fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
-                  outmt2=output.outmt2, outmt=output.outmt)
+        sam_to_fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
+                     outmt2=output.outmt2, outmt=output.outmt)
 
 rule map_nuclear_MT_SE:
     input:

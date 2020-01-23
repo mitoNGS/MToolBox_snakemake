@@ -57,10 +57,10 @@ def s_encoding(s: Union[bytes, str]) -> str:
 
 
 def softclipping(i):
+    # TODO: add a proper docstring
     lseq = len(i[9])
-    sc = re.findall(r'(\d+)S', i[5])
-    sc = map(lambda x: int(x), sc)
-    sc = sum(sc)
+    matches = re.findall(r'(\d+)S', i[5])
+    sc = sum([int(x) for x in matches])
     return lseq, sc
 
 
@@ -375,7 +375,7 @@ def gapped_fasta2contigs(gapped_fasta=None):
 
 
 # TODO: do_softclipping is not used anywhere
-def sam2fastq(samfile=None, outmt1=None, outmt2=None, outmt=None,
+def sam_to_fastq(samfile=None, outmt1=None, outmt2=None, outmt=None,
               do_softclipping=True):
     """
     Extract reads from SAM file.
@@ -385,60 +385,59 @@ def sam2fastq(samfile=None, outmt1=None, outmt2=None, outmt=None,
     # count of reads discarded because of softclipping > threshold (hardcoded 1/3)
     sclipped = 0
     print('Extracting FASTQ from SAM...')
-    mtoutsam = samfile
-    mtoutfastq = gzip.GzipFile(outmt, 'wb')
-    mtoutfastq1 = gzip.GzipFile(outmt1, 'wb')
-    mtoutfastq2 = gzip.GzipFile(outmt2, 'wb')
-    f = gzip.GzipFile(mtoutsam, 'rb')
     dics = {}
     c = 0
-    for i in f:
-        i = i.decode("utf-8")
-        c += 1
-        if c % 100000 == 0:
-            print("{} SAM entries processed.".format(c))
-        if i.strip() == '' or i.startswith('@'):
-            continue
-        l = (i.strip()).split('\t')
-        if l[2] == '*':
-            continue
-        lseq, sc = softclipping(l)
-        if sc > float(lseq)/3:
-            sclipped += 1
-            # if soft-clipped read greater than a third of read length, discard the read
-            continue
-        if len(dics) == 0:
-            dics[l[0]] = [l]
-        else:
-            if l[0] in dics:
-                dics[l[0]].append(l)
+
+    with gzip.open(outmt, "wb") as mtoutfastq, \
+        gzip.open(outmt1, "wb") as mtoutfastq1, \
+        gzip.open(outmt2, "wb") as mtoutfastq2, \
+        gzip.open(samfile, "rb") as f:
+        for i in f:
+            i = i.decode("utf-8")
+            c += 1
+            if c % 100000 == 0:
+                print("{} SAM entries processed.".format(c))
+            if i.strip() == "" or i.startswith("@"):
+                continue
+            l = (i.strip()).split("\t")
+            if l[2] == "*":
+                continue
+            lseq, sc = softclipping(l)
+            if sc > float(lseq)/3:
+                sclipped += 1
+                # if soft-clipped read greater than a third of read length,
+                # discard the read
+                continue
+            if len(dics) == 0:
+                dics[l[0]] = [l]
             else:
-                # check if reads go to single or paired end file
-                # check if each read in a pair goes to R1 or R2
-                if len(dics) != 1:
-                    sys.exit("read data not valid: {}".format(dics))
-                k = [key for key in dics][0]
-                ll = dics[k]
-                if len(ll) == 1:
-                    strand, seq, qual = int(ll[0][1]) & 16, ll[0][9], ll[0][10]
-                    if strand == 16:
-                        seq, qual = reverse_complement(seq), qual[::-1]
-                    entry = '\n'.join(['@' + ll[0][0], seq, '+', qual]) + '\n'
-                    mtoutfastq.write(entry.encode("utf-8"))
+                if l[0] in dics:
+                    dics[l[0]].append(l)
                 else:
-                    strand, seq, qual = int(ll[0][1]) & 16, ll[0][9], ll[0][10]
-                    if strand == 16:
-                        seq, qual = reverse_complement(seq), qual[::-1]
-                    entry = '\n'.join(['@' + ll[0][0], seq, '+', qual]) + '\n'
-                    mtoutfastq1.write(entry.encode("utf-8"))
-                    strand, seq, qual = int(ll[1][1]) & 16, ll[1][9], ll[1][10]
-                    if strand == 16:
-                        seq, qual = reverse_complement(seq), qual[::-1]
-                    entry = '\n'.join(['@' + ll[1][0], seq, '+', qual]) + '\n'
-                    mtoutfastq2.write(entry.encode("utf-8"))
-                # create new dics with new read ID
-                dics = {l[0]: [l]}
-    mtoutfastq.close()
-    mtoutfastq1.close()
-    mtoutfastq2.close()
+                    # check if reads go to single or paired end file
+                    # check if each read in a pair goes to R1 or R2
+                    if len(dics) != 1:
+                        sys.exit("read data not valid: {}".format(dics))
+                    k = [key for key in dics][0]
+                    ll = dics[k]
+                    if len(ll) == 1:
+                        strand, seq, qual = int(ll[0][1]) & 16, ll[0][9], ll[0][10]
+                        if strand == 16:
+                            seq, qual = reverse_complement(seq), qual[::-1]
+                        entry = "\n".join(["@" + ll[0][0], seq, "+", qual]) + "\n"
+                        mtoutfastq.write(entry.encode("utf-8"))
+                    else:
+                        strand, seq, qual = int(ll[0][1]) & 16, ll[0][9], ll[0][10]
+                        if strand == 16:
+                            seq, qual = reverse_complement(seq), qual[::-1]
+                        entry = "\n".join(["@" + ll[0][0], seq, "+", qual]) + "\n"
+                        mtoutfastq1.write(entry.encode("utf-8"))
+                        strand, seq, qual = int(ll[1][1]) & 16, ll[1][9], ll[1][10]
+                        if strand == 16:
+                            seq, qual = reverse_complement(seq), qual[::-1]
+                        entry = "\n".join(["@" + ll[1][0], seq, "+", qual]) + "\n"
+                        mtoutfastq2.write(entry.encode("utf-8"))
+                    # create new dics with new read ID
+                    dics = {l[0]: [l]}
+
     return sclipped
