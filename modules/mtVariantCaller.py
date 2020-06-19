@@ -900,10 +900,6 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
 
     # Mismatch detection
     print("\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2))
-    if sam_file.endswith("gz"):
-        sam = gzip.GzipFile(sam_file, mode='r')
-    else:
-        sam = open(sam_file, 'r')
 
     mismatch_dict = mismatch_detection(sam=sam, coverage_data=coverage_data,
                                        tail_mismatch=tail_mismatch)
@@ -957,8 +953,13 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
 
 
 def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
+    if sam.endswith("gz"):
+        sam_handle = gzip.GzipFile(sam_file, mode='r')
+    else:
+        sam_handle = open(sam_file, 'r')
+
     mismatch_dict = {}
-    for r in sam:
+    for r in sam_handle:
         if r.startswith("@"):
             continue
         (positions_ref, positions_read, all_ref, all_mism,
