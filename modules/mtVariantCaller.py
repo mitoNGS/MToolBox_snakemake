@@ -901,7 +901,7 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
     # Mismatch detection
     print("\n\nsearching for mismatches in {0}.. please wait...\n\n".format(name2))
 
-    mismatch_dict = mismatch_detection(sam=sam, coverage_data=coverage_data,
+    mismatch_dict = mismatch_detection(sam=sam_file, coverage_data=coverage_data,
                                        tail_mismatch=tail_mismatch)
     x = 0  # alignment counter
     print("mismatch_dict length before filtering for allele_DP: {}".format(len(mismatch_dict)))
