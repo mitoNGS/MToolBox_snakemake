@@ -82,6 +82,7 @@ def parse_sam_row(row):
     - in position 12 if the SAM file has not been processed by samtools calmd
     - at the end of the line if the SAM file has been processed by samtools calmd
     """
+    assert(isinstance(row, str))
     row = [i.strip() for i in row.split()]
     row[1] = int(row[1])
     row[3] = int(row[3])
@@ -219,7 +220,7 @@ def allele_strand_counter(strand):
     """ Initialize a strand counter instance for mismatch detection. """
     if strand == "+":
         l = [1, 0]
-    else:
+    elif strand == "-":
         l = [0, 1]
     return l
 
