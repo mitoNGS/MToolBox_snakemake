@@ -40,7 +40,7 @@ def check_strand(mate):
 
 def parse_sam_row(row):
     """
-    Given a SAM row (already splitted) eg
+    Given a SAM row eg
 
     0           HWI-ST0866:195:D1J58ACXX:3:1108:15229:52423
     1                                                   163
@@ -82,7 +82,7 @@ def parse_sam_row(row):
     - in position 12 if the SAM file has not been processed by samtools calmd
     - at the end of the line if the SAM file has been processed by samtools calmd
     """
-    row = [i.strip() for i in row]
+    row = [i.strip() for i in row.split()]
     row[1] = int(row[1])
     row[3] = int(row[3])
     row[4] = int(row[4])
@@ -632,7 +632,8 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
         mtDNA.append(ref_seq[n])
     mtDNAseq = "".join(mtDNA)
 
-    # apply functions to sam file and write outputs into a dictionary
+    ## apply functions to sam file and write outputs into a dictionary
+    # add indels 
     dic = {}
     dic['Ins'] = []
     dic['Del'] = []
@@ -642,11 +643,13 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
         if i.startswith("@"):
             continue
         i = i.split('\t')
+        # mate is the flag (second field of SAM file)
         [CIGAR, readNAME, seq, qs, refposleft, mate] = varnames(i)
         mm = 0
         if 'I' in CIGAR or 'D' in CIGAR:
             r = SearchINDELsintoSAM(readNAME, mate, CIGAR, seq, qs, refposleft,
                                     tail=tail)
+            # r is: ['Ins' or 'Del', readNAME, mate, rLeft, Del, qsDel]
             dic[r[0]].append(r[1:])
 
     rposIns = {}
@@ -957,7 +960,7 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
 def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
     mismatch_dict = {}
     for r in sam:
-        r = r.split('\t')
+        #r = r.split('\t')
         (positions_ref, positions_read, all_ref, all_mism,
          all_qs, strand) = parse_mismatches_from_cigar_md(parse_sam_row(r),
                                                           tail_mismatch=tail_mismatch)
