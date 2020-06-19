@@ -107,8 +107,7 @@ def parse_sam_row(row):
     cigar_nt = list(filter(None, re.split('[0-9]', row[5])))
     new_seq = seq
     new_qs = qs
-    return (md, leftmost, new_seq, new_qs, strand, bases, nt, cigar,
-            cigar_bases, cigar_nt)
+    return (md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt)
 
 
 def read_length_from_cigar(cigar_bases, cigar_nt):
@@ -127,7 +126,7 @@ def read_length_from_cigar(cigar_bases, cigar_nt):
     return eff_read_length
 
 
-def parse_mismatches_from_cigar_md(parsed_sam_row, minqs=25, tail=5,
+def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
                                    tail_mismatch=5):
     """
     Logic of this function is:
@@ -139,8 +138,7 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs=25, tail=5,
     - The script first equals the length of the read to that of the mapped
         portion and then extracts the variants using the MD flag.
     """
-    (md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases,
-     cigar_nt) = parsed_sam_row
+    (md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt) = parse_sam_row(sam_record)
     # Calculate effective read length (cigar without S and D)
     eff_read_length = read_length_from_cigar(cigar_bases, cigar_nt)
     ins_pos_in_seq = 0
@@ -203,7 +201,7 @@ def parse_mismatches_from_cigar_md(parsed_sam_row, minqs=25, tail=5,
     all_qs = []
     for x, t in enumerate(positions_read):
         # filter out variants with qs < threshold
-        # found some cases where there is a mismatch in SC zone, this will raise an error
+        # found some cases where there is a mismatch in soft-clipped zone, this will raise an error
         try:
             if ord(new_qs[t])-33 >= minqs:
                 if t >= tail_mismatch and (eff_read_length-t) >= tail_mismatch:
@@ -960,9 +958,10 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
 def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
     mismatch_dict = {}
     for r in sam:
-        #r = r.split('\t')
+        if r.startswith("@"):
+            continue
         (positions_ref, positions_read, all_ref, all_mism,
-         all_qs, strand) = parse_mismatches_from_cigar_md(parse_sam_row(r),
+         all_qs, strand) = parse_mismatches_from_cigar_md(r,
                                                           tail_mismatch=tail_mismatch)
         if positions_ref == []:
             continue
