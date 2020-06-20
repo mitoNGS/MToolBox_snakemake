@@ -958,7 +958,7 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None
                                                     mismatch_dict[POS].allele_DP))
         a = [POS, mismatch_dict[POS].REF, mismatch_dict[POS].DP,
              mismatch_dict[POS].alleles, mismatch_dict[POS].allele_DP,
-             mismatch_dict[POS].allele_strand_count, 'PASS',
+             join_allele_strand_count(mismatch_dict[POS].allele_strand_count), 'PASS',
              mismatch_dict[POS].hetfreq, mismatch_dict[POS].het_ci_low,
              mismatch_dict[POS].het_ci_up, 'mism']
         Subst[name2].append(a)
@@ -966,6 +966,12 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None
     Indels[name2].extend(Subst[name2])
     return Indels  # it's a dictionary
 
+def join_allele_strand_count(allele_strand_count):
+    """A patch to get allele strand counts for mismatches in the same format as those for indels."""
+    f = []
+    for j in allele_strand_count:
+        f.append([";".join([str(i) for i in j])])
+    return f
 
 def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
     if sam.endswith("gz"):
