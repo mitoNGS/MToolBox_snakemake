@@ -1,7 +1,7 @@
 name: mtoolbox
 channels:
-  - conda-forge
   - bioconda
+  - conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
@@ -26,12 +26,13 @@ dependencies:
   - botocore=1.12.35=py_0
   - bwidget=1.9.11=0
   - bzip2=1.0.6=h14c3975_1002
-  - ca-certificates=2019.9.11=hecc5488_0
+  - ca-certificates=2020.1.1=0
   - cachetools=2.1.0=py_0
   - cairo=1.14.12=h8948797_3
-  - certifi=2019.9.11=py36_0
+  - certifi=2020.4.5.2=py36_0
   - cffi=1.11.5=py36h9745a5d_1001
   - chardet=3.0.4=py36_1003
+  - click=7.1.2=py_0
   - configargparse=0.13.0=py_1
   - cryptography=2.4.1=py36h1ba5d50_1
   - curl=7.64.0=h646f8bb_2
@@ -49,7 +50,6 @@ dependencies:
   - freetype=2.9.1=he983fc9_1006
   - fribidi=1.0.5=h516909a_1002
   - ftputil=3.2=py36_0
-  - gatk-framework=3.6.24=5
   - gcc_impl_linux-64=7.3.0=habb00fd_1
   - gcc_linux-64=7.3.0=h553295d_8
   - gettext=0.19.8.1=hc5be6a0_1002
@@ -95,6 +95,7 @@ dependencies:
   - libdeflate=1.0=h14c3975_1
   - libedit=3.1.20170329=hf8c457e_1001
   - libffi=3.2.1=he1b5a44_1006
+  - libgcc=7.2.0=h69d50b8_2
   - libgcc-ng=8.2.0=hdf63c60_1
   - libgfortran-ng=7.3.0=hdf63c60_0
   - libiconv=1.15=h516909a_1005
@@ -129,7 +130,7 @@ dependencies:
   - numpy-base=1.15.4=py36h2f8d375_0
   - openblas=0.3.7=h6e990d7_1
   - openjdk=8.0.152=h46b5887_1
-  - openssl=1.1.1c=h516909a_0
+  - openssl=1.1.1g=h7b6447c_0
   - packaging=19.0=py_0
   - pandas=0.23.4=py36h637b7d7_1000
   - pandoc=2.2.3.2=0
