@@ -588,15 +588,9 @@ rule make_single_VCF:
         shell("samtools view {merged_bam} > {tmp_dir}/{tmp_sam}".format(merged_bam=input.merged_bam,
                                                                         tmp_dir=params.TMP,
                                                                         tmp_sam=tmp_sam))
-        sam_cov_dict = {}
-        sam_cov = open(input.bam_cov, 'r')
-        for l in sam_cov:
-            ref, pos, cov = l.split()
-            sam_cov_dict[int(pos)] = int(cov)
 
-        sam_cov.close()
         vcf_dict = mtvcf_main_analysis(sam_file="{tmp_dir}/{tmp_sam}".format(tmp_dir=params.TMP, tmp_sam=tmp_sam),
-                                       coverage_data=sam_cov_dict, name2=wildcards.sample,
+                                       coverage_data_file=input.bam_cov, name2=wildcards.sample,
                                        tail=params.tail, Q=params.quality, minrd=params.minrd,
                                        ref_mt=params.ref_mt_fasta, tail_mismatch=params.tail_mismatch)
         # ref_genome_mt will be used in the VCF descriptive field

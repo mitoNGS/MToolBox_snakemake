@@ -445,6 +445,7 @@ def SearchINDELsintoSAM(readNAME, mate, CIGAR, seq, qs, refposleft, tail=5):
         pass
 
 
+# TODO: this function is not used anymore
 # defines function searching for point mutations.
 # It produces both the consensus base and variant(s) as output
 def findmutations(A, C, G, T, Position, Ref, Cov, minrd,
@@ -603,11 +604,25 @@ def s_encoding(s):
     elif type(s) == str:
         return s
 
+def parse_coverage_data_file(coverage_data_file=None):
+    coverage_data = {}
+    sam_cov = open(coverage_data_file, 'r')
+    for l in sam_cov:
+        ref, pos, cov = l.split()
+        coverage_data[int(pos)] = int(cov)
+
+    sam_cov.close()
+    
+    return coverage_data
+
 
 # TODO: mtable_file is not used anywhere
-def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
+def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None,
                         name2=None, tail=5, Q=25, minrd=5, ref_mt=None,
                         tail_mismatch=5):
+    
+    coverage_data = parse_coverage_data_file(coverage_data_file)
+
     if sam_file.endswith("gz"):
         sam = gzip.GzipFile(sam_file, mode = 'r')
     else:
@@ -954,9 +969,9 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data=None, sam_file=None,
 
 def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
     if sam.endswith("gz"):
-        sam_handle = gzip.GzipFile(sam_file, mode='r')
+        sam_handle = gzip.GzipFile(sam, mode='r')
     else:
-        sam_handle = open(sam_file, 'r')
+        sam_handle = open(sam, 'r')
 
     mismatch_dict = {}
     for r in sam_handle:
@@ -992,6 +1007,7 @@ def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
                                                      alleles=[allele],
                                                      allele_DP=[1],
                                                      allele_strand_count=[allele_strand_counter(strand)])
+    sam_handle.close()
     return mismatch_dict
 ### END OF MAIN ANALYSIS
 
