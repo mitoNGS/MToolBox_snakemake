@@ -13,6 +13,7 @@ import os
 import re
 from types import SimpleNamespace
 import vcf
+from modules.general import parse_coverage_data_file
 
 from Bio.bgzf import BgzfWriter
 from Bio import SeqIO
@@ -604,16 +605,16 @@ def s_encoding(s):
     elif type(s) == str:
         return s
 
-def parse_coverage_data_file(coverage_data_file=None):
-    coverage_data = {}
-    sam_cov = open(coverage_data_file, 'r')
-    for l in sam_cov:
-        ref, pos, cov = l.split()
-        coverage_data[int(pos)] = int(cov)
-
-    sam_cov.close()
-    
-    return coverage_data
+# def parse_coverage_data_file(coverage_data_file=None):
+#     coverage_data = {}
+#     sam_cov = open(coverage_data_file, 'r')
+#     for l in sam_cov:
+#         ref, pos, cov = l.split()
+#         coverage_data[int(pos)] = int(cov)
+# 
+#     sam_cov.close()
+# 
+#     return coverage_data
 
 
 # TODO: mtable_file is not used anywhere

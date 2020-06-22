@@ -231,8 +231,10 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
     """
     if out == "raw":
         outfolder = "results/fastqc_raw"
+        suffixes = {"R1" : ".R1_fastqc.html", "R2" : ".R2_fastqc.html", "U" : ".U_fastqc.html"}
     elif out == "filtered":
         outfolder = "results/fastqc_filtered"
+        suffixes = {"R1" : "_qc_R1_fastqc.html", "R2" : "_qc_R2_fastqc.html", "U" : "_qc_U_fastqc.html"}
     else:
         raise ValueError(f"{out} is not a valid argument")
 
@@ -246,18 +248,20 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
             fastqc_out.append(
                 os.path.join(
                     outfolder,
-                    "{sample}_{library}.R1_fastqc.html".format(
+                    "{sample}_{library}{suffix}".format(
                         sample=getattr(row, "sample"),
-                        library=row.library
+                        library=row.library,
+                        suffix=suffixes["R1"]
                     )
                 )
             )
             fastqc_out.append(
                 os.path.join(
                     outfolder,
-                    "{sample}_{library}.R2_fastqc.html".format(
+                    "{sample}_{library}{suffix}".format(
                         sample=getattr(row, "sample"),
-                        library=row.library
+                        library=row.library,
+                        suffix=suffixes["R2"]
                     )
                 )
             )
@@ -265,10 +269,10 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
                 fastqc_out.append(
                     os.path.join(
                         outfolder,
-                        ("{sample}_{library}"
-                         ".U_fastqc.html").format(
+                        "{sample}_{library}{suffix}".format(
                             sample=getattr(row, "sample"),
-                            library=row.library
+                            library=row.library,
+                            suffix=suffixes["U"]
                         )
                     )
                 )

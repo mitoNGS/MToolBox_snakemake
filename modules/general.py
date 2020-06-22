@@ -263,9 +263,18 @@ def pileup2mt_table(pileup=None, ref_fasta=None):
     return mtdna
 
 # End of functions taken from assembleMTgenome
+def parse_coverage_data_file(coverage_data_file=None):
+    coverage_data = {}
+    sam_cov = open(coverage_data_file, 'r')
+    for l in sam_cov:
+        ref, pos, cov = l.split()
+        coverage_data[int(pos)] = int(cov)
 
+    sam_cov.close()
+    
+    return coverage_data
 
-def sam_cov_handle2gapped_fasta(sam_cov_data=None, ref_mt=None):
+def sam_cov_handle2gapped_fasta(coverage_data_file=None, ref_mt=None):
     """
     sam_cov_data is a dict {pos : DP}.
     We currently assume ref is only 1 seq.
@@ -273,6 +282,7 @@ def sam_cov_handle2gapped_fasta(sam_cov_data=None, ref_mt=None):
     ref = SeqIO.index(ref_mt, 'fasta')
     ref_seq = ref[list(ref.keys())[0]].seq
     gapped_fasta = ""
+    sam_cov_data = parse_coverage_data_file(coverage_data_file)
     for n in range(len(sam_cov_data)):
         if sam_cov_data[n+1] >= COV:
             gapped_fasta += ref_seq[n]

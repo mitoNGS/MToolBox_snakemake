@@ -165,9 +165,9 @@ rule fastqc_filtered:
         out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
         out1U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
     output:
-        html_report_R1 = "results/fastqc_filtered/{sample}_{library}.R1_fastqc.html",
-        html_report_R2 = "results/fastqc_filtered/{sample}_{library}.R2_fastqc.html",
-        html_report_U = "results/fastqc_filtered/{sample}_{library}.U_fastqc.html",
+        html_report_R1 = "results/fastqc_filtered/{sample}_{library}_qc_R1_fastqc.html",
+        html_report_R2 = "results/fastqc_filtered/{sample}_{library}_qc_R2_fastqc.html",
+        html_report_U = "results/fastqc_filtered/{sample}_{library}_qc_U_fastqc.html",
     params:
         outDir = "results/fastqc_filtered/"
     threads:
@@ -598,14 +598,14 @@ rule make_single_VCF:
         seq_name = get_seq_name(params.ref_mt_fasta)
         VCF_RECORDS = VCFoutput(vcf_dict, reference=wildcards.ref_genome_mt, seq_name=seq_name,
                                 vcffile=output.single_vcf)
-        BEDoutput(VCF_RECORDS, seq_name=seq_name, bedfile=output.single_bed)
+        bed_output(VCF_RECORDS, seq_name=seq_name, bedfile=output.single_bed)
         # fasta output
         #contigs = pileup2mt_table(pileup=input.pileup, fasta=params.ref_mt_fasta, mt_table=in.mt_table)
         #mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
-        gapped_fasta = sam_cov_handle2gapped_fasta(sam_cov_data=sam_cov_dict,
+        gapped_fasta = sam_cov_handle2gapped_fasta(coverage_data_file=input.bam_cov,
                                                    ref_mt=params.ref_mt_fasta)
         contigs = gapped_fasta2contigs(gapped_fasta=gapped_fasta)
-        FASTAoutput(vcf_dict=vcf_dict, ref_mt=params.ref_mt_fasta, fasta_out=output.single_fasta,
+        fasta_output(vcf_dict=vcf_dict, ref_mt=params.ref_mt_fasta, fasta_out=output.single_fasta,
                     contigs=contigs)
 
 rule index_VCF:
