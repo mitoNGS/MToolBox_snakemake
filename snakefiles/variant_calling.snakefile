@@ -265,7 +265,7 @@ rule sam2fastq:
     message:
         "Converting {input.outmt_sam} to FASTQ"
     run:
-        sclipped = sam2fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
+        sclipped = sam_to_fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
                              outmt2=output.outmt2, outmt=output.outmt, do_softclipping=True)
         print("{} reads with soft-clipping > 1/3 of their length".format(sclipped))
 
