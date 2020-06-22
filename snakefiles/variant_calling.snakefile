@@ -18,7 +18,7 @@ for path in sys.path:
     if "snakefiles" in path:
         sys.path.append(path.replace("/snakefiles", ""))
 
-from modules.BEDoutput import BEDoutput, FASTAoutput
+from modules.BEDoutput import bed_output, fasta_output
 from modules.config_parsers import (
     fastqc_filtered_outputs, fastqc_raw_outputs, get_bed_files, get_datasets_for_symlinks,
     get_fasta_files, get_genome_files, get_genome_single_vcf_files,
