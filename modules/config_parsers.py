@@ -266,7 +266,7 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
                     os.path.join(
                         outfolder,
                         ("{sample}_{library}"
-                         "_qc_U_fastqc.html").format(
+                         ".U_fastqc.html").format(
                             sample=getattr(row, "sample"),
                             library=row.library
                         )

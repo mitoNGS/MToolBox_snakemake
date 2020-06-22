@@ -20,14 +20,14 @@ for path in sys.path:
 
 from modules.BEDoutput import bed_output, fasta_output
 from modules.config_parsers import (
-    fastqc_filtered_outputs, fastqc_raw_outputs, get_bed_files, get_datasets_for_symlinks,
+    fastqc_outputs, get_bed_files, get_datasets_for_symlinks,
     get_fasta_files, get_genome_files, get_genome_single_vcf_files,
     get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_genomes, get_mt_fasta,
     get_sample_bamfiles, get_symlinks
 )
 from modules.filter_alignments import filter_alignments
 from modules.general import (
-    check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam2fastq, sam_cov_handle2gapped_fasta
+    check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta
 )
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
@@ -62,8 +62,8 @@ rule all:
     input:
         get_symlinks(datasets_tab, analysis_tab=analysis_tab, infolder="data/reads",
                      outfolder="data/reads"),
-        fastqc_raw_outputs(datasets_tab, analysis_tab=analysis_tab),
-        fastqc_filtered_outputs(datasets_tab, analysis_tab=analysis_tab),
+        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw"),
+        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered"),
         get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
         get_fasta_files(analysis_tab)
@@ -165,9 +165,9 @@ rule fastqc_filtered:
         out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
         out1U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
     output:
-        html_report_R1 = "results/fastqc_filtered/{sample}_{library}_qc_R1_fastqc.html",
-        html_report_R2 = "results/fastqc_filtered/{sample}_{library}_qc_R2_fastqc.html",
-        html_report_U = "results/fastqc_filtered/{sample}_{library}_qc_U_fastqc.html",
+        html_report_R1 = "results/fastqc_filtered/{sample}_{library}.R1_fastqc.html",
+        html_report_R2 = "results/fastqc_filtered/{sample}_{library}.R2_fastqc.html",
+        html_report_U = "results/fastqc_filtered/{sample}_{library}.U_fastqc.html",
     params:
         outDir = "results/fastqc_filtered/"
     threads:
