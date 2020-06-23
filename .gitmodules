@@ -1,0 +1,3 @@
+[submodule "mtoolnote"]
+	path = mtoolnote
+	url = https://github.com/mitoNGS/mtoolnote.git
