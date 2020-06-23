@@ -170,9 +170,11 @@ def get_seq_name(fasta):
     if len(mt_genome) != 1:
         sys.exit(("Sorry, but MToolBox at the moment only accepts "
                   "single-contig reference mt genomes."))
+
     for contig, contig_seq in mt_genome.items():
         seq_name = contig
-    return seq_name
+        seq_length = len(contig_seq)
+    return seq_name, seq_length
 
 
 def nuc_strand(values):

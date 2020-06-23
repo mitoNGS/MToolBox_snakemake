@@ -1073,7 +1073,7 @@ def get_consensus(dict_of_dicts, hf_max, hf_min):
 
 # TODO: lots of type comparison to replace with isinstance
 def VCFoutput(dict_of_dicts, reference='mt_genome', vcffile='sample',
-              seq_name='seq'):
+              seq_name='seq', seq_length=0):
     print("Reference sequence used for VCF: {}".format(reference))
     print("Seq_name is {}".format(seq_name))
     VCF_RECORDS = []
@@ -1398,12 +1398,13 @@ def VCFoutput(dict_of_dicts, reference='mt_genome', vcffile='sample',
     # writes variant call in the VCF file
     out = BgzfWriter(vcffile, 'w')
     out.write('##fileformat=VCFv4.0\n##reference={}\n'.format(reference))
-    out.write('##FORMAT=<ID=GT,Number=.,Type=String,Description="Genotype">\n')
+    out.write('##contig=<ID={},length={}>\n'.format(seq_name, seq_length))
+    out.write('##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n')
     out.write('##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Reads covering the REF position">\n')
-    out.write('##FORMAT=<ID=HF,Number=.,Type=Float,Description="Heteroplasmy Frequency of variant allele">\n')
-    out.write('##FORMAT=<ID=CILOW,Number=.,Type=Float,Description="Value defining the lower limit of the confidence interval of the heteroplasmy fraction">\n')
-    out.write('##FORMAT=<ID=CIUP,Number=.,Type=Float,Description="Value defining the upper limit of the confidence interval of the heteroplasmy fraction">\n')
-    out.write('##FORMAT=<ID=SDP,Number=.,Type=String,Description="Strand-specific read depth of the ALT allele">\n')
+    out.write('##FORMAT=<ID=HF,Number=3,Type=Float,Description="Heteroplasmy Frequency of variant allele">\n')
+    out.write('##FORMAT=<ID=CILOW,Number=3,Type=Float,Description="Value defining the lower limit of the confidence interval of the heteroplasmy fraction">\n')
+    out.write('##FORMAT=<ID=CIUP,Number=3,Type=Float,Description="Value defining the upper limit of the confidence interval of the heteroplasmy fraction">\n')
+    out.write('##FORMAT=<ID=SDP,Number=2,Type=String,Description="Strand-specific read depth of the ALT allele">\n')
     out.write('##INFO=<ID=AC,Number=1,Type=Integer,Description="Allele count in genotypes">\n')
     out.write('##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">\n')
     out.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t' + header + '\n')
