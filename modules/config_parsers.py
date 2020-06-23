@@ -95,25 +95,32 @@ def get_genome_single_vcf_index_files(df, res_dir="results", ref_genome_mt=None)
 
 
 def get_genome_vcf_files(df: pd.DataFrame,
+                         annotation = False,
                          res_dir: str = "results/vcf") -> List[str]:
     """ Return a list of output filenames where VCF files will be stored.
 
     Args:
         df: input pandas DataFrame
+        annotation: are these annotated vcfs?
         res_dir: output directory name
 
     Returns:
         list of paths
     """
     outpaths = set()
+    if annotation:
+        annotated = ".annotated"
+    else:
+        annotated = ""
     # TODO: this is inefficient as it goes through every row and
     #   then removes duplicates, there is a better way for this
     for row in df.itertuples():
         outpaths.add(
-            "{results}/{ref_genome_mt}_{ref_genome_n}.vcf".format(
+            "{results}/{ref_genome_mt}_{ref_genome_n}{annotated}.vcf".format(
                 results=res_dir,
                 ref_genome_mt=row.ref_genome_mt,
-                ref_genome_n=row.ref_genome_n
+                ref_genome_n=row.ref_genome_n,
+                annotated=annotated
             )
         )
     return list(outpaths)

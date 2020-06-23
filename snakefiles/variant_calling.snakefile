@@ -595,8 +595,8 @@ rule make_single_VCF:
                                        ref_mt=params.ref_mt_fasta, tail_mismatch=params.tail_mismatch)
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
-        seq_name = get_seq_name(params.ref_mt_fasta)
-        VCF_RECORDS = VCFoutput(vcf_dict, reference=wildcards.ref_genome_mt, seq_name=seq_name,
+        seq_name, seq_length = get_seq_name(params.ref_mt_fasta)
+        VCF_RECORDS = VCFoutput(vcf_dict, reference=wildcards.ref_genome_mt, seq_name=seq_name, seq_length=seq_length,
                                 vcffile=output.single_vcf)
         bed_output(VCF_RECORDS, seq_name=seq_name, bedfile=output.single_bed)
         # fasta output
