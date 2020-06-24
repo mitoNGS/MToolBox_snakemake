@@ -1,8 +1,3 @@
-ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file
-# mt1	n1	mt1.fasta	n1.fasta
-# mt2	n2	mt2.fasta	n2.fasta
-# mt3	n3	mt3.fasta	n3.fasta
-# mt_2	n2	mt2.fasta	n2.fasta
-# 87074_1	pb_121-1	87074_1-mtgenome-v270.fasta	pb_121-1_polished_assembly.fasta
-# 87075_2	pb_121-1	87075_2-mtgenome-v270.fasta	pb_121-1_polished_assembly.fasta
-NC_001323.1	GCF_000002315.5	GCF_000002315.5_GRCg6a_genomic_mt.fna	GCF_000002315.5_GRCg6a_genomic.fna
+ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file	species
+# mt1	n1	mt1.fasta	n1.fasta	sp1
+NC_001323.1	GCF_000002315.5	GCF_000002315.5_GRCg6a_genomic_mt.fna	GCF_000002315.5_GRCg6a_genomic.fna	ggallus

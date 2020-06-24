@@ -8,7 +8,8 @@ import pandas as pd
 
 from ..config_parsers import (
     fastqc_outputs, get_bed_files, get_genome_files, get_fasta_files,
-    get_genome_vcf_files, get_mt_genomes,
+    get_genome_vcf_files, get_mt_genomes, get_analysis_species,
+    ref_genome_mt_to_species
 
 )
 
@@ -37,12 +38,27 @@ FASTQC_OUT = [
     "{}/5517_liver_2.R1_fastqc.html",
     "{}/5517_liver_2.R2_fastqc.html"
 ]
-FASTQC_OUT_FILT = FASTQC_OUT + [
+
+FASTQC_OUT_FILT = [
+    "{}/5517_hypo_1_qc_R1_fastqc.html",
+    "{}/5517_hypo_1_qc_R2_fastqc.html",
+    "{}/5517_hypo_2_qc_R1_fastqc.html",
+    "{}/5517_hypo_2_qc_R2_fastqc.html",
+    "{}/5517_liver_1_qc_R1_fastqc.html",
+    "{}/5517_liver_1_qc_R2_fastqc.html",
+    "{}/5517_liver_2_qc_R1_fastqc.html",
+    "{}/5517_liver_2_qc_R2_fastqc.html",
     "{}/5517_hypo_1_qc_U_fastqc.html",
     "{}/5517_hypo_2_qc_U_fastqc.html",
     "{}/5517_liver_1_qc_U_fastqc.html",
-    "{}/5517_liver_2_qc_U_fastqc.html",
+    "{}/5517_liver_2_qc_U_fastqc.html"
 ]
+# FASTQC_OUT_FILT = FASTQC_OUT + [
+#     "{}/5517_hypo_1_qc_U_fastqc.html",
+#     "{}/5517_hypo_2_qc_U_fastqc.html",
+#     "{}/5517_liver_1_qc_U_fastqc.html",
+#     "{}/5517_liver_2_qc_U_fastqc.html",
+# ]
 
 
 class TestConfigParsers(unittest.TestCase):
@@ -53,6 +69,23 @@ class TestConfigParsers(unittest.TestCase):
         self.reference_tab = (pd.read_table(REFERENCE_TAB, sep="\t", comment='#')
                               .set_index("ref_genome_mt", drop=False))
 
+    def test_ref_genome_mt_to_species(self):
+        # Given
+        expected = "ggallus"
+        # When
+        result = ref_genome_mt_to_species(ref_genome_mt="NC_001323.1", reference_tab=self.reference_tab)
+        # Then
+        self.assertEqual(expected, result)
+
+    def test_get_analysis_species(self):
+        # Given
+        expected = ["ggallus", "human"]
+        # When
+        result1 = get_analysis_species("NC_001323.1", reference_tab=self.reference_tab, config_species=None)
+        result2 = get_analysis_species("NC_001323.1", reference_tab=self.reference_tab, config_species="human")
+        # Then
+        self.assertEqual(expected, [result1, result2])
+        
     def test_get_mt_genomes(self):
         # Given
         expected = ["NC_001323.1"]

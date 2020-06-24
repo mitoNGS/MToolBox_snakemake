@@ -6,13 +6,32 @@ import pandas as pd
 from snakemake.io import expand
 
 def parse_config_tabs(analysis_tab_file=None, reference_tab_file=None, datasets_tab_file=None):
+    # TODO:
+    # - test!
     analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
     reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
                      .set_index("ref_genome_mt", drop=False))
     datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
     return analysis_tab, reference_tab, datasets_tab
-    
-def get_analysis_species(ref_genome_mt, ref_genome_mt_species_dict=None, config_species=None):
+
+def ref_genome_mt_to_species(ref_genome_mt=None, reference_tab=None):
+    """ Return a string of species corresponding to a mt reference genome,
+        given a reference_tab.
+
+    Args:
+        ref_genome_mt: ref_genome_mt as parsed from analysis_tab 
+        reference_tab: table of reference genomes 
+    Returns:
+        string
+    """
+    # TODO:
+    # - it should throw an error if multiple instances of species are found in the table, atm it keeps the last one it finds
+    for row in reference_tab.itertuples():
+        if getattr(row, "ref_genome_mt") == ref_genome_mt:
+            species = getattr(row, "species")
+    return species
+
+def get_analysis_species(ref_genome_mt, reference_tab=None, config_species=None):
     """ Return a string of species used for analysis.
 
     Args:
@@ -24,7 +43,7 @@ def get_analysis_species(ref_genome_mt, ref_genome_mt_species_dict=None, config_
     if config_species:
         species = config_species
     else:
-        species = ref_genome_mt_species_dict[ref_genome_mt]
+        species = ref_genome_mt_to_species(ref_genome_mt=ref_genome_mt, reference_tab=reference_tab)
     return species
 
 # TODO: infolder is not used anywhere
