@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
-conda env create -n mtoolbox -f envs/mtoolbox.yaml
+# conda env create -n mtoolbox -f envs/mtoolbox.yaml
 
-# install bamUtils
 conda activate mtoolbox
-git clone https://github.com/statgen/bamUtil.git
-cd bamUtil
-make cloneLib
-make
-make install INSTALLDIR=$(dirname $(which python))
+
+# install required packages not available through conda
+pip install mtoolnote
+
 conda deactivate
 
 # create alias for env activation and running
