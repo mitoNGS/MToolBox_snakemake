@@ -4,7 +4,6 @@
 
 bamUtil
 libStatGen
-data
 modules/GenomeAnalysisTK.jar
 logs
 envs/bcftools.yaml
