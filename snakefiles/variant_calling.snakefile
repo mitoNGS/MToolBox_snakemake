@@ -23,7 +23,7 @@ from modules.config_parsers import (
     fastqc_outputs, get_bed_files, get_datasets_for_symlinks,
     get_fasta_files, get_genome_files, get_genome_single_vcf_files,
     get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_genomes, get_mt_fasta,
-    get_sample_bamfiles, get_symlinks
+    get_sample_bamfiles, get_symlinks, parse_config_tabs
 )
 from modules.filter_alignments import filter_alignments
 from modules.general import (
@@ -37,10 +37,11 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries
 
 # fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
-                 .set_index("ref_genome_mt", drop=False))
-datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
+analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
+# analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+# reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
+#                  .set_index("ref_genome_mt", drop=False))
+# datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
 
 configfile: "config.yaml"
 res_dir = config["results"]

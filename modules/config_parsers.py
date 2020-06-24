@@ -5,6 +5,27 @@ from typing import List
 import pandas as pd
 from snakemake.io import expand
 
+def parse_config_tabs(analysis_tab_file=None, reference_tab_file=None, datasets_tab_file=None):
+    analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+    reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
+                     .set_index("ref_genome_mt", drop=False))
+    datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
+    return analysis_tab, reference_tab, datasets_tab
+    
+def get_analysis_species(ref_genome_mt, ref_genome_mt_species_dict=None, config_species=None):
+    """ Return a string of species used for analysis.
+
+    Args:
+        ref_genome_mt: ref_genome_mt as parsed from analysis_tab 
+        config_species: 
+    Returns:
+        string
+    """
+    if config_species:
+        species = config_species
+    else:
+        species = ref_genome_mt_species_dict[ref_genome_mt]
+    return species
 
 # TODO: infolder is not used anywhere
 def get_datasets_for_symlinks(df, sample=None, library=None, d=None,
