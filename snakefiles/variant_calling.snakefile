@@ -54,7 +54,7 @@ else:
     if species in list(reference_tab["species"]):
         analysis_tab = analysis_tab.assign(species=species)
     else:
-        sys.exit("Provided species in not present in reference_genomes.tab.")
+        sys.exit("Provided species {} in not present in reference_genomes.tab.".format(species))
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
