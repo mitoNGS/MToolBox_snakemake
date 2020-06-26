@@ -5,13 +5,41 @@ from typing import List
 import pandas as pd
 from snakemake.io import expand
 
+def parse_config_tab(tab_file=None, sep = "\t", comment='#', index=[]):
+    """General purpose parser for configuration table.
+    
+    Args:
+        tab_file: configuration file to be parsed
+        sep: table separator
+        comment: lines starting with this will be skipped
+        index: set this field as index
+    
+    Return:
+        pd data frame
+    """
+    # TODO:
+    # - set a better log
+    # - test!
+    tab = pd.read_table(tab_file, sep=sep, comment=comment)
+    if index:
+        try:
+            tab.set_index(index, drop=False, inplace=True, verify_integrity=True)
+        except ValueError:
+            print("Duplicate index!")
+            tab.set_index(index, drop=False, inplace=True)
+            pass
+    return tab
+
 def parse_config_tabs(analysis_tab_file=None, reference_tab_file=None, datasets_tab_file=None):
     # TODO:
     # - test!
-    analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-    reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
-                     .set_index("ref_genome_mt", drop=False))
-    datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
+    analysis_tab = parse_config_tab(tab_file=analysis_tab_file, index=["sample"])
+    reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_genome_mt", "ref_genome_n"])
+    datasets_tab = parse_config_tab(tab_file=datasets_tab_file, index=["sample", "library"])
+    # analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
+    # reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
+    #                  .set_index("ref_genome_mt", drop=False))
+    # datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
     return analysis_tab, reference_tab, datasets_tab
 
 def ref_genome_mt_to_species(ref_genome_mt=None, reference_tab=None):
@@ -36,7 +64,7 @@ def get_analysis_species(ref_genome_mt, reference_tab=None, config_species=None)
 
     Args:
         ref_genome_mt: ref_genome_mt as parsed from analysis_tab 
-        config_species: 
+        config_species: species from config file. This will overseed values parsed from reference_tab
     Returns:
         string
     """
