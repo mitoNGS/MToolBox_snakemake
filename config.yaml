@@ -2,6 +2,8 @@ results:    "results"
 map_dir:    "map"
 log_dir:    "logs"
 tmp_dir:    "/tmp"
+species: 
+use_custom_n_genome: False
 
 read_processing:
     trimmomatic:

@@ -49,6 +49,18 @@ map_dir = config["map_dir"]
 log_dir = config["log_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 
+# if species is not defined by config.yaml, should be parsed for each analysis
+species = config["species"]
+print(type(species))
+if species is None:
+    # should be parsed with the reference_genome.tab
+    pass
+else:
+    if species in list(reference_tab["species"]):
+        analysis_tab = analysis_tab.assign(species=species)
+    else:
+        sys.exit("Provided species in not present in reference_genomes.tab.")
+
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
     ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
