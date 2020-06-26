@@ -38,10 +38,6 @@ localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
-# analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-# reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
-#                  .set_index("ref_genome_mt", drop=False))
-# datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
 
 configfile: "config.yaml"
 res_dir = config["results"]
@@ -51,7 +47,6 @@ gmap_db_dir = config["map"]["gmap_db_dir"]
 
 # if species is not defined by config.yaml, should be parsed for each analysis
 species = config["species"]
-print(type(species))
 if species is None:
     # should be parsed with the reference_genome.tab
     pass
