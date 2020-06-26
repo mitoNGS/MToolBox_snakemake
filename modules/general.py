@@ -21,6 +21,44 @@ def is_compr_file(f):
         except OSError:
             return False
 
+def trimmomatic_input(datasets_tab=None, sample=None, library=None):
+    """Input is supposed to be
+    
+    data/reads/{sample}_{library}.R1.fastq.gz"""
+    outpaths = []
+    for i, l in datasets_tab.iterrows():
+        if l["sample"] == sample and str(l["library"]) == str(library):
+            #print(l)
+            if is_compr_file("data/reads/{}".format(l["R1"])):
+                outpaths.append("data/reads/{sample}_{library}.R1.fastq.gz".format(sample=l["sample"], library=l["library"]))
+                outpaths.append("data/reads/{sample}_{library}.R2.fastq.gz".format(sample=l["sample"], library=l["library"]))
+            else:
+                outpaths.append("data/reads/{sample}_{library}.R1.fastq".format(sample=l["sample"], library=l["library"]))
+                outpaths.append("data/reads/{sample}_{library}.R2.fastq".format(sample=l["sample"], library=l["library"]))
+    return outpaths
+
+# def get_symlinks(df, analysis_tab=None,
+#                  infolder="data/reads", outfolder="data/reads"):
+#     outpaths = []
+#     # TODO: convert .iterrows() to .itertuples() for efficiency
+#     for i, l in df.iterrows():
+#         if l["sample"] in list(analysis_tab["sample"]):
+#             outpaths.append(
+#                 os.path.join(
+#                     outfolder,
+#                     "{sample}_{library}.R1.fastq.gz".format(
+#                         sample=l["sample"], library=l["library"])
+#                 )
+#             )
+#             outpaths.append(
+#                 os.path.join(
+#                     outfolder,
+#                     "{sample}_{library}.R2.fastq.gz".format(
+#                         sample=l["sample"], library=l["library"])
+#                 )
+#             )
+#     return outpaths
+
 def memory_usage_resource() -> float:
     """ Get the current memory usage.
 

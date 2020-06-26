@@ -27,7 +27,8 @@ from modules.config_parsers import (
 )
 from modules.filter_alignments import filter_alignments
 from modules.general import (
-    check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta
+    check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
+    trimmomatic_input
 )
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
@@ -92,10 +93,28 @@ rule symlink_libraries:
         ln -sf $(basename {input.R2}) $(basename {output.R2})
         """
 
+rule symlink_libraries_uncompressed:
+    input:
+        R1 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
+                                                         library=wildcards.library, d="R1"),
+        R2 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
+                                                         library=wildcards.library, d="R2")
+    output:
+        R1 = "data/reads/{sample}_{library}.R1.fastq",
+        R2 = "data/reads/{sample}_{library}.R2.fastq",
+    shell:
+        """
+        cd data/reads/
+        ln -sf $(basename {input.R1}) $(basename {output.R1})
+        ln -sf $(basename {input.R2}) $(basename {output.R2})
+        """
+
 rule fastqc_raw:
     input:
-        R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
-        R2 = "data/reads/{sample}_{library}.R2.fastq.gz",
+        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
+        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
+        # R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
+        # R2 = "data/reads/{sample}_{library}.R2.fastq.gz",
         # R1 = "data/reads/{dataset_basename}_R1_001.fastq.gz",
         # R2 = "data/reads/{dataset_basename}_R2_001.fastq.gz"
     output:
@@ -208,8 +227,10 @@ rule trimmomatic:
         out1U = "data/reads_filtered/{sample}_{library}_qc_1U.fastq.gz",
         out2U = "data/reads_filtered/{sample}_{library}_qc_2U.fastq.gz"
     input:
-        R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
-        R2 = "data/reads/{sample}_{library}.R2.fastq.gz"
+        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
+        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
+        # R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
+        # R2 = "data/reads/{sample}_{library}.R2.fastq.gz"
     output:
         out1P = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
         out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import gzip
 from typing import List
 
 import pandas as pd
@@ -81,6 +82,13 @@ def get_datasets_for_symlinks(df, sample=None, library=None, d=None,
 
     return dataset_file
 
+def is_compr_file(f):
+    with gzip.open(f, 'r') as fh:
+        try:
+            fh.read(1)
+            return True
+        except OSError:
+            return False
 
 # TODO: infolder is not used anywhere
 def get_symlinks(df, analysis_tab=None,
@@ -89,20 +97,37 @@ def get_symlinks(df, analysis_tab=None,
     # TODO: convert .iterrows() to .itertuples() for efficiency
     for i, l in df.iterrows():
         if l["sample"] in list(analysis_tab["sample"]):
-            outpaths.append(
-                os.path.join(
-                    outfolder,
-                    "{sample}_{library}.R1.fastq.gz".format(
-                        sample=l["sample"], library=l["library"])
+            if is_compr_file("data/reads/{}".format(l["R1"])):
+                outpaths.append(
+                    os.path.join(
+                        outfolder,
+                        "{sample}_{library}.R1.fastq.gz".format(
+                            sample=l["sample"], library=l["library"])
+                    )
                 )
-            )
-            outpaths.append(
-                os.path.join(
-                    outfolder,
-                    "{sample}_{library}.R2.fastq.gz".format(
-                        sample=l["sample"], library=l["library"])
+                outpaths.append(
+                    os.path.join(
+                        outfolder,
+                        "{sample}_{library}.R2.fastq.gz".format(
+                            sample=l["sample"], library=l["library"])
+                    )
                 )
-            )
+            else:
+                outpaths.append(
+                    os.path.join(
+                        outfolder,
+                        "{sample}_{library}.R1.fastq".format(
+                            sample=l["sample"], library=l["library"])
+                    )
+                )
+                outpaths.append(
+                    os.path.join(
+                        outfolder,
+                        "{sample}_{library}.R2.fastq".format(
+                            sample=l["sample"], library=l["library"])
+                    )
+                )
+    print(outpaths)
     return outpaths
 
 
