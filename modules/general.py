@@ -13,6 +13,13 @@ from Bio.Seq import reverse_complement
 
 from modules.constants import CLEV, COV, DIUPAC, GLEN, MQUAL
 
+def is_compr_file(f):
+    with gzip.open(f, 'r') as fh:
+        try:
+            fh.read(1)
+            return True
+        except OSError:
+            return False
 
 def memory_usage_resource() -> float:
     """ Get the current memory usage.
