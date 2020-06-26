@@ -137,7 +137,7 @@ rule make_mt_gmap_db:
     shell:
         """
         #module load gsnap
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
+        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
         """
 
 rule make_mt_n_gmap_db:
