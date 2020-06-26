@@ -5,14 +5,14 @@ from typing import List
 import pandas as pd
 from snakemake.io import expand
 
-def parse_config_tab(tab_file=None, sep = "\t", comment='#', index=[]):
+def parse_config_tab(tab_file=None, sep = "\t", comment='#', index=None):
     """General purpose parser for configuration table.
     
     Args:
         tab_file: configuration file to be parsed
-        sep: table separator
-        comment: lines starting with this will be skipped
-        index: set this field as index
+        sep:      table separator
+        comment:  lines starting with this will be skipped
+        index:    set this field as index
     
     Return:
         pd data frame
@@ -22,12 +22,12 @@ def parse_config_tab(tab_file=None, sep = "\t", comment='#', index=[]):
     # - test!
     tab = pd.read_table(tab_file, sep=sep, comment=comment)
     if index:
+        index = list(index)
         try:
             tab.set_index(index, drop=False, inplace=True, verify_integrity=True)
-        except ValueError:
-            print("Duplicate index!")
-            tab.set_index(index, drop=False, inplace=True)
-            pass
+        except ValueError as verr:
+            msg = verr
+            raise ValueError(msg)
     return tab
 
 def parse_config_tabs(analysis_tab_file=None, reference_tab_file=None, datasets_tab_file=None):
@@ -36,10 +36,6 @@ def parse_config_tabs(analysis_tab_file=None, reference_tab_file=None, datasets_
     analysis_tab = parse_config_tab(tab_file=analysis_tab_file, index=["sample"])
     reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_genome_mt", "ref_genome_n"])
     datasets_tab = parse_config_tab(tab_file=datasets_tab_file, index=["sample", "library"])
-    # analysis_tab = pd.read_table("data/analysis.tab", sep = "\t", comment='#')
-    # reference_tab = (pd.read_table("data/reference_genomes.tab", sep = "\t", comment='#')
-    #                  .set_index("ref_genome_mt", drop=False))
-    # datasets_tab = pd.read_table("data/datasets.tab", sep = "\t", comment='#')
     return analysis_tab, reference_tab, datasets_tab
 
 def ref_genome_mt_to_species(ref_genome_mt=None, reference_tab=None):
