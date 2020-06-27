@@ -51,6 +51,7 @@ dependencies:
   - freetype=2.9.1=he983fc9_1006
   - fribidi=1.0.5=h516909a_1002
   - ftputil=3.2=py36_0
+  - gatk-framework=3.6.24=5
   - gcc_impl_linux-64=7.3.0=habb00fd_1
   - gcc_linux-64=7.3.0=h553295d_8
   - gettext=0.19.8.1=hc5be6a0_1002
