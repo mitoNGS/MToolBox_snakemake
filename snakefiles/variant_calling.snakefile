@@ -36,7 +36,7 @@ from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 #source_dir = os.path.abspath(os.path.join(".", os.pardir))
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
-localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries
+localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, symlink_libraries_uncompressed, get_gmap_build_nuclear_mt_input
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
@@ -180,10 +180,10 @@ rule get_gmap_build_nuclear_mt_input:
 rule make_mt_n_gmap_db:
     input:
         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-                                                   ref_genome_mt_file=get_genome_files(reference_tab,
-                                                                                       wildcards.ref_genome_mt,
-                                                                                       "ref_genome_mt_file"))[0],
+        # mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+        #                                            ref_genome_mt_file=get_genome_files(reference_tab,
+        #                                                                                wildcards.ref_genome_mt,
+        #                                                                                "ref_genome_mt_file"))[0],
         # n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
         #                                           ref_genome_n_file=get_genome_files(reference_tab,
         #                                                                              wildcards.ref_genome_mt,
@@ -198,15 +198,8 @@ rule make_mt_n_gmap_db:
     message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     run:
-        run_gmap_build(n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta,
+        run_gmap_build(mt_n_genome_file=input.mt_n_fasta, # n_mt_file=output.mt_n_fasta,
                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log)
-    #conda: "envs/environment.yaml"
-    # shell:
-    #     """
-    #     cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
-    #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g -s none {output.mt_n_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
-    #     # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
-    #     """
 
 rule fastqc_filtered:
     input:

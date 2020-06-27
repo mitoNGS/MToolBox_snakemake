@@ -42,17 +42,17 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
     mt_n_fasta.close()
     #return True
 
-def run_gmap_build(n_genome_file=None, mt_genome_file=None, n_mt_file=None,
+def run_gmap_build(mt_n_genome_file=None, mt_genome_file=None,
                     gmap_db_dir=None, gmap_db=None, log=None):
     """
     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g -s none {output.mt_n_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
     """
     #print("Input files provided: n_genome_file={}, mt_genome_file={}".format(n_genome_file, mt_genome_file))
     # nuclear + mt db
-    if n_genome_file:
+    if mt_n_genome_file:
         #get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
         shell("gmap_build -D {gmap_db_dir} -d {gmap_db} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
-                                                                                            gmap_db=gmap_db, input_fasta=n_mt_file,
+                                                                                            gmap_db=gmap_db, input_fasta=mt_n_genome_file,
                                                                                             log=log))
     # mt db
     else:
