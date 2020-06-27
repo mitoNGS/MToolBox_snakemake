@@ -493,7 +493,7 @@ rule left_align_merged_bam:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai",
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.gz",
+        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
         genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
     output:
