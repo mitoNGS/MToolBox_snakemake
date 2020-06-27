@@ -30,7 +30,7 @@ from modules.general import (
     check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
     trimmomatic_input
 )
-from modules.genome_db import run_gmap_build
+from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
 source_dir = Path(os.path.dirname(workflow.snakefile)).parent
@@ -162,7 +162,7 @@ rule make_mt_gmap_db:
     #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
     #     """
 
-rule make_mt_n_gmap_db:
+rule get_gmap_build_nuclear_mt_input:
     input:
         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
@@ -173,16 +173,32 @@ rule make_mt_n_gmap_db:
                                                                                      wildcards.ref_genome_mt,
                                                                                      "ref_genome_n_file"))[0]
     output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.gz"
+    run:
+        get_gmap_build_nuclear_mt_input(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta)
+
+rule make_mt_n_gmap_db:
+    input:
+        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
+        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+                                                   ref_genome_mt_file=get_genome_files(reference_tab,
+                                                                                       wildcards.ref_genome_mt,
+                                                                                       "ref_genome_mt_file"))[0],
+        # n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
+        #                                           ref_genome_n_file=get_genome_files(reference_tab,
+        #                                                                              wildcards.ref_genome_mt,
+        #                                                                              "ref_genome_n_file"))[0]
+    output:
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        # mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
-    message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
+    message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     run:
-        run_gmap_build(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta,
+        run_gmap_build(n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta,
                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log)
     #conda: "envs/environment.yaml"
     # shell:
@@ -456,7 +472,7 @@ rule merge_bam:
 
 rule index_genome:
     input:
-        mt_n_fasta = rules.make_mt_n_gmap_db.output.mt_n_fasta
+        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
@@ -470,7 +486,7 @@ rule index_genome:
 
 rule dict_genome:
     input:
-        mt_n_fasta = rules.make_mt_n_gmap_db.output.mt_n_fasta
+        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
@@ -484,7 +500,7 @@ rule left_align_merged_bam:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai",
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta",
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.gz",
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
         genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
     output:

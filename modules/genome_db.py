@@ -49,7 +49,7 @@ def run_gmap_build(n_genome_file=None, mt_genome_file=None, n_mt_file=None,
     #print("Input files provided: n_genome_file={}, mt_genome_file={}".format(n_genome_file, mt_genome_file))
     # nuclear + mt db
     if n_genome_file:
-        get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
+        #get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
         shell("gmap_build -D {gmap_db_dir} -d {gmap_db} -g -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
                                                                                             gmap_db=gmap_db, input_fasta=n_mt_file,
                                                                                             log=log))
