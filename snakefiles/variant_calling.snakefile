@@ -174,7 +174,7 @@ rule make_mt_n_gmap_db:
                                                                                      "ref_genome_n_file"))[0]
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
@@ -456,12 +456,15 @@ rule merge_bam:
 
 rule index_genome:
     input:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = rules.make_mt_n_gmap_db.output.mt_n_fasta
+        #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     message: "Indexing {input.mt_n_fasta} with samtools faidx"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
     #conda: "envs/samtools_biopython.yaml"
+    params:
+        TMP = check_tmp_dir(config["tmp_dir"]),
     shell:
         """
         samtools faidx {input.mt_n_fasta} &> {log}
@@ -469,7 +472,8 @@ rule index_genome:
 
 rule dict_genome:
     input:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = rules.make_mt_n_gmap_db.output.mt_n_fasta
+        #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
