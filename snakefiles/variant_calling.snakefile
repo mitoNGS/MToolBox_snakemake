@@ -463,8 +463,6 @@ rule index_genome:
     message: "Indexing {input.mt_n_fasta} with samtools faidx"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
     #conda: "envs/samtools_biopython.yaml"
-    params:
-        TMP = check_tmp_dir(config["tmp_dir"]),
     shell:
         """
         samtools faidx {input.mt_n_fasta} &> {log}
