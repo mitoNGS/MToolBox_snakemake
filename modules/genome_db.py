@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from modules.general import is_compr_file
-from Bio import SeqIO
+from Bio import SeqIO, bgzf
 from snakemake import shell
 import gzip
 
@@ -30,7 +30,7 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
     """
     n_handle = open_genome_file(genome_file=n_genome_file)
     mt_handle = open_genome_file(genome_file=mt_genome_file)
-    mt_n_fasta = gzip.open(n_mt_file, 'wt')
+    mt_n_fasta = bgzf.BgzfWriter(n_mt_file, 'w')
     for s in mt_handle:
         mt_genome_id = s.id
         mt_genome_seq = str(s.seq)
