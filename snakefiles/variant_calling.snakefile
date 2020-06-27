@@ -30,6 +30,7 @@ from modules.general import (
     check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
     trimmomatic_input
 )
+from modules.genome_db import run_gmap_build
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
 source_dir = Path(os.path.dirname(workflow.snakefile)).parent
@@ -153,11 +154,13 @@ rule make_mt_gmap_db:
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
     log: "logs/gmap_build/{ref_genome_mt}.log"
     #conda: "envs/environment.yaml"
-    shell:
-        """
-        #module load gsnap
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
-        """
+    run:
+        run_gmap_build(mt_genome_file=input.mt_genome_fasta, gmap_db_dir=params.gmap_db_dir,
+                        gmap_db=params.gmap_db, log=log)
+    # shell:
+    #     """
+    #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
+    #     """
 
 rule make_mt_n_gmap_db:
     input:
@@ -178,13 +181,16 @@ rule make_mt_n_gmap_db:
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt + n genome: {input.mt_genome_fasta},{input.n_genome_fasta}"
     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
+    run:
+        run_gmap_build(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta,
+                            gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log)
     #conda: "envs/environment.yaml"
-    shell:
-        """
-        cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
-        gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g -s none {output.mt_n_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
-        # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
-        """
+    # shell:
+    #     """
+    #     cat {input.mt_genome_fasta} {input.n_genome_fasta} > {output.mt_n_fasta}
+    #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g -s none {output.mt_n_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
+    #     # rm {input.mt_genome_fasta}_{input.n_genome_fasta}.fasta
+    #     """
 
 rule fastqc_filtered:
     input:
