@@ -173,7 +173,7 @@ rule get_gmap_build_nuclear_mt_input:
                                                                                      wildcards.ref_genome_mt,
                                                                                      "ref_genome_n_file"))[0]
     output:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.gz"
+        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     run:
         get_gmap_build_nuclear_mt_input(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta)
 

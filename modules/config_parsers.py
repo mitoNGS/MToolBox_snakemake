@@ -127,7 +127,7 @@ def get_symlinks(df, analysis_tab=None,
                             sample=l["sample"], library=l["library"])
                     )
                 )
-    print(outpaths)
+    # print(outpaths)
     return outpaths
 
 

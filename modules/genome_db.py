@@ -17,7 +17,7 @@ def open_genome_file(genome_file=None):
 def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_mt_file=None):
     """Takes a Bio.SeqIO parsed nuclear genome and mt genome,
     checks if the mt genome is already in the nuclear genome handle,
-    generates compressed fasta file with genome for gmap_build.
+    generates fasta file with genome for gmap_build.
     
     PLEASE NOTE: atm it's safe to have one-contig mt genomes.
     
@@ -30,7 +30,8 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
     """
     n_handle = open_genome_file(genome_file=n_genome_file)
     mt_handle = open_genome_file(genome_file=mt_genome_file)
-    mt_n_fasta = bgzf.BgzfWriter(n_mt_file, 'w')
+    mt_n_fasta = open(n_mt_file, 'w')
+    #mt_n_fasta = bgzf.BgzfWriter(n_mt_file, 'w')
     for s in mt_handle:
         mt_genome_id = s.id
         mt_genome_seq = str(s.seq)
@@ -50,7 +51,7 @@ def run_gmap_build(n_genome_file=None, mt_genome_file=None, n_mt_file=None,
     # nuclear + mt db
     if n_genome_file:
         #get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
-        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} -g -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
+        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
                                                                                             gmap_db=gmap_db, input_fasta=n_mt_file,
                                                                                             log=log))
     # mt db
