@@ -4,12 +4,13 @@
 from modules.general import is_compr_file
 from Bio import SeqIO
 from snakemake import shell
+import gzip
 
 shell.prefix("set -euo pipefail;")
 
 def open_genome_file(genome_file=None):
     if is_compr_file(genome_file):
-        return SeqIO.parse(gzip.open(genome_file), 'fasta')
+        return SeqIO.parse(gzip.open(genome_file, 'rt'), 'fasta')
     else:
         return SeqIO.parse(genome_file, 'fasta')
 
@@ -29,7 +30,7 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
     """
     n_handle = open_genome_file(genome_file=n_genome_file)
     mt_handle = open_genome_file(genome_file=mt_genome_file)
-    mt_n_fasta = gzip.open(n_mt_file, 'w')
+    mt_n_fasta = gzip.open(n_mt_file, 'wt')
     for s in mt_handle:
         mt_genome_id = s.id
         mt_genome_seq = str(s.seq)
@@ -45,7 +46,7 @@ def run_gmap_build(n_genome_file=None, mt_genome_file=None, n_mt_file=None,
     """
     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g -s none {output.mt_n_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
     """
-    print("Input files provided: n_genome_file={}, mt_genome_file={}".format(n_genome_file, mt_genome_file))
+    #print("Input files provided: n_genome_file={}, mt_genome_file={}".format(n_genome_file, mt_genome_file))
     # nuclear + mt db
     if n_genome_file:
         get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
@@ -54,11 +55,10 @@ def run_gmap_build(n_genome_file=None, mt_genome_file=None, n_mt_file=None,
                                                                                             log=log))
     # mt db
     else:
-        print(type(mt_genome_file))
         if is_compr_file(mt_genome_file):
-            g_flag == "-g"
+            g_flag = "-g"
         else:
-            g_flag == ""
+            g_flag = ""
         shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {g_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
                                                                                         gmap_db=gmap_db, input_fasta=mt_genome_file,
                                                                                         log=log, g_flag=g_flag))
