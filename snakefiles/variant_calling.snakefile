@@ -145,7 +145,7 @@ rule make_mt_gmap_db:
         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
-                                                                                       "ref_genome_mt_file"))
+                                                                                       "ref_genome_mt_file"))[0]
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     params:
@@ -167,11 +167,11 @@ rule make_mt_n_gmap_db:
         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
-                                                                                       "ref_genome_mt_file")),
+                                                                                       "ref_genome_mt_file"))[0],
         n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
                                                   ref_genome_n_file=get_genome_files(reference_tab,
                                                                                      wildcards.ref_genome_mt,
-                                                                                     "ref_genome_n_file"))
+                                                                                     "ref_genome_n_file"))[0]
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
