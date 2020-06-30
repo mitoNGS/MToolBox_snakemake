@@ -42,24 +42,34 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
     mt_n_fasta.close()
     #return True
 
+def get_mt_header(mt_genome_file=None):
+    """Gets seq id of a single-contig fasta file"""
+    mt_handle = SeqIO.read(mt_genome_file, 'fasta')
+    return mt_handle.id    
+
 def run_gmap_build(mt_n_genome_file=None, mt_genome_file=None,
-                    gmap_db_dir=None, gmap_db=None, log=None):
+                    gmap_db_dir=None, gmap_db=None, log=None, mt_is_circular=True):
     """
     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -g -s none {output.mt_n_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {output.mt_n_fasta} &> {log}
     """
     #print("Input files provided: n_genome_file={}, mt_genome_file={}".format(n_genome_file, mt_genome_file))
     # nuclear + mt db
+    c_flag = ""
+    g_flag = ""
+    if mt_is_circular:
+        mt_id = get_mt_header(mt_genome_file=mt_genome_file)
+        c_flag = "-c {}".format(mt_id)
     if mt_n_genome_file:
         #get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
-        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
-                                                                                            gmap_db=gmap_db, input_fasta=mt_n_genome_file,
+        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {c_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
+                                                                                            gmap_db=gmap_db, c_flag=c_flag, input_fasta=mt_n_genome_file,
                                                                                             log=log))
     # mt db
     else:
         if is_compr_file(mt_genome_file):
             g_flag = "-g"
-        else:
-            g_flag = ""
-        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {g_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
+        # else:
+        #     g_flag = ""
+        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {g_flag} {c_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
                                                                                         gmap_db=gmap_db, input_fasta=mt_genome_file,
-                                                                                        log=log, g_flag=g_flag))
+                                                                                        log=log, g_flag=g_flag, c_flag=c_flag))
