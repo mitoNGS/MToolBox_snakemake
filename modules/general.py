@@ -7,11 +7,15 @@ import re
 import resource
 import sys
 from typing import Union
+from types import SimpleNamespace
+from snakemake import shell
 
 from Bio import SeqIO
 from Bio.Seq import reverse_complement
 
 from modules.constants import CLEV, COV, DIUPAC, GLEN, MQUAL
+
+shell.prefix("set -euo pipefail;")
 
 def is_compr_file(f):
     with gzip.open(f, 'r') as fh:
@@ -498,3 +502,97 @@ def sam_to_fastq(samfile=None, outmt1=None, outmt2=None, outmt=None,
                     dics = {l[0]: [l]}
 
     return sclipped
+
+#b = [0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+
+def collect_bitwise_flags(n, b=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]):
+    """
+    | Integer  	|    Binary    	|                                Description (Paired Read Interpretation)                               	|
+|:--------:	|:------------:	|:-----------------------------------------------------------------------------------------------------:	|
+|     1    	|       1      	|                   template having multiple templates in sequencing (read is paired)                   	|
+|     2    	|      10      	|          each segment properly aligned according to the aligner (read mapped in proper pair)          	|
+|     4    	|      100     	|                                   segment unmapped (read1 unmapped)                                   	|
+|     8    	|     1000     	|                         next segment in the template unmapped (read2 unmapped)                        	|
+|    16    	|     10000    	|                      SEQ being reverse complemented (read1 reverse complemented)                      	|
+|    32    	|    100000    	|    SEQ of the next segment in the template being reverse complemented (read2 reverse complemented)    	|
+|    64    	|    1000000   	|                              the first segment in the template (is read1)                             	|
+|    128   	|   10000000   	|                              the last segment in the template (is read2)                              	|
+|    256   	|   100000000  	|                                         not primary alignment                                         	|
+|    512   	|  1000000000  	|                                     alignment fails quality checks                                    	|
+|   1024   	|  10000000000 	|                                        PCR or optical duplicate                                       	|
+|   2048   	| 100000000000 	| supplementary alignment (e.g. aligner specific, could be a portion of a split read or a tied region)  	|
+    """
+    flags = []
+    for i in b:
+        if n & i == 0 and n == 0:
+            flags.append(0)
+        if n & i != 0:
+            flags.append(i)
+    return set(flags)
+#gzip.open(outmt2, "wb") as mtoutfastq2, \
+
+def sam_to_ids(samfile=None, outmt1=None, outmt=None, keep_orphans=True, return_dict=False, return_files=True):
+    """Parses sam file and collect read ids.
+    
+    Args:
+        samfile:            a gzip-compressed SAM file
+        outmt:              file with list of SE reads
+        outmt1:             file with list of PE reads
+        keep_orphans:       wanna keep PE reads who lost their mate?
+        return_dict:        wanna return read dict (for debugging)?
+        return_files:       wanna return output files (for the pipeline)?
+    
+    Return:
+        if return_dict:     read dict
+    """
+    # TODO:
+    # - set a better log
+    # - test!
+    c = 0
+    f = gzip.open(samfile, "rt") 
+    if return_dict:
+        read_bitwiseflag_decomp = {}
+    if return_files:
+        mtoutfastq = gzip.open(outmt, "wt")
+        mtoutfastq1 = gzip.open(outmt1, "wt")
+    for i in f:
+        bitwise_status = True
+        c += 1
+        if c % 100000 == 0:
+            print("{} SAM entries processed.".format(c))
+        if i.strip() == "" or i.startswith("@"):
+            continue
+        l = (i.strip()).split("\t")
+        if l[2] == "*":
+            continue
+        bitwise_flags = collect_bitwise_flags(int(l[1]))
+        if 2048 in bitwise_flags: # skip supplementary alignments, we've already met this read
+            continue
+        elif set([1, 64]).issubset(bitwise_flags): # read paired and first in pair
+            paired_status = "PE"
+            if return_files:
+                mtoutfastq1.write("{}\n".format(l[0]))
+        elif 0 in bitwise_flags: # unpaired, mapped
+            paired_status = "SE"
+            if return_files:
+                mtoutfastq.write("{}\n".format(l[0]))
+        elif keep_orphans:
+            if set([1, 8]).issubset(bitwise_flags): # orphan left from alignment stage
+                paired_status = "SE"
+                if return_files:
+                    mtoutfastq.write("{}\n".format(l[0]))
+        else:
+            print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
+            bitwise_status = False
+        if return_dict:
+            read_bitwiseflag_decomp[l[0]] = SimpleNamespace(readID=l[0], bitwise_flag=int(l[1]),
+                                                        bitwise_decomp=bitwise_flags, bitwise_status=bitwise_status, paired_status=paired_status)
+    if return_files:
+        mtoutfastq.close()
+        mtoutfastq1.close()
+    f.close()
+    if return_dict:
+        return read_bitwiseflag_decomp
+
+def run_seqtk_subset(seqfile=None, id_list=None, outseqfile=None):
+    shell("seqtk subseq {seqfile} {id_list} > {outseqfile}")

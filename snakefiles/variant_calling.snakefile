@@ -156,7 +156,7 @@ rule make_mt_gmap_db:
     #conda: "envs/environment.yaml"
     run:
         run_gmap_build(mt_genome_file=input.mt_genome_fasta, gmap_db_dir=params.gmap_db_dir,
-                        gmap_db=params.gmap_db, log=log)
+                        gmap_db=params.gmap_db, log=log, mt_is_circular=True)
     # shell:
     #     """
     #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
@@ -199,7 +199,7 @@ rule make_mt_n_gmap_db:
     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     run:
         run_gmap_build(mt_n_genome_file=input.mt_n_fasta, # n_mt_file=output.mt_n_fasta,
-                            gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log)
+                            gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
 
 rule fastqc_filtered:
     input:
@@ -313,6 +313,19 @@ rule sam2fastq:
                              outmt2=output.outmt2, outmt=output.outmt, do_softclipping=True)
         print("{} reads with soft-clipping > 1/3 of their length".format(sclipped))
 
+rule sam_to_ids:
+    input:
+        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
+    output:
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.ids",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
+        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.ids",
+    message:
+        "Getting ids of mapped reads from {input.outmt_sam}"
+    run:
+        sam_to_ids(samfile=input.outmt_sam, outmt1=output.outmt1,
+                             outmt=output.outmt, keep_orphans=True, return_dict=False, return_files=True)
+        
 rule map_nuclear_MT_SE:
     input:
         outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
