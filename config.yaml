@@ -19,6 +19,7 @@ map:
     gmap_threads:       4
     gmap_remap_threads: 4
 
+keep_orphans: True
 mark_duplicates: False
 
 trimBam: False

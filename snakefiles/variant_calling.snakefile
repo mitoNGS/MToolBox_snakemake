@@ -37,7 +37,7 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 #source_dir = os.path.abspath(os.path.join(".", os.pardir))
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, symlink_libraries_uncompressed, get_gmap_build_nuclear_mt_input
-ruleorder: sam_to_ids_keep_orphans > sam_to_ids
+#ruleorder: sam_to_ids_keep_orphans > sam_to_ids
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
@@ -315,20 +315,20 @@ rule map_MT_PE_SE:
 #                              outmt2=output.outmt2, outmt=output.outmt, do_softclipping=True)
 #         print("{} reads with soft-clipping > 1/3 of their length".format(sclipped))
 
-rule sam_to_ids:
-    input:
-        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
-    output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.ids",
-        #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
-        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.ids",
-    message:
-        "Getting ids of mapped reads from {input.outmt_sam}"
-    run:
-        sam_to_ids(samfile=input.outmt_sam, outmt_PE=output.outmt1,
-                             outmt_SE=output.outmt, keep_orphans=False, return_dict=False, return_files=True)
+# rule sam_to_ids:
+#     input:
+#         outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
+#     output:
+#         outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.ids",
+#         #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
+#         outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.ids",
+#     message:
+#         "Getting ids of mapped reads from {input.outmt_sam}"
+#     run:
+#         sam_to_ids(samfile=input.outmt_sam, outmt_PE=output.outmt1,
+#                              outmt_SE=output.outmt, keep_orphans=False, return_dict=False, return_files=True)
 
-rule sam_to_ids_keep_orphans:
+rule sam_to_ids:
     input:
         outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
     output:
@@ -345,8 +345,8 @@ rule sam_to_ids_keep_orphans:
 
 rule ids_to_fastq_PE:
     input:
-        outmt1 = rules.sam_to_ids_keep_orphans.output.outmt1 if config["keep_orphans"] \
-                    else rules.sam_to_ids.output.outmt1,
+        outmt1 = rules.sam_to_ids.output.outmt1,# if config["keep_orphans"] \
+                    #else rules.sam_to_ids.output.outmt1,
         R1 = rules.trimmomatic.output.out1P,
         R2 = rules.trimmomatic.output.out2P,
         #outmt = rules.sam_to_ids.output.outmt,
@@ -367,8 +367,8 @@ rule ids_to_fastq_PE:
 
 rule ids_to_fastq_SE:
     input:
-        outmt = rules.sam_to_ids_keep_orphans.output.outmt if config["keep_orphans"] \
-                    else rules.sam_to_ids.output.outmt,
+        outmt = rules.sam_to_ids.output.outmt,# if config["keep_orphans"] \
+                    #else rules.sam_to_ids.output.outmt,
         U1 = rules.trimmomatic.output.out1U,
         #U2 = rules.trimmomatic.output.out2U,
         #outmt = rules.sam_to_ids.output.outmt,
@@ -389,8 +389,8 @@ rule ids_to_fastq_SE:
 
 rule ids_to_fastq_orphans:
     input:
-        outmt_U1 = rules.sam_to_ids_keep_orphans.output.outmt_U1,
-        outmt_U2 = rules.sam_to_ids_keep_orphans.output.outmt_U2,
+        outmt_U1 = rules.sam_to_ids.output.outmt_U1,
+        outmt_U2 = rules.sam_to_ids.output.outmt_U2,
         R1 = rules.trimmomatic.output.out1P,
         R2 = rules.trimmomatic.output.out2P,
         #outmt = rules.sam_to_ids.output.outmt,
