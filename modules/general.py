@@ -531,7 +531,7 @@ def collect_bitwise_flags(n, b=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 
     return set(flags)
 #gzip.open(outmt2, "wb") as mtoutfastq2, \
 
-def sam_to_ids(samfile=None, outmt1=None, outmt=None, keep_orphans=True, return_dict=False, return_files=True):
+def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_SE=None, keep_orphans=True, return_dict=False, return_files=True):
     """Parses sam file and collect read ids.
     
     Args:
@@ -553,10 +553,14 @@ def sam_to_ids(samfile=None, outmt1=None, outmt=None, keep_orphans=True, return_
     if return_dict:
         read_bitwiseflag_decomp = {}
     if return_files:
-        mtoutfastq = gzip.open(outmt, "wt")
-        mtoutfastq1 = gzip.open(outmt1, "wt")
+        mtoutfastq_SE = gzip.open(outmt_SE, "wt")
+        mtoutfastq_PE = gzip.open(outmt_PE, "wt")
+        if keep_orphans:
+            mtoutfastq_U1 = gzip.open(outmt_U1, 'wt')
+            mtoutfastq_U2 = gzip.open(outmt_U2, 'wt')
     for i in f:
         bitwise_status = True
+        paired_status = ""
         c += 1
         if c % 100000 == 0:
             print("{} SAM entries processed.".format(c))
@@ -568,19 +572,29 @@ def sam_to_ids(samfile=None, outmt1=None, outmt=None, keep_orphans=True, return_
         bitwise_flags = collect_bitwise_flags(int(l[1]))
         if 2048 in bitwise_flags: # skip supplementary alignments, we've already met this read
             continue
-        elif set([1, 64]).issubset(bitwise_flags): # read paired and first in pair
-            paired_status = "PE"
-            if return_files:
-                mtoutfastq1.write("{}\n".format(l[0]))
         elif 0 in bitwise_flags: # unpaired, mapped
             paired_status = "SE"
             if return_files:
-                mtoutfastq.write("{}\n".format(l[0]))
+                mtoutfastq_SE.write("{}\n".format(l[0]))
         elif keep_orphans:
             if set([1, 8]).issubset(bitwise_flags): # orphan left from alignment stage
-                paired_status = "SE"
-                if return_files:
-                    mtoutfastq.write("{}\n".format(l[0]))
+                if 64 in bitwise_flags: # first in pair
+                    paired_status = "PE_orphan_1"
+                    if return_files:
+                        mtoutfastq_U1.write("{}\n".format(l[0]))
+                elif 128 in bitwise_flags: # second in pair
+                    paired_status = "PE_orphan_2"
+                    if return_files:
+                        mtoutfastq_U2.write("{}\n".format(l[0]))
+                else:
+                    print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
+                # paired_status = "SE"
+                # if return_files:
+                #     mtoutfastq.write("{}\n".format(l[0]))
+        elif set([1, 64]).issubset(bitwise_flags): # read paired and first in pair
+            paired_status = "PE"
+            if return_files:
+                mtoutfastq_PE.write("{}\n".format(l[0]))
         else:
             print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
             bitwise_status = False
@@ -588,8 +602,10 @@ def sam_to_ids(samfile=None, outmt1=None, outmt=None, keep_orphans=True, return_
             read_bitwiseflag_decomp[l[0]] = SimpleNamespace(readID=l[0], bitwise_flag=int(l[1]),
                                                         bitwise_decomp=bitwise_flags, bitwise_status=bitwise_status, paired_status=paired_status)
     if return_files:
-        mtoutfastq.close()
-        mtoutfastq1.close()
+        mtoutfastq_SE.close()
+        mtoutfastq_PE.close()
+        mtoutfastq_U1.close()
+        mtoutfastq_U2.close()
     f.close()
     if return_dict:
         return read_bitwiseflag_decomp

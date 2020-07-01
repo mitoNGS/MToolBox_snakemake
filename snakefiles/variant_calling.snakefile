@@ -23,7 +23,7 @@ from modules.config_parsers import (
     fastqc_outputs, get_bed_files, get_datasets_for_symlinks,
     get_fasta_files, get_genome_files, get_genome_single_vcf_files,
     get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_genomes, get_mt_fasta,
-    get_sample_bamfiles, get_symlinks, parse_config_tabs
+    get_sample_bamfiles, get_symlinks, parse_config_tabs, get_inputs_for_rule_map_nuclear_MT_SE
 )
 from modules.filter_alignments import filter_alignments
 from modules.general import (
@@ -37,6 +37,7 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 #source_dir = os.path.abspath(os.path.join(".", os.pardir))
 #localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, symlink_libraries_uncompressed, get_gmap_build_nuclear_mt_input
+ruleorder: sam_to_ids_keep_orphans > sam_to_ids
 
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
@@ -46,6 +47,7 @@ res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
+keep_orphans = config["keep_orphans"]
 
 # if species is not defined by config.yaml, should be parsed for each analysis
 species = config["species"]
@@ -296,40 +298,124 @@ rule map_MT_PE_SE:
             print("PE + SE mode")
             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input[0]} {input[1]} {input[2]} &> {log} && gzip {params.uncompressed_output} &>> {log}")
 
-rule sam2fastq:
-    input:
-        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
-        #outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
-    output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.fastq.gz",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.fastq.gz",
-        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
-        #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
-    #conda: "envs/environment.yaml"
-    message:
-        "Converting {input.outmt_sam} to FASTQ"
-    run:
-        sclipped = sam_to_fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
-                             outmt2=output.outmt2, outmt=output.outmt, do_softclipping=True)
-        print("{} reads with soft-clipping > 1/3 of their length".format(sclipped))
+# rule sam2fastq:
+#     input:
+#         outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
+#         #outmt_sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_outmt.sam.gz"
+#     output:
+#         outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.fastq.gz",
+#         outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.fastq.gz",
+#         outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+#         #log = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/sam2fastq.done"
+#     #conda: "envs/environment.yaml"
+#     message:
+#         "Converting {input.outmt_sam} to FASTQ"
+#     run:
+#         sclipped = sam_to_fastq(samfile=input.outmt_sam, outmt1=output.outmt1,
+#                              outmt2=output.outmt2, outmt=output.outmt, do_softclipping=True)
+#         print("{} reads with soft-clipping > 1/3 of their length".format(sclipped))
 
 rule sam_to_ids:
     input:
         outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
     output:
         outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.ids",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
+        #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
         outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.ids",
     message:
         "Getting ids of mapped reads from {input.outmt_sam}"
     run:
-        sam_to_ids(samfile=input.outmt_sam, outmt1=output.outmt1,
-                             outmt=output.outmt, keep_orphans=True, return_dict=False, return_files=True)
-        
+        sam_to_ids(samfile=input.outmt_sam, outmt_PE=output.outmt1,
+                             outmt_SE=output.outmt, keep_orphans=False, return_dict=False, return_files=True)
+
+rule sam_to_ids_keep_orphans:
+    input:
+        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
+    output:
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.ids",
+        #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
+        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.ids",
+        outmt_U1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.ids",
+        outmt_U2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.ids",   
+    message:
+        "Getting ids of mapped reads from {input.outmt_sam}"
+    run:
+        sam_to_ids(samfile=input.outmt_sam, outmt_PE=output.outmt1,
+                             outmt_SE=output.outmt, keep_orphans=True, return_dict=False, return_files=True)
+
+rule ids_to_fastq_PE:
+    input:
+        outmt1 = rules.sam_to_ids_keep_orphans.output.outmt1 if config["keep_orphans"] \
+                    else rules.sam_to_ids.output.outmt1,
+        R1 = rules.trimmomatic.output.out1P,
+        R2 = rules.trimmomatic.output.out2P,
+        #outmt = rules.sam_to_ids.output.outmt,
+    output:
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.fastq.gz",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.fastq.gz",
+        #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+    message:
+        "Fetching reads in {input.outmt1}"
+    params:
+        out1_temp = lambda wildcards, output: output.outmt1.replace(".gz", ""),
+        out2_temp = lambda wildcards, output: output.outmt2.replace(".gz", "") 
+    run:
+        run_seqtk_subset(seqfile=input.R1, id_list=input.outmt1, outseqfile=params.out1_temp)
+        run_seqtk_subset(seqfile=input.R2, id_list=input.outmt1, outseqfile=params.out2_temp)
+        shell("gzip {params.out1_temp}")
+        shell("gzip {params.out2_temp}")
+
+rule ids_to_fastq_SE:
+    input:
+        outmt = rules.sam_to_ids_keep_orphans.output.outmt if config["keep_orphans"] \
+                    else rules.sam_to_ids.output.outmt,
+        U1 = rules.trimmomatic.output.out1U,
+        #U2 = rules.trimmomatic.output.out2U,
+        #outmt = rules.sam_to_ids.output.outmt,
+    output:
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+        #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_2.fastq.gz",
+        #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+    message:
+        "Fetching reads in {input.outmt}"
+    params:
+        out1_temp = lambda wildcards, output: output.outmt1.replace(".gz", ""),
+#        out2_temp = lambda wildcards, output: output.outmt2.replace(".gz", "") 
+    run:
+        run_seqtk_subset(seqfile=input.U1, id_list=input.outmt1, outseqfile=params.out1_temp)
+#        run_seqtk_subset(seqfile=input.R2, id_list=input.outmt1, outseqfile=params.out2_temp)
+        shell("gzip {params.out1_temp}")
+#        shell("gzip {params.out2_temp}")
+
+rule ids_to_fastq_orphans:
+    input:
+        outmt_U1 = rules.sam_to_ids_keep_orphans.output.outmt_U1,
+        outmt_U2 = rules.sam_to_ids_keep_orphans.output.outmt_U2,
+        R1 = rules.trimmomatic.output.out1P,
+        R2 = rules.trimmomatic.output.out2P,
+        #outmt = rules.sam_to_ids.output.outmt,
+    output:
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.fastq.gz",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.fastq.gz",
+        #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+    message:
+        "Fetching reads in {input.outmt_U1} and {input.outmt_U2}"
+    params:
+        out1_temp = lambda wildcards, output: output.outmt1.replace(".gz", ""),
+        out2_temp = lambda wildcards, output: output.outmt2.replace(".gz", "") 
+    run:
+        run_seqtk_subset(seqfile=input.R1, id_list=input.outmt_U1, outseqfile=params.out1_temp)
+        run_seqtk_subset(seqfile=input.R2, id_list=input.outmt_U2, outseqfile=params.out2_temp)
+        shell("gzip {params.out1_temp}")
+        shell("gzip {params.out2_temp}")
+
 rule map_nuclear_MT_SE:
     input:
-        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
+        lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
+                                                                ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
+                                                                keep_orphans=keep_orphans),
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
     output:
         outS = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
     params:
@@ -350,15 +436,17 @@ rule map_nuclear_MT_SE:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
         if os.path.isfile(input.outmt):
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt} &> {log.logS} && gzip {params.uncompressed_output} &>> {log.logS}")
+            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input[:-1]} &> {log.logS} && gzip {params.uncompressed_output} &>> {log.logS}")
         else:
             open(output.outS, 'a').close()
 
 rule map_nuclear_MT_PE:
     input:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.fastq.gz",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.fastq.gz",
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        outmt1 = rules.ids_to_fastq_PE.output.outmt1,
+        outmt2 = rules.ids_to_fastq_PE.output.outmt2,
+        # outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_1.fastq.gz",
+        # outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_2.fastq.gz",
     output:
         outP = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
     params:
