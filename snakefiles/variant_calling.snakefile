@@ -28,7 +28,7 @@ from modules.config_parsers import (
 from modules.filter_alignments import filter_alignments
 from modules.general import (
     check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
-    trimmomatic_input, sam_to_ids
+    trimmomatic_input, sam_to_ids, run_seqtk_subset
 )
 from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
@@ -344,7 +344,7 @@ rule sam_to_ids:
     message:
         "Getting ids of mapped reads from {input.outmt_sam}"
     run:
-        sam_to_ids(samfile=input.outmt_sam, outmt_PE=output.outmt1,
+        sam_to_ids(samfile=input.outmt_sam, outmt_PE=output.outmt1, outmt_U1=output.outmt_U1, outmt_U2=output.outmt_U2, 
                              outmt_SE=output.outmt, keep_orphans=True, return_dict=False, return_files=True)
 
 rule ids_to_fastq_PE:
@@ -386,7 +386,7 @@ rule ids_to_fastq_SE:
         out1_temp = lambda wildcards, output: output.outmt1.replace(".gz", ""),
 #        out2_temp = lambda wildcards, output: output.outmt2.replace(".gz", "") 
     run:
-        run_seqtk_subset(seqfile=input.U1, id_list=input.outmt1, outseqfile=params.out1_temp)
+        run_seqtk_subset(seqfile=input.U1, id_list=input.outmt, outseqfile=params.out1_temp)
 #        run_seqtk_subset(seqfile=input.R2, id_list=input.outmt1, outseqfile=params.out2_temp)
         shell("gzip {params.out1_temp}")
 #        shell("gzip {params.out2_temp}")
