@@ -124,7 +124,7 @@ def get_SAM_header(samfile):
     comment_count = 0
     header_lines = []
     l = s_encoding(samhandle.readline())
-    print(l)
+    #print(l)
     while l[0] == "@":
         header_lines.append(l)
         comment_count += 1

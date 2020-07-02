@@ -28,7 +28,7 @@ from modules.config_parsers import (
 from modules.filter_alignments import filter_alignments
 from modules.general import (
     check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
-    trimmomatic_input
+    trimmomatic_input, sam_to_ids
 )
 from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
@@ -182,6 +182,10 @@ rule get_gmap_build_nuclear_mt_input:
 rule make_mt_n_gmap_db:
     input:
         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
+        mt_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+                                                   ref_genome_mt_file=get_genome_files(reference_tab,
+                                                                                       wildcards.ref_genome_mt,
+                                                                                       "ref_genome_mt_file"))[0],
         # mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
         #                                            ref_genome_mt_file=get_genome_files(reference_tab,
         #                                                                                wildcards.ref_genome_mt,
@@ -200,7 +204,7 @@ rule make_mt_n_gmap_db:
     message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     run:
-        run_gmap_build(mt_n_genome_file=input.mt_n_fasta, # n_mt_file=output.mt_n_fasta,
+        run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_fasta,
                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
 
 rule fastqc_filtered:
@@ -473,23 +477,73 @@ rule map_nuclear_MT_PE:
         else:
             open(output.outP, 'a').close()
 
+# def get_map_nuclear_MT_PE_SE_params(basename=None, sample=None, library=None, ref_genome_mt=None, ref_genome_n=None):
+#     concordant_uniq = "{}.concordant_uniq".format(basename)
+#     concordant_circular = "{}.concordant_circular".format(basename)
+#     unpaired_uniq = "{}.unpaired_uniq".format(basename)
+#     unpaired_circular = "{}.unpaired_circular".format(basename)
+#     return concordant_uniq, concordant_circular, unpaired_uniq, unpaired_circular
+
+rule map_nuclear_MT_PE_SE:
+    input:
+        lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
+                                                                ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
+                                                                keep_orphans=keep_orphans),
+        outmt1 = rules.ids_to_fastq_PE.output.outmt1,
+        outmt2 = rules.ids_to_fastq_PE.output.outmt2,
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+    output:
+        concordant_uniq = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_uniq",
+        concordant_circular = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_circular",
+        unpaired_uniq = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.unpaired_uniq",
+        unpaired_circular = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.unpaired_circular",
+        # outmt_n = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.sam.gz"
+    params:
+        out_basename = lambda wildcards, output: output.concordant_uniq.replace(".concordant_uniq", "")
+        # concordant_uniq, concordant_circular, unpaired_uniq, unpaired_circular = lambda wildcards, output: get_map_nuclear_MT_PE_SE_params(output.replace(".sam.gz", ""))
+    run:
+        shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --split-output={params.out_basename} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 -n 1 -Q -O -t {threads} {input[:-1]} &> {log} && gzip {params.uncompressed_output} &>> {log}")
+
+def cat_alignment(samfile=None, outfile=None, ref_mt_fasta_header=None):
+    samhandle = gzip.open(samfile, 'rt')
+    outhandle = gzip.open(outfile, 'at')
+    for l in samhandle:
+        if l.startswith("@") == False and l.split()[2] == ref_mt_fasta_header:
+            outhandle.write(l)
+    samhandle.close()
+    outhandle.close()
+
+def cat_alignments(*samfiles, outfile=None, ref_mt_fasta_header=None):
+    header = get_SAM_header(samfiles[0])[0]
+    outhandle = gzip.open(outfile, 'at')
+    for l in header:
+        outhandle.write(l)
+    outhandle.close()
+    for samfile in samfiles:
+        cat_alignment(samfile, outfile, ref_mt_fasta_header=ref_mt_fasta_header)
+
 rule filtering_mt_alignments:
     input:
-        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz",
-        outS = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz",
-        outP = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
+        rules.map_nuclear_MT_PE_SE.output,
+        # outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz",
+        # outS = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz",
+        # outP = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
     output:
         sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
+        ref_mt_fasta_header = lambda wildcards: get_seq_name("data/genomes/{ref_genome_mt_file}".format(
             ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
-        )
+        ))
+    #     # ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
+    #     #     ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
+    #     # )
     #conda: "envs/environment.yaml"
     threads: 1
-    message: "Filtering alignments in file {input.outmt} by checking alignments in {input.outS} and {input.outP}"
+    message: "Filtering alignments in files {input}"
     run:
-        filter_alignments(outmt=input.outmt, outS=input.outS, outP=input.outP, OUT=output.sam,
-                          ref_mt_fasta=params.ref_mt_fasta)
+        cat_alignments(input, outfile=output.sam, ref_mt_fasta_header=params.ref_mt_fasta_header)
+        # filter_alignments(outmt=input.outmt, outS=input.outS, outP=input.outP, OUT=output.sam,
+        #                   ref_mt_fasta=params.ref_mt_fasta)
 
 rule sam2bam:
     input:
