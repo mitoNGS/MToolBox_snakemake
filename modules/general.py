@@ -215,6 +215,7 @@ def freq(d):
 
 
 def get_seq_name(fasta):
+    """Return tuple of seq id and length"""
     mt_genome = SeqIO.index(fasta, 'fasta')
     if len(mt_genome) != 1:
         sys.exit(("Sorry, but MToolBox at the moment only accepts "
@@ -553,14 +554,17 @@ def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_
     if return_dict:
         read_bitwiseflag_decomp = {}
     if return_files:
-        mtoutfastq_SE = gzip.open(outmt_SE, "wt")
-        mtoutfastq_PE = gzip.open(outmt_PE, "wt")
+        mtoutfastq_SE = open(outmt_SE, "w")
+        mtoutfastq_PE = open(outmt_PE, "w")
+        # mtoutfastq_SE = gzip.open(outmt_SE, "wt")
+        # mtoutfastq_PE = gzip.open(outmt_PE, "wt")
         if keep_orphans:
-            mtoutfastq_U1 = gzip.open(outmt_U1, 'wt')
-            mtoutfastq_U2 = gzip.open(outmt_U2, 'wt')
+            mtoutfastq_U1 = open(outmt_U1, 'w')
+            mtoutfastq_U2 = open(outmt_U2, 'w')
     for i in f:
         bitwise_status = True
         paired_status = ""
+        write_to_dict = False
         c += 1
         if c % 100000 == 0:
             print("{} SAM entries processed.".format(c))
@@ -572,34 +576,41 @@ def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_
         bitwise_flags = collect_bitwise_flags(int(l[1]))
         if 2048 in bitwise_flags: # skip supplementary alignments, we've already met this read
             continue
-        elif 0 in bitwise_flags: # unpaired, mapped
+        elif 0 in bitwise_flags or bitwise_flags == set([16]): # unpaired, mapped
             paired_status = "SE"
+            write_to_dict = True
             if return_files:
                 mtoutfastq_SE.write("{}\n".format(l[0]))
-        elif keep_orphans:
-            if set([1, 8]).issubset(bitwise_flags): # orphan left from alignment stage
-                if 64 in bitwise_flags: # first in pair
-                    paired_status = "PE_orphan_1"
+        elif 1 in bitwise_flags: # read paired
+            if 8 in bitwise_flags: # orphan
+                if keep_orphans:
+                    if 64 in bitwise_flags:
+                        paired_status = "PE_orphan_1"
+                        write_to_dict = True
+                        if return_files:
+                            mtoutfastq_U1.write("{}\n".format(l[0]))
+                    elif 128 in bitwise_flags:
+                        paired_status = "PE_orphan_2"
+                        write_to_dict = True
+                        if return_files:
+                            mtoutfastq_U2.write("{}\n".format(l[0]))
+                    else:
+                        print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
+                        bitwise_status = False
+            else: # properly paired
+                if 64 in bitwise_flags:
+                    paired_status = "PE"
+                    write_to_dict = True
                     if return_files:
-                        mtoutfastq_U1.write("{}\n".format(l[0]))
-                elif 128 in bitwise_flags: # second in pair
-                    paired_status = "PE_orphan_2"
-                    if return_files:
-                        mtoutfastq_U2.write("{}\n".format(l[0]))
+                        mtoutfastq_PE.write("{}\n".format(l[0]))
+                elif 128 in bitwise_flags:
+                    write_to_dict = False
                 else:
                     print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
-                # paired_status = "SE"
-                # if return_files:
-                #     mtoutfastq.write("{}\n".format(l[0]))
-        elif set([1, 64]).issubset(bitwise_flags): # read paired and first in pair
-            paired_status = "PE"
-            if return_files:
-                mtoutfastq_PE.write("{}\n".format(l[0]))
-        else:
-            print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
-            bitwise_status = False
+                    bitwise_status = False
         if return_dict:
-            read_bitwiseflag_decomp[l[0]] = SimpleNamespace(readID=l[0], bitwise_flag=int(l[1]),
+            if write_to_dict:
+                read_bitwiseflag_decomp[l[0]] = SimpleNamespace(readID=l[0], bitwise_flag=int(l[1]),
                                                         bitwise_decomp=bitwise_flags, bitwise_status=bitwise_status, paired_status=paired_status)
     if return_files:
         mtoutfastq_SE.close()
@@ -612,3 +623,36 @@ def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_
 
 def run_seqtk_subset(seqfile=None, id_list=None, outseqfile=None):
     shell("seqtk subseq {seqfile} {id_list} > {outseqfile}")
+
+# 
+# 
+# 
+# ###
+#         elif set([1, 64]).issubset(bitwise_flags): # read paired and first in pair
+# 
+#             write_to_dict = True
+#             paired_status = "PE"
+#             if return_files:
+#                 mtoutfastq_PE.write("{}\n".format(l[0]))
+#         elif keep_orphans:
+#             if set([1, 8]).issubset(bitwise_flags): # orphan left from alignment stage
+#                 if 64 in bitwise_flags: # first in pair
+#                     paired_status = "PE_orphan_1"
+#                     write_to_dict = True
+#                     if return_files:
+#                         mtoutfastq_U1.write("{}\n".format(l[0]))
+#                 elif 128 in bitwise_flags: # second in pair
+#                     paired_status = "PE_orphan_2"
+#                     write_to_dict = True
+#                     if return_files:
+#                         mtoutfastq_U2.write("{}\n".format(l[0]))
+#                 else:
+#                     print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
+#                 # paired_status = "SE"
+#                 # if return_files:
+#                 #     mtoutfastq.write("{}\n".format(l[0]))
+#         # elif set([1, 128]).issubset(bitwise_flags): # read paired and second in pair, don't need it
+#         #     continue
+#         else:
+#             print("Couldn't find assignment for {} with bitwise flag {}".format(l[0], l[1]))
+#             bitwise_status = False
