@@ -8,12 +8,10 @@ Install Anaconda
 
 To this purpose, please follow instructions at http://docs.anaconda.com/anaconda/install/linux/ (hint: download the Anaconda installer in your personal directory with  `wget https://repo.continuum.io/archive/Anaconda3-2018.12-Linux-x86_64.sh`).
 
-**Note on installation**: step 11 (verify installation by opening `anaconda-navigator`) is not compulsory. However, if you wish to do so, please make sure you have logged in the grid with either the `-X` or the `-Y` option.
-
 Install MToolBox
 ----------------
 
-MToolBox is hosted on `GitHub`_. You can get a copy by running this commands:
+MToolBox is hosted on `GitHub`_. You can get a copy of the repository by running this commands:
 
 .. code-block:: bash
 
@@ -25,16 +23,17 @@ MToolBox is hosted on `GitHub`_. You can get a copy by running this commands:
     # fetch repo
     git clone https://github.com/mitoNGS/MToolBox_snakemake.git
 
-The MToolBox repo comes with a setup script ``install.sh``, which will:
-
-- install the ``mtoolbox`` conda environment with all the required dependencies
-- install the ``bamUtils`` suite (a third-party tool used in one of the steps of the pipeline which is not available as conda package)
-- create a command (``mtoolbox_activate``) which will be used to activate the MToolBox conda environment and add the folders of MToolBox executables and utilities to your ``PATH``.
+Installing MToolBox is as easy as running
 
 .. code-block:: bash
 
-    cd MToolBox_snakemake
-    bash install.sh
+   cd MToolBox_snakemake
+   bash install.sh
+
+The setup script ``install.sh`` will:
+
+- install the ``mtoolbox`` conda environment with all the required dependencies
+- create a command (``mtoolbox-activate``) which will be used to activate the MToolBox conda environment and add the folders of MToolBox executables and utilities to your ``PATH``.
 
 .. _`MToolBox_snakemake`: https://github.com/mitoNGS/MToolBox_snakemake
 .. _`MToolBox pipeline`: https://github.com/mitoNGS/MToolBox
