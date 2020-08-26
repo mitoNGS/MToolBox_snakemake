@@ -25,7 +25,7 @@ from modules.config_parsers import (
     get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_genomes, get_mt_fasta,
     get_sample_bamfiles, get_symlinks, parse_config_tabs, get_inputs_for_rule_map_nuclear_MT_SE
 )
-from modules.filter_alignments import filter_alignments
+from modules.filter_alignments import filter_alignments, cat_alignments
 from modules.general import (
     check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
     trimmomatic_input, sam_to_ids, run_seqtk_subset, get_SAM_header
