@@ -5,10 +5,8 @@ MToolBox is made by several snakemake workflows which can be run independently. 
  
 All the wrappers accepts snakemake arguments and parse automatically the `config.yaml` configuration file required by snakemake.
 
-An overview
------------
-
-If you're interested in using MToolBox
+Before starting...
+------------------
 
 Hints on functional annotation.
 
@@ -90,7 +88,7 @@ Structure (strictly **tab-separated**):
 
 This table contains explicit names for reference genome files used in the workflow. Names in the columns :code:`ref_genome_mt` and :code:`ref_genome_n` must be consistent with the ones in the same columns in the :code:`data/analysis.tab` table. Genome files must be located in the :code:`data/genomes` folder.
 
-The name in the column :code:`species` should be one of the `species available in mtoolnote`_ for variant functional annotation. 
+The name in the column :code:`species` should be consistent with the `species available in mtoolnote`_ for the variant functional annotation. 
 
 How to run the MToolBox wrappers
 --------------------------------

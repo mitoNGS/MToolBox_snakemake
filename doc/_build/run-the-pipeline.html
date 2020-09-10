@@ -1,0 +1,256 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Run MToolBox &#8212; MToolBox  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="run-mtoolbox">
+<h1>Run MToolBox<a class="headerlink" href="#run-mtoolbox" title="Permalink to this headline">¶</a></h1>
+<p>MToolBox is made by several snakemake workflows which can be run independently. We provide wrappers for the most common tasks and analyses. Using these wrappers will save a lot of typing and headache for the lazy users (probably <em>you</em>). Cool, isn’t it? :)</p>
+<p>All the wrappers accepts snakemake arguments and parse automatically the <cite>config.yaml</cite> configuration file required by snakemake.</p>
+<div class="section" id="before-starting">
+<h2>Before starting…<a class="headerlink" href="#before-starting" title="Permalink to this headline">¶</a></h2>
+<p>Hints on functional annotation.</p>
+</div>
+<div class="section" id="setting-up-a-working-directory">
+<h2>Setting up a working directory<a class="headerlink" href="#setting-up-a-working-directory" title="Permalink to this headline">¶</a></h2>
+<p>Replace <code class="code docutils literal notranslate"><span class="pre">/path/to/MToolBox/dir/</span></code> with the MToolBox installation path and <code class="code docutils literal notranslate"><span class="pre">/path/to/analysis/dir</span></code> with the folder where you wish to run your analysis.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">MTOOLBOX_DIR</span><span class="o">=</span>/path/to/MToolBox/dir/
+
+<span class="nb">cd</span> /path/to/analysis/dir
+
+<span class="c1"># create folders needed by the workflow</span>
+mkdir -p data/reads
+mkdir -p data/genomes
+mkdir -p logs/cluster_jobs
+
+<span class="c1"># copy configuration files you will edit later</span>
+cp <span class="nv">$MTOOLBOX_DIR</span>/config.yaml .
+cp <span class="nv">$MTOOLBOX_DIR</span>/cluster.yaml .
+cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
+</pre></div>
+</div>
+<p>At this point, if you run the command <code class="code docutils literal notranslate"><span class="pre">tree</span></code> the structure of your directory should look like</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.
+├── cluster.yaml
+├── config.yaml
+├── data
+│   ├── analysis.tab
+│   ├── datasets.tab
+│   ├── genomes
+│   ├── reads
+│   └── reference_genomes.tab
+└── logs
+    └── cluster_jobs
+</pre></div>
+</div>
+</div>
+<div class="section" id="compiling-configuration-files">
+<h2>Compiling configuration files<a class="headerlink" href="#compiling-configuration-files" title="Permalink to this headline">¶</a></h2>
+<p>An MToolBox-snakemake run is managed with these configuration files:</p>
+<ul class="simple">
+<li><code class="code docutils literal notranslate"><span class="pre">data/analysis.tab</span></code></li>
+<li><code class="code docutils literal notranslate"><span class="pre">data/reference_genomes.tab</span></code></li>
+<li><code class="code docutils literal notranslate"><span class="pre">data/datasets.tab</span></code></li>
+<li><code class="code docutils literal notranslate"><span class="pre">config.yaml</span></code></li>
+<li><code class="code docutils literal notranslate"><span class="pre">cluster.yaml</span></code></li>
+</ul>
+<p>Sounds a pain, huh? The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the <code class="code docutils literal notranslate"><span class="pre">config.yaml</span></code> and <code class="code docutils literal notranslate"><span class="pre">cluster.yaml</span></code> files should work the way they are. <strong>Please read the “Notes on configuration files” at the end of this section</strong>.</p>
+<p>Let’s see how to compile the configuration files in detail.</p>
+<ul class="simple">
+<li><code class="code docutils literal notranslate"><span class="pre">data/analysis.tab</span></code></li>
+</ul>
+<p>For each sample you are going to analyse, in this table you provide info about which mitochondrial and nuclear reference genomes to use. Example:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="36%" />
+<col width="40%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">sample</th>
+<th class="head">ref_genome_mt</th>
+<th class="head">ref_genome_n</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>sample_1</td>
+<td>NC_001323.1</td>
+<td>GCF_000002315.5</td>
+</tr>
+<tr class="row-odd"><td>sample_2</td>
+<td>NC_001323.1</td>
+<td>GCF_000002315.5</td>
+</tr>
+</tbody>
+</table>
+<p>In this example, the first row specifies that variant calling will be performed on <code class="code docutils literal notranslate"><span class="pre">sample_1</span></code> using the mitochondrial reference genome <code class="code docutils literal notranslate"><span class="pre">NC_001323.1</span></code>, by discarding those reads aligning on the nuclear reference genome <code class="code docutils literal notranslate"><span class="pre">GCF_000002315.5</span></code>. Please note that the names used in this table will be used in the workflow execution and are case-sensitive. Actual files related to samples and reference genomes will be provided in the <code class="code docutils literal notranslate"><span class="pre">data/reference_genomes.tab</span></code> and in the <code class="code docutils literal notranslate"><span class="pre">data/datasets.tab</span></code> files.</p>
+<ul class="simple">
+<li><code class="code docutils literal notranslate"><span class="pre">data/reference_genomes.tab</span></code></li>
+</ul>
+<p>Structure (strictly <strong>tab-separated</strong>):</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="26%" />
+<col width="22%" />
+<col width="26%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">ref_genome_mt</th>
+<th class="head">ref_genome_n</th>
+<th class="head">ref_genome_mt_file</th>
+<th class="head">ref_genome_n_file</th>
+<th class="head">species</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>NC_001323.1</td>
+<td>GCF_000002315.5.fasta</td>
+<td>NC_001323.1.fasta</td>
+<td>GCF_000002315.5.fasta</td>
+<td>ggallus</td>
+</tr>
+</tbody>
+</table>
+<p>This table contains explicit names for reference genome files used in the workflow. Names in the columns <code class="code docutils literal notranslate"><span class="pre">ref_genome_mt</span></code> and <code class="code docutils literal notranslate"><span class="pre">ref_genome_n</span></code> must be consistent with the ones in the same columns in the <code class="code docutils literal notranslate"><span class="pre">data/analysis.tab</span></code> table. Genome files must be located in the <code class="code docutils literal notranslate"><span class="pre">data/genomes</span></code> folder.</p>
+<p>The name in the column <code class="code docutils literal notranslate"><span class="pre">species</span></code> should be consistent with the <a class="reference external" href="https://github.com/mitoNGS/mtoolnote#features">species available in mtoolnote</a> for the variant functional annotation.</p>
+</div>
+<div class="section" id="how-to-run-the-mtoolbox-wrappers">
+<h2>How to run the MToolBox wrappers<a class="headerlink" href="#how-to-run-the-mtoolbox-wrappers" title="Permalink to this headline">¶</a></h2>
+<p>Running the wrappers is as simple as this:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
+
+MToolBox-&lt;wrapper&gt; &lt;snakemake arguments&gt;
+</pre></div>
+</div>
+<p><em>E.g.</em> if you want to run the MToolBox-variant-calling wrapper and print the commands it will execute, you can run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
+
+MToolBox-variant-calling -p
+</pre></div>
+</div>
+<p>You can also display a graphical representation of the workflow by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
+
+MToolBox-variant-calling --dag <span class="p">|</span> display
+</pre></div>
+</div>
+<p>This will show the workflow in a browser. Alternatively, you can save the workflow representation in a file by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
+
+MToolBox-variant-calling --dag &gt; workflow.svg
+</pre></div>
+</div>
+</div>
+<div class="section" id="available-wrappers">
+<h2>Available wrappers<a class="headerlink" href="#available-wrappers" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#mtoolbox-variant-calling">MToolBox-variant-calling</a></li>
+</ul>
+<div class="section" id="mtoolbox-variant-calling">
+<h3>MToolBox-variant-calling<a class="headerlink" href="#mtoolbox-variant-calling" title="Permalink to this headline">¶</a></h3>
+<p>Performs QC, quality trimming of raw reads, read alignment, alignment filtering, variant calling. The final output is a VCF file.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Run MToolBox</a><ul>
+<li><a class="reference internal" href="#before-starting">Before starting…</a></li>
+<li><a class="reference internal" href="#setting-up-a-working-directory">Setting up a working directory</a></li>
+<li><a class="reference internal" href="#compiling-configuration-files">Compiling configuration files</a></li>
+<li><a class="reference internal" href="#how-to-run-the-mtoolbox-wrappers">How to run the MToolBox wrappers</a></li>
+<li><a class="reference internal" href="#available-wrappers">Available wrappers</a><ul>
+<li><a class="reference internal" href="#mtoolbox-variant-calling">MToolBox-variant-calling</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">Installation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/run-the-pipeline.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Domenico Simone.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
+    </div>
+  </body>
+</html>
