@@ -85,11 +85,11 @@ In this example, the first row specifies that variant calling will be performed 
 
 Structure (strictly **tab-separated**):
 
-+---------------+-----------------------+--------------------+-----------------------+---------+
-| ref_genome_mt | ref_genome_n          | ref_genome_mt_file | ref_genome_n_file     | species |
-+===============+=======================+====================+=======================+=========+
-| NC_001323.1   | GCF_000002315.5.fasta | NC_001323.1.fasta  | GCF_000002315.5.fasta | ggallus |
-+---------------+-----------------------+--------------------+-----------------------+---------+
++---------------+-----------------+--------------------+-----------------------+---------+
+| ref_genome_mt | ref_genome_n    | ref_genome_mt_file | ref_genome_n_file     | species |
++===============+=================+====================+=======================+=========+
+| NC_001323.1   | GCF_000002315.5 | NC_001323.1.fasta  | GCF_000002315.5.fasta | ggallus |
++---------------+-----------------+--------------------+-----------------------+---------+
 
 This table contains explicit names for reference genome files used in the workflow. Names in the columns **ref_genome_mt** and **ref_genome_n** must be consistent with the ones in the same columns in the **data/analysis.tab** table. **Genome files must be located in the data/genomes folder**.
 
