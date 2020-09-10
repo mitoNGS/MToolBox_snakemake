@@ -10,13 +10,14 @@ Welcome to the MToolBox-snakemake documentation!
 
 And with this new implementation, MToolBox is also capable of analysing also mt data from **other species**!
 
+**Eager to use MToolBox? Follow our tutorials to install and run the pipeline!**
+
 .. toctree::
    :maxdepth: 2
-   :caption: Eager to use MToolBox? Follow our tutorials to install and run the pipeline!
+   :caption: Contents
    
    installation
    run-the-pipeline
-
 
 Indices and tables
 ==================

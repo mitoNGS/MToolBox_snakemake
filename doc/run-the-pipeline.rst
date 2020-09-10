@@ -8,14 +8,17 @@ All the wrappers accepts snakemake arguments and parse automatically the `config
 An overview
 -----------
 
-If you're interested in using MToolBox
+You are going to analyse one or more **samples**, be represented by one or more read **datasets** (*ie*, libraries). 
+For this purpose, you're going to provide a **reference mitochondrial genome**. Choose it carefully, as your final results will be based on it! You also have to pick a **reference nuclear genome** that will be used as reference to filter out ambiguous reads.
 
-Hints on functional annotation.
+If you are interested in performing functional annotation of mt variants, you will also explicitly provide **species**.
+
+Now you'll be wondering: *how do I tell all these things to the pipeline?* In the following sections, we'll see how to do that through a handful of configuration files!
 
 Setting up a working directory
 ------------------------------
 
-Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
+**Note:** Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
 
 .. code-block:: bash
     
@@ -60,7 +63,7 @@ An MToolBox-snakemake run is managed with these configuration files:
 - :code:`config.yaml`
 - :code:`cluster.yaml`
 
-Sounds a pain, huh? The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the :code:`config.yaml` and :code:`cluster.yaml` files should work the way they are. **Please read the "Notes on configuration files" at the end of this section**.
+*Sounds a pain, huh?* The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the :code:`config.yaml` and :code:`cluster.yaml` files should work the way they are, with little to no edit needed. **Please read the "Notes on configuration files" at the end of this section**.
 
 Let's see how to compile the configuration files in detail.
 
@@ -88,9 +91,37 @@ Structure (strictly **tab-separated**):
 | NC_001323.1   | GCF_000002315.5.fasta | NC_001323.1.fasta  | GCF_000002315.5.fasta | ggallus |
 +---------------+-----------------------+--------------------+-----------------------+---------+
 
-This table contains explicit names for reference genome files used in the workflow. Names in the columns :code:`ref_genome_mt` and :code:`ref_genome_n` must be consistent with the ones in the same columns in the :code:`data/analysis.tab` table. Genome files must be located in the :code:`data/genomes` folder.
+This table contains explicit names for reference genome files used in the workflow. Names in the columns :code:`ref_genome_mt` and :code:`ref_genome_n` must be consistent with the ones in the same columns in the :code:`data/analysis.tab` table. **Genome files must be located in the data/genomes folder**.
 
 The name in the column :code:`species` should be one of the `species available in mtoolnote`_ for variant functional annotation. 
+
+- :code:`data/datasets.tab`
+
+Fill this table with as many read (paired) datasets are available per sample. Each read dataset will be processed independently and merged with the others from the same sample before the variant calling stage. **Read dataset files must be located in the data/reads folder**.
+
+Example:
+
++----------+---------+--------------------------+--------------------------+
+| sample   | library | R1                       | R2                       |
++==========+=========+==========================+==========================+
+| sample_1 | 1       | sample_1_R1_001.fastq.gz | sample_1_R2_001.fastq.gz |
++----------+---------+--------------------------+--------------------------+
+| sample_1 | 2       | sample_1_R1_002.fastq.gz | sample_1_R2_002.fastq.gz |
++----------+---------+--------------------------+--------------------------+
+| sample_2 | 1       | sample_2_R1.fastq.gz     | sample_2_R2.fastq.gz     |
++----------+---------+--------------------------+--------------------------+
+
+In this case, sample_1 is represented by two PE libraries, while sample_2 is represented by one.
+
+A recap
+^^^^^^^
+
+.. figure:: img/MToolBox_conf_files.png
+    :align: center
+    :alt: alternate text
+    :figclass: align-center
+
+    An overview of MToolBox-snakemake configuration files
 
 How to run the MToolBox wrappers
 --------------------------------
