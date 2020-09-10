@@ -193,8 +193,14 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 <ul class="simple">
 <li><strong>config.yaml</strong></li>
 </ul>
-<p>This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the <cite>mark_duplicates</cite> option (which removes duplicate reads with Picard MarkDuplicates) and set it to True or False, depending on your needs.
-TODO: add realign indels option</p>
+<p>This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the following options:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>mark_duplicates</cite>: remove duplicate alignments with Picard MarkDuplicates. Default is <cite>False</cite>.</li>
+<li><cite>keep_orphans</cite>: the first alignment round might leave some reads “orphan”, <em>i.e.</em> their mate has been discarded. This can happen for two reasons: 1) the discarded read has so many sequencing errors it couldn’t be properly mapped or 2) the discarded read maps <em>only</em> on the nuclear genome: this could mean that the whole read pair represents a nuclear region overlapping a NumtS (nuclear sequences of mitochondrial origin). Either case, you might want to discard these “orphan reads” since they could represent a source of error/noise for downstream analyses. Default is to keep them (<cite>True</cite>).</li>
+<li><cite>trimBam</cite>: read aligners sometime struggle to properly align reads at their ends when they contain an indel or when they encompass low-complexity regions or homopolymeric stretches. Despite all the post-processing efforts we could implement (<em>e.g.</em> read re-alignment around indels), misalignments could still make it to the variant calling step and introduce noise (<em>e.g.</em> variants with very low heteroplasmy fraction which eat into the HF of a properly called variant). To prevent this, you can choose to “mask” (soft-clip) 10 nucleotides at each alignment end. Default is <cite>True</cite> (mask the alignment ends). Please note that, at the moment, the number of nts you can mask at each end (10) cannot be modified.</li>
+</ul>
+</div></blockquote>
 <ul class="simple">
 <li><strong>cluster.yaml</strong></li>
 </ul>

@@ -115,12 +115,15 @@ In this case, sample_1 is represented by two PE libraries, while sample_2 is rep
 
 - **config.yaml**
 
-This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the `mark_duplicates` option (which removes duplicate reads with Picard MarkDuplicates) and set it to True or False, depending on your needs.
-TODO: add realign indels option
+This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the following options:
+
+    - `mark_duplicates`: remove duplicate alignments with Picard MarkDuplicates. Default is `False`.
+    - `keep_orphans`: the first alignment round might leave some reads "orphan", *i.e.* their mate has been discarded. This can happen for two reasons: 1) the discarded read has so many sequencing errors it couldn't be properly mapped or 2) the discarded read maps *only* on the nuclear genome: this could mean that the whole read pair represents a nuclear region overlapping a NumtS (nuclear sequences of mitochondrial origin). Either case, you might want to discard these "orphan reads" since they could represent a source of error/noise for downstream analyses. Default is to keep them (`True`).
+    - `trimBam`: read aligners sometime struggle to properly align reads at their ends when they contain an indel or when they encompass low-complexity regions or homopolymeric stretches. Despite all the post-processing efforts we could implement (*e.g.* read re-alignment around indels), misalignments could still make it to the variant calling step and introduce noise (*e.g.* variants with very low heteroplasmy fraction which eat into the HF of a properly called variant). To prevent this, you can choose to "mask" (soft-clip) 10 nucleotides at each alignment end. Default is `True` (mask the alignment ends). Please note that, at the moment, the number of nts you can mask at each end (10) cannot be modified.
 
 - **cluster.yaml**
 
-TODO: add stuff
+If you are analysing huge datasets, it would be a good idea to run MToolBox-snakemake on a computing cluster. The file cluster.yaml contains settings for this scenario, which should work well as they are.
 
 A recap
 ^^^^^^^
