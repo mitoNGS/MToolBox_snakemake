@@ -85,16 +85,16 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 <h2>Compiling configuration files<a class="headerlink" href="#compiling-configuration-files" title="Permalink to this headline">¶</a></h2>
 <p>An MToolBox-snakemake run is managed with these configuration files:</p>
 <ul class="simple">
-<li><code class="code docutils literal notranslate"><span class="pre">data/analysis.tab</span></code></li>
-<li><code class="code docutils literal notranslate"><span class="pre">data/reference_genomes.tab</span></code></li>
-<li><code class="code docutils literal notranslate"><span class="pre">data/datasets.tab</span></code></li>
-<li><code class="code docutils literal notranslate"><span class="pre">config.yaml</span></code></li>
-<li><code class="code docutils literal notranslate"><span class="pre">cluster.yaml</span></code></li>
+<li>data/analysis.tab</li>
+<li>data/reference_genomes.tab</li>
+<li>data/datasets.tab</li>
+<li>config.yaml</li>
+<li>cluster.yaml</li>
 </ul>
-<p><em>Sounds a pain, huh?</em> The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the <code class="code docutils literal notranslate"><span class="pre">config.yaml</span></code> and <code class="code docutils literal notranslate"><span class="pre">cluster.yaml</span></code> files should work the way they are, with little to no edit needed. <strong>Please read the “Notes on configuration files” at the end of this section</strong>.</p>
+<p><em>Sounds a pain, huh?</em> The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the config.yaml and cluster.yaml files should work the way they are, with little to no edit needed. <strong>Please read the “Notes on configuration files” at the end of this section</strong>.</p>
 <p>Let’s see how to compile the configuration files in detail.</p>
 <ul class="simple">
-<li><code class="code docutils literal notranslate"><span class="pre">data/analysis.tab</span></code></li>
+<li><strong>data/analysis.tab</strong></li>
 </ul>
 <p>For each sample you are going to analyse, in this table you provide info about which mitochondrial and nuclear reference genomes to use. Example:</p>
 <table border="1" class="docutils">
@@ -120,9 +120,9 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 </tr>
 </tbody>
 </table>
-<p>In this example, the first row specifies that variant calling will be performed on <code class="code docutils literal notranslate"><span class="pre">sample_1</span></code> using the mitochondrial reference genome <code class="code docutils literal notranslate"><span class="pre">NC_001323.1</span></code>, by discarding those reads aligning on the nuclear reference genome <code class="code docutils literal notranslate"><span class="pre">GCF_000002315.5</span></code>. Please note that the names used in this table will be used in the workflow execution and are case-sensitive. Actual files related to samples and reference genomes will be provided in the <code class="code docutils literal notranslate"><span class="pre">data/reference_genomes.tab</span></code> and in the <code class="code docutils literal notranslate"><span class="pre">data/datasets.tab</span></code> files.</p>
+<p>In this example, the first row specifies that variant calling will be performed on <strong>sample_1</strong> using the mitochondrial reference genome <strong>NC_001323.1</strong>, by discarding those reads aligning on the nuclear reference genome <strong>GCF_000002315.5</strong>. Please note that the names used in this table will be used in the workflow execution and are case-sensitive. Actual files related to samples and reference genomes will be provided in the <strong>data/reference_genomes.tab</strong> and in the <strong>data/datasets.tab</strong> files.</p>
 <ul class="simple">
-<li><code class="code docutils literal notranslate"><span class="pre">data/reference_genomes.tab</span></code></li>
+<li><strong>data/reference_genomes.tab</strong></li>
 </ul>
 <p>Structure (strictly <strong>tab-separated</strong>):</p>
 <table border="1" class="docutils">
@@ -150,10 +150,10 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 </tr>
 </tbody>
 </table>
-<p>This table contains explicit names for reference genome files used in the workflow. Names in the columns <code class="code docutils literal notranslate"><span class="pre">ref_genome_mt</span></code> and <code class="code docutils literal notranslate"><span class="pre">ref_genome_n</span></code> must be consistent with the ones in the same columns in the <code class="code docutils literal notranslate"><span class="pre">data/analysis.tab</span></code> table. <strong>Genome files must be located in the data/genomes folder</strong>.</p>
-<p>The name in the column <code class="code docutils literal notranslate"><span class="pre">species</span></code> should be one of the <a class="reference external" href="https://github.com/mitoNGS/mtoolnote#features">species available in mtoolnote</a> for variant functional annotation.</p>
+<p>This table contains explicit names for reference genome files used in the workflow. Names in the columns <strong>ref_genome_mt</strong> and <strong>ref_genome_n</strong> must be consistent with the ones in the same columns in the <strong>data/analysis.tab</strong> table. <strong>Genome files must be located in the data/genomes folder</strong>.</p>
+<p>The name in the column <strong>species</strong> should be one of the <a class="reference external" href="https://github.com/mitoNGS/mtoolnote#features">species available in mtoolnote</a> for variant functional annotation.</p>
 <ul class="simple">
-<li><code class="code docutils literal notranslate"><span class="pre">data/datasets.tab</span></code></li>
+<li><strong>data/datasets.tab</strong></li>
 </ul>
 <p>Fill this table with as many read (paired) datasets are available per sample. Each read dataset will be processed independently and merged with the others from the same sample before the variant calling stage. <strong>Read dataset files must be located in the data/reads folder</strong>.</p>
 <p>Example:</p>
@@ -190,6 +190,15 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 </tbody>
 </table>
 <p>In this case, sample_1 is represented by two PE libraries, while sample_2 is represented by one.</p>
+<ul class="simple">
+<li><strong>config.yaml</strong></li>
+</ul>
+<p>This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the <cite>mark_duplicates</cite> option (which removes duplicate reads with Picard MarkDuplicates) and set it to True or False, depending on your needs.
+TODO: add realign indels option</p>
+<ul class="simple">
+<li><strong>cluster.yaml</strong></li>
+</ul>
+<p>TODO: add stuff</p>
 <div class="section" id="a-recap">
 <h3>A recap<a class="headerlink" href="#a-recap" title="Permalink to this headline">¶</a></h3>
 <div class="align-center figure" id="id1">

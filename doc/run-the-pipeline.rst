@@ -57,17 +57,17 @@ Compiling configuration files
 
 An MToolBox-snakemake run is managed with these configuration files: 
 
-- :code:`data/analysis.tab`
-- :code:`data/reference_genomes.tab`
-- :code:`data/datasets.tab`
-- :code:`config.yaml`
-- :code:`cluster.yaml`
+- data/analysis.tab
+- data/reference_genomes.tab
+- data/datasets.tab
+- config.yaml
+- cluster.yaml
 
-*Sounds a pain, huh?* The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the :code:`config.yaml` and :code:`cluster.yaml` files should work the way they are, with little to no edit needed. **Please read the "Notes on configuration files" at the end of this section**.
+*Sounds a pain, huh?* The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the config.yaml and cluster.yaml files should work the way they are, with little to no edit needed. **Please read the "Notes on configuration files" at the end of this section**.
 
 Let's see how to compile the configuration files in detail.
 
-- :code:`data/analysis.tab`
+- **data/analysis.tab**
 
 For each sample you are going to analyse, in this table you provide info about which mitochondrial and nuclear reference genomes to use. Example:
 
@@ -79,9 +79,9 @@ For each sample you are going to analyse, in this table you provide info about w
 | sample_2 | NC_001323.1   | GCF_000002315.5 |
 +----------+---------------+-----------------+
 
-In this example, the first row specifies that variant calling will be performed on :code:`sample_1` using the mitochondrial reference genome :code:`NC_001323.1`, by discarding those reads aligning on the nuclear reference genome :code:`GCF_000002315.5`. Please note that the names used in this table will be used in the workflow execution and are case-sensitive. Actual files related to samples and reference genomes will be provided in the :code:`data/reference_genomes.tab` and in the :code:`data/datasets.tab` files.
+In this example, the first row specifies that variant calling will be performed on **sample_1** using the mitochondrial reference genome **NC_001323.1**, by discarding those reads aligning on the nuclear reference genome **GCF_000002315.5**. Please note that the names used in this table will be used in the workflow execution and are case-sensitive. Actual files related to samples and reference genomes will be provided in the **data/reference_genomes.tab** and in the **data/datasets.tab** files.
 
-- :code:`data/reference_genomes.tab`
+- **data/reference_genomes.tab**
 
 Structure (strictly **tab-separated**):
 
@@ -91,11 +91,11 @@ Structure (strictly **tab-separated**):
 | NC_001323.1   | GCF_000002315.5.fasta | NC_001323.1.fasta  | GCF_000002315.5.fasta | ggallus |
 +---------------+-----------------------+--------------------+-----------------------+---------+
 
-This table contains explicit names for reference genome files used in the workflow. Names in the columns :code:`ref_genome_mt` and :code:`ref_genome_n` must be consistent with the ones in the same columns in the :code:`data/analysis.tab` table. **Genome files must be located in the data/genomes folder**.
+This table contains explicit names for reference genome files used in the workflow. Names in the columns **ref_genome_mt** and **ref_genome_n** must be consistent with the ones in the same columns in the **data/analysis.tab** table. **Genome files must be located in the data/genomes folder**.
 
-The name in the column :code:`species` should be one of the `species available in mtoolnote`_ for variant functional annotation. 
+The name in the column **species** should be one of the `species available in mtoolnote`_ for variant functional annotation. 
 
-- :code:`data/datasets.tab`
+- **data/datasets.tab**
 
 Fill this table with as many read (paired) datasets are available per sample. Each read dataset will be processed independently and merged with the others from the same sample before the variant calling stage. **Read dataset files must be located in the data/reads folder**.
 
@@ -112,6 +112,15 @@ Example:
 +----------+---------+--------------------------+--------------------------+
 
 In this case, sample_1 is represented by two PE libraries, while sample_2 is represented by one.
+
+- **config.yaml**
+
+This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the `mark_duplicates` option (which removes duplicate reads with Picard MarkDuplicates) and set it to True or False, depending on your needs.
+TODO: add realign indels option
+
+- **cluster.yaml**
+
+TODO: add stuff
 
 A recap
 ^^^^^^^
