@@ -454,8 +454,19 @@ rule map_nuclear_MT_PE_SE:
         out_basename = lambda wildcards, output: output.concordant_uniq.replace(".concordant_uniq", ""),
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
     run:
-        input_files = input[:-1]
-        shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --split-output={params.out_basename} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input_files} &> {log}")#" && gzip {params.uncompressed_output} &>> {log}")
+        input_files_PE = input[:2]   # PE files are always the first two
+        input_files_SE = input[2:-1] # SE files are those from the third one to the one before the last one
+        # create a single SE file to be compliant with gsnap
+        input_files_SE_all = input_files_SE[0].replace("_outmt.fastq.gz", "_outmt_all.fastq.gz")
+        if len(input_files_SE) > 1:
+            with open(input_files_SE_all, 'wb') as input_files_SE_cat:
+                for f in input_files_SE:
+                    with open(f, 'rb') as rfp:
+                        shutil.copyfileobj(rfp, input_files_SE_cat)
+            input_files_SE = [input_files_SE_all]
+        shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --split-output={params.out_basename} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input_files_PE} {input_files_SE} &> {log}")#" && gzip {params.uncompressed_output} &>> {log}")
+        # delete the single SE file
+        os.remove(input_files_SE_all)
 
 rule filtering_mt_alignments:
     input:
@@ -757,4 +768,8 @@ rule merge_VCF:
     message: "Merging vcf files for mt reference genome: {wildcards.ref_genome_mt}"
     #conda: "envs/bcftools.yaml"
     run:
-        shell("bcftools merge {input.single_vcf_list} -O v -o {output.merged_vcf}")
+        if len(input.single_vcf_list) == 1:
+            shutil.copy2(input.single_vcf_list[0], output.merged_vcf+".gz")
+            shell("gunzip {output.merged_vcf}.gz")
+        else:
+            shell("bcftools merge {input.single_vcf_list} -O v -o {output.merged_vcf}")
