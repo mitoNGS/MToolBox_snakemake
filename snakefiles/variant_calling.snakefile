@@ -768,4 +768,8 @@ rule merge_VCF:
     message: "Merging vcf files for mt reference genome: {wildcards.ref_genome_mt}"
     #conda: "envs/bcftools.yaml"
     run:
-        shell("bcftools merge {input.single_vcf_list} -O v -o {output.merged_vcf}")
+        if len(input.single_vcf_list) == 1:
+            shutil.copy2(input.single_vcf_list[0], output.merged_vcf+".gz")
+            shell("gunzip {output.merged_vcf}.gz")
+        else:
+            shell("bcftools merge {input.single_vcf_list} -O v -o {output.merged_vcf}")
