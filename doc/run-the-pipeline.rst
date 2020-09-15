@@ -144,23 +144,48 @@ Running the wrappers is as simple as this:
     
     MToolBox-<wrapper> <snakemake arguments>
 
-*E.g.* if you want to run the :code:`MToolBox-variant-calling` wrapper and print the commands it will execute, you can run
+The :code:`MToolBox` wrapper scripts embed `snakemake`_ workflows, which allow an efficient and powerful management of all steps required to get the desired output files. In other words, with (roughly) the same command, you can run a full analysis, resume it or check its status. This is extremely useful in many settings, *e.g.* when you are running MToolBox-snakemake on a lot of samples.
+
+**Graphical representation of the workflow**
+
+Before running the workflow, it's good practice to check if the provided setup is correct. You can run
 
 .. code-block:: bash
     
-    MToolBox-variant-calling -p
+    MToolBox-variant-calling -nrp
 
-You can also display a graphical representation of the workflow by running
+to execute a dry run (*i.e.* simulate to run the workflow) and get a list of the files that will be created and the commands that will be run.
 
-.. code-block:: bash
-    
-    MToolBox-variant-calling --dag | display
-
-This will show the workflow in a browser. Alternatively, you can save the workflow representation in a file by running
+A graphical - and probably more user-friendly - representation of the workflow can be obtained by running
 
 .. code-block:: bash
     
-    MToolBox-variant-calling --dag > workflow.svg
+    MToolBox-variant-calling --dag | dot -Tsvg > my_workflow.svg
+
+The graph in file `my_workflow.svg` will report all the workflow steps (for each sample in the `analysis.tab` configuration file). Steps in dashed lines are to be run (because their outputs are not present), whereas outputs for steps in solid lines are already present. A graphical representation of the workflow as per the `analysis.tab` file in this repo is reported as follows.
+
+TODO: insert image.
+
+**Ok, gotcha! How do I actually run the workflow then?**
+
+.. code-block:: bash
+    
+    MToolBox-variant-calling -pk -j 8
+
+This will run the :code:`MToolBox-variant-calling` wrapper, printing the commands that get executed and using at most 8 cores at the same time (TL;DR: allowing to run multiple commands at the same time *with no excessive risk* of blowing up your machine).
+
+Running on a computing cluster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you wish to run MToolBox-snakemake on a huge number of samples and/or your datasets are of a considerable size, you might want to run the workflow on a computing cluster. In this case, you should instruct the job scheduler you're using on how to do it. with the :code:`--cluster` option. You might also want to run the process in background and redirect the standard error and output (*i.e.* all the messages printed on the screen) to a log file:
+
+.. code-block:: bash
+    
+    MToolBox-variant-calling \
+    -rpk \
+    -j 100 \
+    --cluster cluster.yaml \
+    --cluster 'sbatch -A snic2018-8-310 -p core -n {cluster.threads} -t {cluster.time} -o {cluster.stdout}' &> logs/mtoolbox_run.log &
 
 Available wrappers
 ------------------
@@ -170,4 +195,5 @@ Available wrappers
    
    mtoolbox-variant-calling
 
+.. _`snakemake`: https://snakemake.readthedocs.io/en/stable/
 .. _`species available in mtoolnote`: https://github.com/mitoNGS/mtoolnote#features
