@@ -1,3 +1,5 @@
+.. _mtoolbox_variant_calling:
+
 MToolBox-variant-calling
 ========================
 

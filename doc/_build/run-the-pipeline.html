@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Run MToolBox &#8212; MToolBox  documentation</title>
+    <title>The MToolBox-snakemake workflows &#8212; MToolBox  documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
@@ -33,7 +33,7 @@
           <a href="installation.html" title="Installation"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Run MToolBox</a></li> 
+        <li class="nav-item nav-item-this"><a href="">The MToolBox-snakemake workflows</a></li> 
       </ul>
     </div>  
 
@@ -42,20 +42,24 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="run-mtoolbox">
-<h1>Run MToolBox<a class="headerlink" href="#run-mtoolbox" title="Permalink to this headline">¶</a></h1>
-<p>MToolBox is made by several snakemake workflows which can be run independently. We provide wrappers for the most common tasks and analyses. Using these wrappers will save a lot of typing and headache for the lazy users (probably <em>you</em>). Cool, isn’t it? :)</p>
+  <div class="section" id="the-mtoolbox-snakemake-workflows">
+<span id="mtoolbox-workflows"></span><h1>The MToolBox-snakemake workflows<a class="headerlink" href="#the-mtoolbox-snakemake-workflows" title="Permalink to this headline">¶</a></h1>
+<p>MToolBox-snakemake includes several workflows, written in snakemake and conveniently embedded in wrappers. Using these wrappers will save a lot of typing and headache for the lazy users (probably <em>you</em>). Cool, isn’t it? :)</p>
 <p>All the wrappers accepts snakemake arguments and parse automatically the <cite>config.yaml</cite> configuration file required by snakemake.</p>
 <div class="section" id="an-overview">
 <h2>An overview<a class="headerlink" href="#an-overview" title="Permalink to this headline">¶</a></h2>
-<p>You are going to analyse one or more <strong>samples</strong>, be represented by one or more read <strong>datasets</strong> (<em>ie</em>, libraries).
-For this purpose, you’re going to provide a <strong>reference mitochondrial genome</strong>. Choose it carefully, as your final results will be based on it! You also have to pick a <strong>reference nuclear genome</strong> that will be used as reference to filter out ambiguous reads.</p>
+<p>The MToolBox-snakemake main workflow is <strong>MToolBox-variant-calling</strong>. At the moment, all the other MToolBox-snakemake workflows rely or</p>
+<p>You are going to analyse one or more <strong>samples</strong>, represented by one or more read <strong>datasets</strong> (<em>ie</em>, libraries).
+For this purpose, you are going to provide a <strong>reference mitochondrial genome</strong>. Choose it carefully, as your final results will be based on it! You also have to pick a <strong>reference nuclear genome</strong> that will be used as reference to filter out ambiguous reads.</p>
 <p>If you are interested in performing functional annotation of mt variants, you will also explicitly provide <strong>species</strong>.</p>
-<p>Now you’ll be wondering: <em>how do I tell all these things to the pipeline?</em> In the following sections, we’ll see how to do that through a handful of configuration files!</p>
+<p>Now you’ll be wondering: <em>how do I tell all these things to the pipeline</em>? In the following sections, we’ll see how to do that through a handful of configuration files!</p>
 </div>
 <div class="section" id="setting-up-a-working-directory">
-<h2>Setting up a working directory<a class="headerlink" href="#setting-up-a-working-directory" title="Permalink to this headline">¶</a></h2>
-<p><strong>Note:</strong> Replace <code class="code docutils literal notranslate"><span class="pre">/path/to/MToolBox/dir/</span></code> with the MToolBox installation path and <code class="code docutils literal notranslate"><span class="pre">/path/to/analysis/dir</span></code> with the folder where you wish to run your analysis.</p>
+<span id="setup-working-directory"></span><h2>Setting up a working directory<a class="headerlink" href="#setting-up-a-working-directory" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Replace <code class="code docutils literal notranslate"><span class="pre">/path/to/MToolBox/dir/</span></code> with the MToolBox installation path and <code class="code docutils literal notranslate"><span class="pre">/path/to/analysis/dir</span></code> with the folder where you wish to run your analysis.</p>
+</div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">MTOOLBOX_DIR</span><span class="o">=</span>/path/to/MToolBox/dir/
 
 <span class="nb">cd</span> /path/to/analysis/dir
@@ -88,7 +92,7 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 </div>
 <div class="section" id="compiling-configuration-files">
 <h2>Compiling configuration files<a class="headerlink" href="#compiling-configuration-files" title="Permalink to this headline">¶</a></h2>
-<p>An MToolBox-snakemake run is managed with these configuration files:</p>
+<p>An MToolBox-snakemake workflow run is managed with these configuration files:</p>
 <ul class="simple">
 <li><p>data/analysis.tab</p></li>
 <li><p>data/reference_genomes.tab</p></li>
@@ -224,27 +228,42 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-&lt;wrapper&gt; &lt;snakemake arguments&gt;
 </pre></div>
 </div>
-<p><em>E.g.</em> if you want to run the <code class="code docutils literal notranslate"><span class="pre">MToolBox-variant-calling</span></code> wrapper and print the commands it will execute, you can run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling -p
+<p>The <code class="code docutils literal notranslate"><span class="pre">MToolBox</span></code> wrapper scripts embed <a class="reference external" href="https://snakemake.readthedocs.io/en/stable/">snakemake</a> workflows, which allow an efficient and powerful management of all steps required to get the desired output files. In other words, with (roughly) the same command, you can run a full analysis, resume it or check its status. This is extremely useful in many settings, <em>e.g.</em> when you are running MToolBox-snakemake on a lot of samples.</p>
+<p><strong>Graphical representation of the workflow</strong></p>
+<p>Before running the workflow, it’s good practice to check if the provided setup is correct. You can run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling -nrp
 </pre></div>
 </div>
-<p>You can also display a graphical representation of the workflow by running</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling --dag <span class="p">|</span> display
+<p>to execute a dry run (<em>i.e.</em> simulate to run the workflow) and get a list of the files that will be created and the commands that will be run.</p>
+<p>A graphical - and probably more user-friendly - representation of the workflow can be obtained by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling --dag <span class="p">|</span> dot -Tsvg &gt; my_workflow.svg
 </pre></div>
 </div>
-<p>This will show the workflow in a browser. Alternatively, you can save the workflow representation in a file by running</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling --dag &gt; workflow.svg
+<p>The graph in file <cite>my_workflow.svg</cite> will report all the workflow steps (for each sample in the <cite>analysis.tab</cite> configuration file). Steps in dashed lines are to be run (because their outputs are not present), whereas outputs for steps in solid lines are already present. A graphical representation of the workflow as per the <cite>analysis.tab</cite> file in this repo is reported as follows.</p>
+<p>TODO: insert image.</p>
+<p><strong>Ok, gotcha! How do I actually run the workflow then?</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling -pk -j <span class="m">8</span>
 </pre></div>
+</div>
+<p>This will run the <code class="code docutils literal notranslate"><span class="pre">MToolBox-variant-calling</span></code> wrapper, printing the commands that get executed and using at most 8 cores at the same time (<em>i.e.</em> allowing to run multiple commands at the same time <em>with no excessive risk</em> of blowing up your machine).</p>
+<div class="section" id="running-on-a-computing-cluster">
+<h3>Running on a computing cluster<a class="headerlink" href="#running-on-a-computing-cluster" title="Permalink to this headline">¶</a></h3>
+<p>If you wish to run a MToolBox-snakemake workflow on a huge number of samples and/or your datasets are of a considerable size, you might want to run the workflow on a computing cluster. In this case, you should instruct the job scheduler you’re using on how to do it. with the <code class="code docutils literal notranslate"><span class="pre">--cluster</span></code> option. You might also want to run the process in background and redirect the standard error and output (<em>i.e.</em> all the messages printed on the screen) to a log file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling <span class="se">\</span>
+-rpk <span class="se">\</span>
+-j <span class="m">100</span> <span class="se">\</span>
+--cluster cluster.yaml <span class="se">\</span>
+--cluster <span class="s1">&#39;sbatch -A snic2018-8-310 -p core -n {cluster.threads} -t {cluster.time} -o {cluster.stdout}&#39;</span> <span class="p">&amp;</span>&gt; logs/mtoolbox_run.log <span class="p">&amp;</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="available-wrappers">
 <h2>Available wrappers<a class="headerlink" href="#available-wrappers" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="mtoolbox-variant-calling.html">MToolBox-variant-calling</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="mtoolbox-variant-calling.html#what-should-i-look-to-here">What should I look to, here?</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="mtoolbox-variant-calling.html">MToolBox-variant-calling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mtoolbox-variant-annotation.html">MToolBox-variant-annotation</a></li>
 </ul>
 </div>
 </div>
@@ -259,14 +278,17 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Run MToolBox</a><ul>
+<li><a class="reference internal" href="#">The MToolBox-snakemake workflows</a><ul>
 <li><a class="reference internal" href="#an-overview">An overview</a></li>
 <li><a class="reference internal" href="#setting-up-a-working-directory">Setting up a working directory</a></li>
 <li><a class="reference internal" href="#compiling-configuration-files">Compiling configuration files</a><ul>
 <li><a class="reference internal" href="#a-recap">A recap</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#how-to-run-the-mtoolbox-wrappers">How to run the MToolBox wrappers</a></li>
+<li><a class="reference internal" href="#how-to-run-the-mtoolbox-wrappers">How to run the MToolBox wrappers</a><ul>
+<li><a class="reference internal" href="#running-on-a-computing-cluster">Running on a computing cluster</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#available-wrappers">Available wrappers</a></li>
 </ul>
 </li>
@@ -312,7 +334,7 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
           <a href="installation.html" title="Installation"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Run MToolBox</a></li> 
+        <li class="nav-item nav-item-this"><a href="">The MToolBox-snakemake workflows</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

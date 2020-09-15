@@ -1,24 +1,30 @@
-Run MToolBox
-============
+.. _mtoolbox_workflows:
 
-MToolBox is made by several snakemake workflows which can be run independently. We provide wrappers for the most common tasks and analyses. Using these wrappers will save a lot of typing and headache for the lazy users (probably *you*). Cool, isn't it? :)
+The MToolBox-snakemake workflows
+================================
+
+MToolBox-snakemake includes several workflows, written in snakemake and conveniently embedded in wrappers. Using these wrappers will save a lot of typing and headache for the lazy users (probably *you*). Cool, isn't it? :)
  
 All the wrappers accepts snakemake arguments and parse automatically the `config.yaml` configuration file required by snakemake.
 
 An overview
 -----------
 
-You are going to analyse one or more **samples**, be represented by one or more read **datasets** (*ie*, libraries). 
-For this purpose, you're going to provide a **reference mitochondrial genome**. Choose it carefully, as your final results will be based on it! You also have to pick a **reference nuclear genome** that will be used as reference to filter out ambiguous reads.
+The MToolBox-snakemake main workflow is **MToolBox-variant-calling**. At the moment, all the other MToolBox-snakemake workflows rely or 
+
+You are going to analyse one or more **samples**, represented by one or more read **datasets** (*ie*, libraries). 
+For this purpose, you are going to provide a **reference mitochondrial genome**. Choose it carefully, as your final results will be based on it! You also have to pick a **reference nuclear genome** that will be used as reference to filter out ambiguous reads.
 
 If you are interested in performing functional annotation of mt variants, you will also explicitly provide **species**.
 
-Now you'll be wondering: *how do I tell all these things to the pipeline?* In the following sections, we'll see how to do that through a handful of configuration files!
+Now you'll be wondering: *how do I tell all these things to the pipeline*? In the following sections, we'll see how to do that through a handful of configuration files!
+
+.. _setup_working_directory:
 
 Setting up a working directory
 ------------------------------
 
-**Note:** Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
+.. note::  Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
 
 .. code-block:: bash
     
@@ -55,7 +61,7 @@ At this point, if you run the command :code:`tree` the structure of your directo
 Compiling configuration files
 -----------------------------
 
-An MToolBox-snakemake run is managed with these configuration files: 
+An MToolBox-snakemake workflow run is managed with these configuration files: 
 
 - data/analysis.tab
 - data/reference_genomes.tab
@@ -177,7 +183,7 @@ This will run the :code:`MToolBox-variant-calling` wrapper, printing the command
 Running on a computing cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you wish to run MToolBox-snakemake on a huge number of samples and/or your datasets are of a considerable size, you might want to run the workflow on a computing cluster. In this case, you should instruct the job scheduler you're using on how to do it. with the :code:`--cluster` option. You might also want to run the process in background and redirect the standard error and output (*i.e.* all the messages printed on the screen) to a log file:
+If you wish to run a MToolBox-snakemake workflow on a huge number of samples and/or your datasets are of a considerable size, you might want to run the workflow on a computing cluster. In this case, you should instruct the job scheduler you're using on how to do it. with the :code:`--cluster` option. You might also want to run the process in background and redirect the standard error and output (*i.e.* all the messages printed on the screen) to a log file:
 
 .. code-block:: bash
     
@@ -194,6 +200,7 @@ Available wrappers
    :maxdepth: 1 
    
    mtoolbox-variant-calling
+   mtoolbox-variant-annotation
 
 .. _`snakemake`: https://snakemake.readthedocs.io/en/stable/
 .. _`species available in mtoolnote`: https://github.com/mitoNGS/mtoolnote#features
