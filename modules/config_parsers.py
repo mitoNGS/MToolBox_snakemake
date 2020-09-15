@@ -373,3 +373,15 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
                     )
                 )
     return fastqc_out
+
+def get_inputs_for_rule_map_nuclear_MT_SE(sample=None, library=None, ref_genome_n=None, ref_genome_mt=None, keep_orphans=True):
+    outpaths = []
+    outpaths.append("results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz")
+    if keep_orphans:
+        outpaths.append(
+            "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.fastq.gz"
+            )
+        outpaths.append(
+            "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.fastq.gz"
+            )
+    return outpaths
