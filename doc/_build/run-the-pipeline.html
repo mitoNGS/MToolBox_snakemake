@@ -1,22 +1,23 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Run MToolBox &#8212; MToolBox  documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MToolBox-variant-calling" href="mtoolbox-variant-calling.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -26,9 +27,13 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="mtoolbox-variant-calling.html" title="MToolBox-variant-calling"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
           <a href="installation.html" title="Installation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Run MToolBox</a></li> 
       </ul>
     </div>  
 
@@ -85,174 +90,168 @@ cp <span class="nv">$MTOOLBOX_DIR</span>/data/*.tab data
 <h2>Compiling configuration files<a class="headerlink" href="#compiling-configuration-files" title="Permalink to this headline">¶</a></h2>
 <p>An MToolBox-snakemake run is managed with these configuration files:</p>
 <ul class="simple">
-<li>data/analysis.tab</li>
-<li>data/reference_genomes.tab</li>
-<li>data/datasets.tab</li>
-<li>config.yaml</li>
-<li>cluster.yaml</li>
+<li><p>data/analysis.tab</p></li>
+<li><p>data/reference_genomes.tab</p></li>
+<li><p>data/datasets.tab</p></li>
+<li><p>config.yaml</p></li>
+<li><p>cluster.yaml</p></li>
 </ul>
 <p><em>Sounds a pain, huh?</em> The good news is that they will help you in setting up and keeping track of your analyses very efficiently. Plus, the config.yaml and cluster.yaml files should work the way they are, with little to no edit needed. <strong>Please read the “Notes on configuration files” at the end of this section</strong>.</p>
 <p>Let’s see how to compile the configuration files in detail.</p>
 <ul class="simple">
-<li><strong>data/analysis.tab</strong></li>
+<li><p><strong>data/analysis.tab</strong></p></li>
 </ul>
 <p>For each sample you are going to analyse, in this table you provide info about which mitochondrial and nuclear reference genomes to use. Example:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="24%" />
-<col width="36%" />
-<col width="40%" />
+<col style="width: 24%" />
+<col style="width: 36%" />
+<col style="width: 40%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">sample</th>
-<th class="head">ref_genome_mt</th>
-<th class="head">ref_genome_n</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>sample</p></th>
+<th class="head"><p>ref_genome_mt</p></th>
+<th class="head"><p>ref_genome_n</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>sample_1</td>
-<td>NC_001323.1</td>
-<td>GCF_000002315.5</td>
+<tbody>
+<tr class="row-even"><td><p>sample_1</p></td>
+<td><p>NC_001323.1</p></td>
+<td><p>GCF_000002315.5</p></td>
 </tr>
-<tr class="row-odd"><td>sample_2</td>
-<td>NC_001323.1</td>
-<td>GCF_000002315.5</td>
+<tr class="row-odd"><td><p>sample_2</p></td>
+<td><p>NC_001323.1</p></td>
+<td><p>GCF_000002315.5</p></td>
 </tr>
 </tbody>
 </table>
 <p>In this example, the first row specifies that variant calling will be performed on <strong>sample_1</strong> using the mitochondrial reference genome <strong>NC_001323.1</strong>, by discarding those reads aligning on the nuclear reference genome <strong>GCF_000002315.5</strong>. Please note that the names used in this table will be used in the workflow execution and are case-sensitive. Actual files related to samples and reference genomes will be provided in the <strong>data/reference_genomes.tab</strong> and in the <strong>data/datasets.tab</strong> files.</p>
 <ul class="simple">
-<li><strong>data/reference_genomes.tab</strong></li>
+<li><p><strong>data/reference_genomes.tab</strong></p></li>
 </ul>
 <p>Structure (strictly <strong>tab-separated</strong>):</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="18%" />
-<col width="20%" />
-<col width="24%" />
-<col width="27%" />
-<col width="11%" />
+<col style="width: 18%" />
+<col style="width: 20%" />
+<col style="width: 24%" />
+<col style="width: 27%" />
+<col style="width: 11%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">ref_genome_mt</th>
-<th class="head">ref_genome_n</th>
-<th class="head">ref_genome_mt_file</th>
-<th class="head">ref_genome_n_file</th>
-<th class="head">species</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>ref_genome_mt</p></th>
+<th class="head"><p>ref_genome_n</p></th>
+<th class="head"><p>ref_genome_mt_file</p></th>
+<th class="head"><p>ref_genome_n_file</p></th>
+<th class="head"><p>species</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>NC_001323.1</td>
-<td>GCF_000002315.5</td>
-<td>NC_001323.1.fasta</td>
-<td>GCF_000002315.5.fasta</td>
-<td>ggallus</td>
+<tbody>
+<tr class="row-even"><td><p>NC_001323.1</p></td>
+<td><p>GCF_000002315.5</p></td>
+<td><p>NC_001323.1.fasta</p></td>
+<td><p>GCF_000002315.5.fasta</p></td>
+<td><p>ggallus</p></td>
 </tr>
 </tbody>
 </table>
 <p>This table contains explicit names for reference genome files used in the workflow. Names in the columns <strong>ref_genome_mt</strong> and <strong>ref_genome_n</strong> must be consistent with the ones in the same columns in the <strong>data/analysis.tab</strong> table. <strong>Genome files must be located in the data/genomes folder</strong>.</p>
 <p>The name in the column <strong>species</strong> should be one of the <a class="reference external" href="https://github.com/mitoNGS/mtoolnote#features">species available in mtoolnote</a> for variant functional annotation.</p>
 <ul class="simple">
-<li><strong>data/datasets.tab</strong></li>
+<li><p><strong>data/datasets.tab</strong></p></li>
 </ul>
 <p>Fill this table with as many read (paired) datasets are available per sample. Each read dataset will be processed independently and merged with the others from the same sample before the variant calling stage. <strong>Read dataset files must be located in the data/reads folder</strong>.</p>
 <p>Example:</p>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="14%" />
-<col width="13%" />
-<col width="37%" />
-<col width="37%" />
+<col style="width: 14%" />
+<col style="width: 13%" />
+<col style="width: 37%" />
+<col style="width: 37%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">sample</th>
-<th class="head">library</th>
-<th class="head">R1</th>
-<th class="head">R2</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>sample</p></th>
+<th class="head"><p>library</p></th>
+<th class="head"><p>R1</p></th>
+<th class="head"><p>R2</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>sample_1</td>
-<td>1</td>
-<td>sample_1_R1_001.fastq.gz</td>
-<td>sample_1_R2_001.fastq.gz</td>
+<tbody>
+<tr class="row-even"><td><p>sample_1</p></td>
+<td><p>1</p></td>
+<td><p>sample_1_R1_001.fastq.gz</p></td>
+<td><p>sample_1_R2_001.fastq.gz</p></td>
 </tr>
-<tr class="row-odd"><td>sample_1</td>
-<td>2</td>
-<td>sample_1_R1_002.fastq.gz</td>
-<td>sample_1_R2_002.fastq.gz</td>
+<tr class="row-odd"><td><p>sample_1</p></td>
+<td><p>2</p></td>
+<td><p>sample_1_R1_002.fastq.gz</p></td>
+<td><p>sample_1_R2_002.fastq.gz</p></td>
 </tr>
-<tr class="row-even"><td>sample_2</td>
-<td>1</td>
-<td>sample_2_R1.fastq.gz</td>
-<td>sample_2_R2.fastq.gz</td>
+<tr class="row-even"><td><p>sample_2</p></td>
+<td><p>1</p></td>
+<td><p>sample_2_R1.fastq.gz</p></td>
+<td><p>sample_2_R2.fastq.gz</p></td>
 </tr>
 </tbody>
 </table>
 <p>In this case, sample_1 is represented by two PE libraries, while sample_2 is represented by one.</p>
 <ul class="simple">
-<li><strong>config.yaml</strong></li>
+<li><p><strong>config.yaml</strong></p></li>
 </ul>
 <p>This file contains basic configuration for the whole workflow. Default configuration should fit most cases; you might want to check the following options:</p>
 <blockquote>
 <div><ul class="simple">
-<li><cite>mark_duplicates</cite>: remove duplicate alignments with Picard MarkDuplicates. Default is <cite>False</cite>.</li>
-<li><cite>keep_orphans</cite>: the first alignment round might leave some reads “orphan”, <em>i.e.</em> their mate has been discarded. This can happen for two reasons: 1) the discarded read has so many sequencing errors it couldn’t be properly mapped or 2) the discarded read maps <em>only</em> on the nuclear genome: this could mean that the whole read pair represents a nuclear region overlapping a NumtS (nuclear sequences of mitochondrial origin). Either case, you might want to discard these “orphan reads” since they could represent a source of error/noise for downstream analyses. Default is to keep them (<cite>True</cite>).</li>
-<li><cite>trimBam</cite>: read aligners sometime struggle to properly align reads at their ends when they contain an indel or when they encompass low-complexity regions or homopolymeric stretches. Despite all the post-processing efforts we could implement (<em>e.g.</em> read re-alignment around indels), misalignments could still make it to the variant calling step and introduce noise (<em>e.g.</em> variants with very low heteroplasmy fraction which eat into the HF of a properly called variant). To prevent this, you can choose to “mask” (soft-clip) 10 nucleotides at each alignment end. Default is <cite>True</cite> (mask the alignment ends). Please note that, at the moment, the number of nts you can mask at each end (10) cannot be modified.</li>
+<li><p><cite>mark_duplicates</cite>: remove duplicate alignments with Picard MarkDuplicates. Default is <cite>False</cite>.</p></li>
+<li><p><cite>keep_orphans</cite>: the first alignment round might leave some reads “orphan”, <em>i.e.</em> their mate has been discarded. This can happen for two reasons: 1) the discarded read has so many sequencing errors it couldn’t be properly mapped or 2) the discarded read maps <em>only</em> on the nuclear genome: this could mean that the whole read pair represents a nuclear region overlapping a NumtS (nuclear sequences of mitochondrial origin). Either case, you might want to discard these “orphan reads” since they could represent a source of error/noise for downstream analyses. Default is to keep them (<cite>True</cite>).</p></li>
+<li><p><cite>trimBam</cite>: read aligners sometime struggle to properly align reads at their ends when they contain an indel or when they encompass low-complexity regions or homopolymeric stretches. Despite all the post-processing efforts we could implement (<em>e.g.</em> read re-alignment around indels), misalignments could still make it to the variant calling step and introduce noise (<em>e.g.</em> variants with very low heteroplasmy fraction which eat into the HF of a properly called variant). To prevent this, you can choose to “mask” (soft-clip) 10 nucleotides at each alignment end. Default is <cite>True</cite> (mask the alignment ends). Please note that, at the moment, the number of nts you can mask at each end (10) cannot be modified.</p></li>
 </ul>
 </div></blockquote>
 <ul class="simple">
-<li><strong>cluster.yaml</strong></li>
+<li><p><strong>cluster.yaml</strong></p></li>
 </ul>
-<p>TODO: add stuff</p>
+<p>If you are analysing huge datasets, it would be a good idea to run MToolBox-snakemake on a computing cluster. The file cluster.yaml contains settings for this scenario, which should work well as they are.</p>
 <div class="section" id="a-recap">
 <h3>A recap<a class="headerlink" href="#a-recap" title="Permalink to this headline">¶</a></h3>
 <div class="align-center figure" id="id1">
 <img alt="alternate text" src="_images/MToolBox_conf_files.png" />
-<p class="caption"><span class="caption-text">An overview of MToolBox-snakemake configuration files</span></p>
+<p class="caption"><span class="caption-text">An overview of MToolBox-snakemake configuration files</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
 </div>
 </div>
 </div>
 <div class="section" id="how-to-run-the-mtoolbox-wrappers">
 <h2>How to run the MToolBox wrappers<a class="headerlink" href="#how-to-run-the-mtoolbox-wrappers" title="Permalink to this headline">¶</a></h2>
 <p>Running the wrappers is as simple as this:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
-
-MToolBox-&lt;wrapper&gt; &lt;snakemake arguments&gt;
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-&lt;wrapper&gt; &lt;snakemake arguments&gt;
 </pre></div>
 </div>
-<p><em>E.g.</em> if you want to run the MToolBox-variant-calling wrapper and print the commands it will execute, you can run</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
-
-MToolBox-variant-calling -p
+<p><em>E.g.</em> if you want to run the <code class="code docutils literal notranslate"><span class="pre">MToolBox-variant-calling</span></code> wrapper and print the commands it will execute, you can run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling -p
 </pre></div>
 </div>
 <p>You can also display a graphical representation of the workflow by running</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
-
-MToolBox-variant-calling --dag <span class="p">|</span> display
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling --dag <span class="p">|</span> display
 </pre></div>
 </div>
 <p>This will show the workflow in a browser. Alternatively, you can save the workflow representation in a file by running</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/path/to/MToolBox/dir/:<span class="nv">$PATH</span>
-
-MToolBox-variant-calling --dag &gt; workflow.svg
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MToolBox-variant-calling --dag &gt; workflow.svg
 </pre></div>
 </div>
 </div>
 <div class="section" id="available-wrappers">
 <h2>Available wrappers<a class="headerlink" href="#available-wrappers" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference internal" href="#mtoolbox-variant-calling">MToolBox-variant-calling</a></li>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mtoolbox-variant-calling.html">MToolBox-variant-calling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mtoolbox-variant-calling.html#what-should-i-look-to-here">What should I look to, here?</a></li>
 </ul>
-<div class="section" id="mtoolbox-variant-calling">
-<h3>MToolBox-variant-calling<a class="headerlink" href="#mtoolbox-variant-calling" title="Permalink to this headline">¶</a></h3>
-<p>Performs QC, quality trimming of raw reads, read alignment, alignment filtering, variant calling. The final output is a VCF file.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
         </div>
       </div>
@@ -268,10 +267,7 @@ MToolBox-variant-calling --dag &gt; workflow.svg
 </ul>
 </li>
 <li><a class="reference internal" href="#how-to-run-the-mtoolbox-wrappers">How to run the MToolBox wrappers</a></li>
-<li><a class="reference internal" href="#available-wrappers">Available wrappers</a><ul>
-<li><a class="reference internal" href="#mtoolbox-variant-calling">MToolBox-variant-calling</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#available-wrappers">Available wrappers</a></li>
 </ul>
 </li>
 </ul>
@@ -279,6 +275,9 @@ MToolBox-variant-calling --dag &gt; workflow.svg
   <h4>Previous topic</h4>
   <p class="topless"><a href="installation.html"
                         title="previous chapter">Installation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mtoolbox-variant-calling.html"
+                        title="next chapter">MToolBox-variant-calling</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -287,17 +286,15 @@ MToolBox-variant-calling --dag &gt; workflow.svg
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -309,14 +306,18 @@ MToolBox-variant-calling --dag &gt; workflow.svg
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
+          <a href="mtoolbox-variant-calling.html" title="MToolBox-variant-calling"
+             >next</a> |</li>
+        <li class="right" >
           <a href="installation.html" title="Installation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Run MToolBox</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Domenico Simone.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
     </div>
   </body>
 </html>

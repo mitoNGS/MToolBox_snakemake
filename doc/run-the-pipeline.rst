@@ -142,15 +142,11 @@ Running the wrappers is as simple as this:
 
 .. code-block:: bash
     
-    export PATH=/path/to/MToolBox/dir/:$PATH
-    
     MToolBox-<wrapper> <snakemake arguments>
 
-*E.g.* if you want to run the MToolBox-variant-calling wrapper and print the commands it will execute, you can run
+*E.g.* if you want to run the :code:`MToolBox-variant-calling` wrapper and print the commands it will execute, you can run
 
 .. code-block:: bash
-    
-    export PATH=/path/to/MToolBox/dir/:$PATH
     
     MToolBox-variant-calling -p
 
@@ -158,26 +154,20 @@ You can also display a graphical representation of the workflow by running
 
 .. code-block:: bash
     
-    export PATH=/path/to/MToolBox/dir/:$PATH
-    
     MToolBox-variant-calling --dag | display
 
 This will show the workflow in a browser. Alternatively, you can save the workflow representation in a file by running
 
 .. code-block:: bash
     
-    export PATH=/path/to/MToolBox/dir/:$PATH
-    
     MToolBox-variant-calling --dag > workflow.svg
 
 Available wrappers
 ------------------
 
-- `MToolBox-variant-calling`_
-
-MToolBox-variant-calling
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Performs QC, quality trimming of raw reads, read alignment, alignment filtering, variant calling. The final output is a VCF file.
+.. toctree::
+   :maxdepth: 2 
+   
+   mtoolbox-variant-calling
 
 .. _`species available in mtoolnote`: https://github.com/mitoNGS/mtoolnote#features
