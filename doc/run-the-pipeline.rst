@@ -3,19 +3,23 @@
 The MToolBox-snakemake workflows
 ================================
 
+.. contents::
+
 MToolBox-snakemake includes several workflows, written in snakemake and conveniently embedded in wrappers. Using these wrappers will save a lot of typing and headache for the lazy users (probably *you*). Cool, isn't it? :)
  
 All the wrappers accepts snakemake arguments and parse automatically the `config.yaml` configuration file required by snakemake.
 
+You can find a list of the available workflows :ref:`at the end of this page<available_wrappers>`. 
+
 An overview
 -----------
 
-The MToolBox-snakemake main workflow is **MToolBox-variant-calling**. At the moment, all the other MToolBox-snakemake workflows rely or 
+The MToolBox-snakemake main workflow is **MToolBox-variant-calling**. The configuration of this workflow is shared with all the other MToolBox-snakemake workflows and it is reported in this section.
 
 You are going to analyse one or more **samples**, represented by one or more read **datasets** (*ie*, libraries). 
 For this purpose, you are going to provide a **reference mitochondrial genome**. Choose it carefully, as your final results will be based on it! You also have to pick a **reference nuclear genome** that will be used as reference to filter out ambiguous reads.
 
-If you are interested in performing functional annotation of mt variants, you will also explicitly provide **species**.
+If you are interested in performing :ref:`functional annotation<mtoolbox_variant_annotation>` of mt variants, you will also explicitly provide **species**.
 
 Now you'll be wondering: *how do I tell all these things to the pipeline*? In the following sections, we'll see how to do that through a handful of configuration files!
 
@@ -24,7 +28,7 @@ Now you'll be wondering: *how do I tell all these things to the pipeline*? In th
 Setting up a working directory
 ------------------------------
 
-.. note::  Replace :code:`/path/to/MToolBox/dir/` with the MToolBox installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
+.. note:: Replace :code:`/path/to/MToolBox/dir/` with the MToolBox-snakemake installation path and :code:`/path/to/analysis/dir` with the folder where you wish to run your analysis.
 
 .. code-block:: bash
     
@@ -192,6 +196,8 @@ If you wish to run a MToolBox-snakemake workflow on a huge number of samples and
     -j 100 \
     --cluster cluster.yaml \
     --cluster 'sbatch -A snic2018-8-310 -p core -n {cluster.threads} -t {cluster.time} -o {cluster.stdout}' &> logs/mtoolbox_run.log &
+
+.. _available_wrappers:
 
 Available wrappers
 ------------------
