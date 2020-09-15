@@ -172,7 +172,7 @@ TODO: insert image.
     
     MToolBox-variant-calling -pk -j 8
 
-This will run the :code:`MToolBox-variant-calling` wrapper, printing the commands that get executed and using at most 8 cores at the same time (TL;DR: allowing to run multiple commands at the same time *with no excessive risk* of blowing up your machine).
+This will run the :code:`MToolBox-variant-calling` wrapper, printing the commands that get executed and using at most 8 cores at the same time (*i.e.* allowing to run multiple commands at the same time *with no excessive risk* of blowing up your machine).
 
 Running on a computing cluster
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
