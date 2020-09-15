@@ -166,7 +166,7 @@ Available wrappers
 ------------------
 
 .. toctree::
-   :maxdepth: 2 
+   :maxdepth: 1 
    
    mtoolbox-variant-calling
 
