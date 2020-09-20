@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# snakemake -s ~/theCellarDoor/MToolBox_dev/heterobasidion_mt/Snakefile --reason \
+# --printshellcmds \
+# --keep-going \
+# --cores 100 \
+# --cluster-config cluster.yaml --latency-wait 60 \
+# --cluster 'sbatch -A snic2018-8-310 -p core -n {cluster.threads} -t 7:00:00 -o {cluster.stdout}' \
+# --dryrun
+
+DIR="$(dirname "$(readlink -f "$0")")"
+snakefile=${DIR}/snakefiles/genome_db_2.snakefile
+git_show=${DIR}/scripts/git_show.sh
+
+# do you want the DAG?
+args=$(echo $@ | tr '[:upper:]' '[:lower:]')
+
+if [[ $args == *"dag"* ]]; then
+    snakemake --dag -s ${snakefile} "$@" | dot -Tsvg
+else
+    bash ${git_show}
+    snakemake -s ${snakefile} "$@"
+fi

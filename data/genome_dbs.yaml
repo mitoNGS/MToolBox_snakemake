@@ -1,0 +1,16 @@
+# genome_db file
+
+human:
+    mt_genome: rCRS
+    dl_link: link
+    mt_AC: NC_001224.1
+    n_AC: GCF_000146045.2_R64_genomic
+    zenodo_id: 4032479
+    species: human
+
+ggallus:
+    mt_genome: ggallus
+    mt_AC: NC_001224.1
+    n_AC: GCF_000146045.2_R64_genomic
+    zenodo_id: 4032478
+    species: ggallus

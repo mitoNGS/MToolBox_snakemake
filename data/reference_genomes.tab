@@ -1,3 +1,4 @@
-ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file	species
+ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file	species	ref_organism
 # mt1	n1	mt1.fasta	n1.fasta	sp1
-NC_001323.1	GCF_000002315.5	GCF_000002315.5_GRCg6a_genomic_mt.fna	GCF_000002315.5_GRCg6a_genomic.fna	ggallus
+NC_001323.1	GCF_000002315.5	GCF_000002315.5_GRCg6a_genomic_mt.fna	GCF_000002315.5_GRCg6a_genomic.fna	ggallus	ggallus_2
+#NC_001323.1	GCF_000002315.5	GCF_000002315.5_GRCg6a_genomic_mt.fna	GCF_000002315.5_GRCg6a_genomic.fna	ggallus	mamt

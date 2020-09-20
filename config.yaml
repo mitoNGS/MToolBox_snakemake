@@ -2,7 +2,7 @@ results:    "results"
 map_dir:    "map"
 log_dir:    "logs"
 tmp_dir:    "/tmp"
-species: 
+ref_organism: 
 
 read_processing:
     trimmomatic:
