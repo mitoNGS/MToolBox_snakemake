@@ -9,7 +9,7 @@
 # --dryrun
 
 DIR="$(dirname "$(readlink -f "$0")")"
-snakefile=${DIR}/snakefiles/genome_db_2.snakefile
+snakefile=${DIR}/snakefiles/genome_db.snakefile
 git_show=${DIR}/scripts/git_show.sh
 
 # do you want the DAG?
