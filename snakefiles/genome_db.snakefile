@@ -109,6 +109,36 @@ checkpoint check_gmap_db_status:
         #"echo {params.status} > {output.mt_n}"
         # create genome "status" file
 
+## wanna dl genomes?
+rule download_mt_genome_fasta:
+    input:
+        ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
+    output:
+        mt_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
+    params:
+        ref_genome_mt      = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt)
+        ref_genome_mt_file = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
+    run:
+        shell("esearch -db nucleotide -query '{params.ref_genome_mt}' | efetch -format fasta > {params.ref_genome_mt}.fasta")
+
+rule download_mt_n_genome_fasta:
+    input:
+        ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
+    output:
+        n_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_n_file}".format(ref_genome_n_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file),
+    params:
+        ref_genome_n = lambda wildcards: "{ref_genome_n}".format(ref_genome_n=ref_organism_dict[wildcards.ref_organism].ref_genome_n)
+        ref_genome_n_file = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file)
+    run:
+        if wildcards.ref_genome_n.startswith("GCA"):
+            shell("esearch -db assembly -query '{params.ref_genome_n}' | elink -target nucleotide -name \
+                    assembly_nuccore_insdc | efetch -format fasta > {params.ref_genome_n}.fa")
+        elif wildcards.ref_genome_n.startswith("GCF"):
+            shell("esearch -db assembly -query '{params.ref_genome_n}' | elink -target nucleotide -name \
+                    assembly_nuccore_refseq | efetch -format fasta > {params.ref_genome_n}.fa")
+        else:
+            sys.exit("Please provide a valid assembly accession (GCF- or GCA-).")
+
 # workflow, option1
 rule make_mt_gmap_db:
     input:
