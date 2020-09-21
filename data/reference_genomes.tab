@@ -1,4 +1,6 @@
 ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file	species	ref_organism
 # mt1	n1	mt1.fasta	n1.fasta	sp1	org1
-NC_001323.1	GCF_000002315.5	NC_001323.1.fasta	GCF_000002315.5.fa	ggallus	ggallus_2
-
+# example of reference genome with fasta files already in data/genomes
+NC_001224.1	GCF_000146045.2	NC_001224.1.fa	GCF_000146045.2_R64_genomic.fna	scerevisiae	scerevisiae_2
+# example of reference genome with fasta files to be downloaded and then processed by gmap_build
+NC_002333.2	GCF_000000175.5	NC_002333.2.fasta	GCF_000000175.5.fa	drerio	drerio_2
