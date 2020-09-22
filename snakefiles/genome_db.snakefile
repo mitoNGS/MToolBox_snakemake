@@ -246,7 +246,7 @@ rule make_mt_n_gmap_db:
         gmap_db = lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt,
                                                                             ref_genome_n=ref_organism_dict[wildcards.ref_organism].ref_genome_n),
         mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
-    message: "Generating joint gmap db for mt+n genome: {ref_organism}"
+    message: "Generating joint gmap db for mt+n genome: {wildcards.ref_organism}"
     log: "logs/gmap_build/{ref_organism}_mt_n.log"
     run:
         run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=params.mt_fasta,
