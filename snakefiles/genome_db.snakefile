@@ -46,6 +46,12 @@ genome_fasta_dir = "data/genomes"
 # for final output files of the pipeline.
 ref_organism_dict = {}
 for r in ref_organisms_config:
+    if os.path.isdir("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
+                                                        ref_organism=r)):
+        pass
+    else:
+        os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
+                                                        ref_organism=r), exist_ok=True)
     ref_organism_dict[r] = SimpleNamespace()
     # check if it's in genome_db_data
     if r in genome_db_data:
@@ -58,8 +64,6 @@ for r in ref_organisms_config:
             setattr(ref_organism_dict[r], "fetch_n_genome", "no")
             # otherwise in reference_tab
     elif r in reference_tab.index:
-        os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
-                                                            ref_organism=r), exist_ok=True)
         # reference_tab.loc["ggallus_2"]["ref_genome_mt"]
         for attribute in ["ref_genome_mt", "ref_genome_n", "ref_genome_mt_file", "ref_genome_n_file"]:
             try:
@@ -95,9 +99,9 @@ for r in ref_organisms_config:
 #                                                     status="download",
 #                                                     zenodo_id="bwe")}
 
-for ref_organism in ref_organism_dict:
-    os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
-                                                        ref_organism=ref_organism), exist_ok=True)
+# for ref_organism in ref_organism_dict:
+#     os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
+#                                                         ref_organism=ref_organism), exist_ok=True)
     # os.makedirs("{gmap_db_dir}/{ref_organism}/{ref_organism}.status".format(gmap_db_dir=gmap_db_dir,
     #                                                                         ref_organism=ref_organism), exist_ok=True)
 
@@ -117,7 +121,7 @@ rule all:
 # the checkpoint that shall trigger re-evaluation of the DAG
 checkpoint check_gmap_db_status:
     input:
-        ref_organism = gmap_db_dir + "/{ref_organism}"
+        ancient(gmap_db_dir + "/{ref_organism}")
     output:
         ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
         # fetch_mt = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetch",
