@@ -54,8 +54,9 @@ for r in ref_organisms_config:
         for f in genome_db_data[r]:
             setattr(ref_organism_dict[r], f, genome_db_data[r][f])
             setattr(ref_organism_dict[r], "status", "download")
-            setattr(ref_organism_dict[r], "fetch_genome", "no")
-    # otherwise in reference_tab
+            setattr(ref_organism_dict[r], "fetch_mt_genome", "no")
+            setattr(ref_organism_dict[r], "fetch_n_genome", "no")
+            # otherwise in reference_tab
     elif r in reference_tab.index:
         os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
                                                             ref_organism=r), exist_ok=True)
@@ -69,12 +70,12 @@ for r in ref_organisms_config:
         setattr(ref_organism_dict[r], "status", "new")
         if os.path.isfile(os.path.join(genome_fasta_dir, ref_organism_dict[r].ref_genome_mt_file)):
             setattr(ref_organism_dict[r], "fetch_mt_genome", "no")
-            open(gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched".format(ref_organism=r), 'a').close()
+            #open(gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched".format(ref_organism=r), 'a').close()
         else:
             setattr(ref_organism_dict[r], "fetch_mt_genome", "yes")
         if os.path.isfile(os.path.join(genome_fasta_dir, ref_organism_dict[r].ref_genome_n_file)):
             setattr(ref_organism_dict[r], "fetch_n_genome", "no")
-            open(gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetched".format(ref_organism=r), 'a').close()
+            #open(gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetched".format(ref_organism=r), 'a').close()
         else:
             setattr(ref_organism_dict[r], "fetch_n_genome", "yes")
     # otherwise drop it
@@ -82,7 +83,7 @@ for r in ref_organisms_config:
         "{r} is not a reference organism neither in the default genome_db nor in the reference_genomes.tab file. It will be discarded.".format(r=r)
         pass
 
-# print(ref_organism_dict)
+#print(ref_organism_dict)
 
 ## toy example of ref_organism_dict
 ## status MUST be "download" or "new"
@@ -123,13 +124,13 @@ checkpoint check_gmap_db_status:
         # fetch_n = gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetch"
     params:
         status = lambda wildcards: ref_organism_dict[wildcards.ref_organism].status,
-        # fetch_mt = lambda wildcards: ref_organism_dict[wildcards.ref_organism].fetch_mt_genome
-        # fetch_n = lambda wildcards: ref_organism_dict[wildcards.ref_organism].fetch_n_genome
+        fetch_mt = lambda wildcards: ref_organism_dict[wildcards.ref_organism].fetch_mt_genome,
+        fetch_n = lambda wildcards: ref_organism_dict[wildcards.ref_organism].fetch_n_genome
     run:
         # simulate some output value
-        shell("echo {params.status} > {output.ref_organism_flag}")
-        # shell("echo {params.fetch_mt} > {output.fetch_mt}")
-        # shell("echo {params.fetch_n} > {output.fetch_n}")
+        shell("echo 'status: {params.status}' > {output.ref_organism_flag}")
+        shell("echo 'fetch_mt_genome: {params.fetch_mt}' >> {output.ref_organism_flag}")
+        shell("echo 'fetch_n_genome: {params.fetch_n}' >> {output.ref_organism_flag}")        # shell("echo {params.fetch_n} > {output.fetch_n}")
         #"echo {params.status} > {output.mt_n}"
         # create genome "status" file
 
@@ -145,49 +146,59 @@ checkpoint check_gmap_db_status:
 
 
 
-# rule download_mt_genome_fasta:
-#     input:
-#         ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
-#         #ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetch",
-#     output:
-#         ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched",
-# #        ref_organism_fetch = "data/genomes/{ref_genome_mt_file}",
-#     params:
-#         mt_genome_fasta    = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file),
-#         ref_genome_mt      = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt),
-#         #ref_genome_mt_file = lambda wildcards: "{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
-#     run:
-#         shell("esearch -db nucleotide -query '{params.ref_genome_mt}' | efetch -format fasta > {params.mt_genome_fasta} && touch {output.ref_organism_fetch}")
-#         #shell("echo done > {output.ref_organism_fetch}")
-# 
-# rule download_mt_n_genome_fasta:
-#     input:
-#         ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
-#         #ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetch",
-#     output:
-#         ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetched",
-#         #ref_organism_fetch = "data/genomes/{ref_genome_n_file}",
-#     params:
-#         n_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_n_file}".format(ref_genome_n_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file),
-#         ref_genome_n = lambda wildcards: "{ref_genome_n}".format(ref_genome_n=ref_organism_dict[wildcards.ref_organism].ref_genome_n),
-#         #ref_genome_n_file = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file)
-#     run:
-#         if ref_organism_dict[wildcards.ref_organism].ref_genome_n.startswith("GCA"):
-#             db = "insdc"
-#         elif ref_organism_dict[wildcards.ref_organism].ref_genome_n.startswith("GCF"):
-#             db = "refseq"
-#         else:
-#             sys.exit("Please provide a valid assembly accession (GCF- or GCA-).")
-#         shell("esearch -db assembly -query '{ref_genome_n}' | elink -target nucleotide -name assembly_nuccore_{db} | efetch -format fasta > {n_genome_fasta} && touch {ref_organism_fetch}".format(ref_genome_n=params.ref_genome_n, db=db, n_genome_fasta=params.n_genome_fasta, ref_organism_fetch=output.ref_organism_fetch))
-#         #shell("touch {output.ref_organism_fetch}")
-#         #shell("echo done > {output.ref_organism_fetch}")
+rule download_mt_genome_fasta:
+    input:
+        ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
+        #ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetch",
+    output:
+        ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched",
+#        ref_organism_fetch = "data/genomes/{ref_genome_mt_file}",
+    params:
+        mt_genome_fasta    = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file),
+        ref_genome_mt      = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt),
+        #ref_genome_mt_file = lambda wildcards: "{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
+    run:
+        gmap_db_status = yaml.full_load(open(input.ref_organism_flag, 'r'))
+        print(input.ref_organism_flag, gmap_db_status)
+        if gmap_db_status["fetch_mt_genome"] == True:
+            shell("esearch -db nucleotide -query '{params.ref_genome_mt}' | efetch -format fasta > {params.mt_genome_fasta} && touch {output.ref_organism_fetch}")
+        else:
+            shell("touch {output.ref_organism_fetch}")
+        #shell("echo done > {output.ref_organism_fetch}")
+
+rule download_mt_n_genome_fasta:
+    input:
+        ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
+        #ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetch",
+    output:
+        ref_organism_fetch = gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetched",
+        #ref_organism_fetch = "data/genomes/{ref_genome_n_file}",
+    params:
+        n_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_n_file}".format(ref_genome_n_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file),
+        ref_genome_n = lambda wildcards: "{ref_genome_n}".format(ref_genome_n=ref_organism_dict[wildcards.ref_organism].ref_genome_n),
+        #ref_genome_n_file = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file)
+    run:
+        gmap_db_status = yaml.full_load(open(input.ref_organism_flag, 'r'))
+        if gmap_db_status["fetch_n_genome"] == True:
+            if ref_organism_dict[wildcards.ref_organism].ref_genome_n.startswith("GCA"):
+                db = "insdc"
+            elif ref_organism_dict[wildcards.ref_organism].ref_genome_n.startswith("GCF"):
+                db = "refseq"
+            else:
+                sys.exit("Please provide a valid assembly accession (GCF- or GCA-).")
+            # this
+            shell("esearch -db assembly -query '{ref_genome_n}' | elink -target nucleotide -name assembly_nuccore_{db} | efetch -format fasta > {n_genome_fasta} && touch {ref_organism_fetch}".format(ref_genome_n=params.ref_genome_n, db=db, n_genome_fasta=params.n_genome_fasta, ref_organism_fetch=output.ref_organism_fetch))
+            # or this
+            #shell("esearch -db nucleotide -query '{params.ref_genome_n}' | efetch -format fasta > {params.mt_genome_fasta} && touch {output.ref_organism_fetch}")
+        else:
+            shell("touch {output.ref_organism_fetch}")
 
 # workflow, option1
 rule make_mt_gmap_db:
     input:
 #        ref_organism_flag = gmap_db_dir + "/{ref_organism}/{ref_organism}.status",
         ref_organism_fetch_mt = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched",
-        mt_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
+        #mt_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
     output:
         dl_mt = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.new",
     params:
@@ -195,7 +206,7 @@ rule make_mt_gmap_db:
         gmap_db = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt),
         mt_genome_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
         #gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
-    message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
+    message: "Generating gmap db for mt genome: {params.mt_genome_fasta}.\nWildcards: {wildcards}"
     log: "logs/gmap_build/{ref_organism}_mt.log"
     #conda: "envs/environment.yaml"
     run:
@@ -269,7 +280,9 @@ def aggregate_input(wildcards):
     # This way, Snakemake is able to automatically download the file if it is generated in
     # a cloud environment without a shared filesystem.
     with open(checkpoints.check_gmap_db_status.get(ref_organism=wildcards.ref_organism).output.ref_organism_flag) as f:
-        if f.read().strip() == "download":
+        gmap_db_status = yaml.full_load(f)
+        if gmap_db_status["status"] == "download":
+#        if f.read().strip() == "download":
             return gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.download", \
                 gmap_db_dir + "/{ref_organism}/{ref_organism}_mt_n.download"
         else:
