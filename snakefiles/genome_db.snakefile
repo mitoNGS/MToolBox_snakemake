@@ -65,13 +65,33 @@ for r in ref_organisms_config:
             # otherwise in reference_tab
     elif r in reference_tab.index:
         # reference_tab.loc["ggallus_2"]["ref_genome_mt"]
-        for attribute in ["ref_genome_mt", "ref_genome_n", "ref_genome_mt_file", "ref_genome_n_file"]:
+        for attribute in ["ref_genome_mt", "ref_genome_n"]:
+            # these attributes MUST be set
             try:
                 a = reference_tab.loc[r][attribute]
             except KeyError:
                 sys.exit("{r} doesn't have a valid {attribute}".format(r=r, attribute=attribute))
             setattr(ref_organism_dict[r], attribute, a)
+        for attribute in ["ref_genome_mt_file", "ref_genome_n_file"]:
+            # these attributes might not be set and their values
+            # will be set based on their related attributes, ie
+            # ref_genome_mt_file from ref_genome_mt
+            # ref_genome_n_file  from ref_genome_n
+            try:
+                a = reference_tab.loc[r][attribute]
+            except KeyError:
+                # eg if ref_genome_mt_file is not set in the reference_tab,
+                # its value will be set as <ref_genome_mt>.fasta
+                a = "{ref}.fasta".format(ref=reference_tab.loc[r][attribute.replace("_file", "")])
+            setattr(ref_organism_dict[r], attribute, a)
         setattr(ref_organism_dict[r], "status", "new")
+        # for attribute in ["ref_genome_mt", "ref_genome_n", "ref_genome_mt_file", "ref_genome_n_file"]:
+        #     try:
+        #         a = reference_tab.loc[r][attribute]
+        #     except KeyError:
+        #         sys.exit("{r} doesn't have a valid {attribute}".format(r=r, attribute=attribute))
+        #     setattr(ref_organism_dict[r], attribute, a)
+        # setattr(ref_organism_dict[r], "status", "new")
         if os.path.isfile(os.path.join(genome_fasta_dir, ref_organism_dict[r].ref_genome_mt_file)):
             setattr(ref_organism_dict[r], "fetch_mt_genome", "no")
             #open(gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched".format(ref_organism=r), 'a').close()

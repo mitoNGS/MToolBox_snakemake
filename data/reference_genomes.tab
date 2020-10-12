@@ -4,3 +4,5 @@ ref_genome_mt	ref_genome_n	ref_genome_mt_file	ref_genome_n_file	species	ref_orga
 NC_001224.1	GCF_000146045.2	NC_001224.1.fa	GCF_000146045.2_R64_genomic.fna	scerevisiae	scerevisiae_2
 # example of reference genome with fasta files to be downloaded and then processed by gmap_build
 NC_002333.2	GCF_000000175.5	NC_002333.2.fasta	GCF_000000175.5.fa	drerio	drerio_2
+NC_008282.1	GCA_000184455.3	NC_008282.1.fa	GCA_000184455.3	aspergillus_oryzae_RIB40	aspergillus_oryzae_RIB40
+

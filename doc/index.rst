@@ -13,10 +13,11 @@ And with this new implementation, MToolBox is also capable of analysing also mt 
 **Eager to use MToolBox? Follow our tutorials to install and run the pipeline!**
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents
    
    installation
+   mtoolbox-gmap-build
    run-the-pipeline
 
 Indices and tables
