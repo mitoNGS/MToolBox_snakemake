@@ -39,6 +39,15 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, symlink_libraries_uncompressed, get_gmap_build_nuclear_mt_input
 #ruleorder: sam_to_ids_keep_orphans > sam_to_ids
 
+for path in sys.path:
+    if "snakefiles" in path:
+        rootdir = path.replace("/snakefiles", "/")
+        #print(rootdir)
+
+genome_db_data_file = os.path.join(rootdir, "data/genome_dbs.yaml")
+#print(genome_db_data_file)
+reference_tab_file =  os.path.join(rootdir, "data/reference_genomes.tab")
+
 # fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
 
@@ -59,6 +68,8 @@ else:
         analysis_tab = analysis_tab.assign(species=species)
     else:
         sys.exit("Provided species {} in not present in reference_genomes.tab.".format(species))
+
+include: "genome_db.snakefile"
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
@@ -136,60 +147,61 @@ rule fastqc_raw:
         fastqc -t {threads} -o {params.outDir} {input} &> {log}
         """
 
-rule make_mt_gmap_db:
-    input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-                                                   ref_genome_mt_file=get_genome_files(reference_tab,
-                                                                                       wildcards.ref_genome_mt,
-                                                                                       "ref_genome_mt_file"))[0]
-    output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
-    params:
-        gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
-    message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
-    log: "logs/gmap_build/{ref_genome_mt}.log"
-    #conda: "envs/environment.yaml"
-    run:
-        run_gmap_build(mt_genome_file=input.mt_genome_fasta, gmap_db_dir=params.gmap_db_dir,
-                        gmap_db=params.gmap_db, log=log, mt_is_circular=True)
-    # shell:
-    #     """
-    #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
-    #     """
-
-rule get_gmap_build_nuclear_mt_input:
-    input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-                                                   ref_genome_mt_file=get_genome_files(reference_tab,
-                                                                                       wildcards.ref_genome_mt,
-                                                                                       "ref_genome_mt_file"))[0],
-        n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
-                                                  ref_genome_n_file=get_genome_files(reference_tab,
-                                                                                     wildcards.ref_genome_mt,
-                                                                                     "ref_genome_n_file"))[0]
-    output:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-    run:
-        get_gmap_build_nuclear_mt_input(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta)
-
-rule make_mt_n_gmap_db:
-    input:
-        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
-        mt_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-                                                   ref_genome_mt_file=get_genome_files(reference_tab,
-                                                                                       wildcards.ref_genome_mt,
-                                                                                       "ref_genome_mt_file"))[0],
-    output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
-    params:
-        gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
-    message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
-    log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
-    run:
-        run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_fasta,
-                            gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
+### rules moved to genome_db.snakefile
+# rule make_mt_gmap_db:
+#     input:
+#         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+#                                                    ref_genome_mt_file=get_genome_files(reference_tab,
+#                                                                                        wildcards.ref_genome_mt,
+#                                                                                        "ref_genome_mt_file"))[0]
+#     output:
+#         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
+#     params:
+#         gmap_db_dir = config["map"]["gmap_db_dir"],
+#         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
+#     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
+#     log: "logs/gmap_build/{ref_genome_mt}.log"
+#     #conda: "envs/environment.yaml"
+#     run:
+#         run_gmap_build(mt_genome_file=input.mt_genome_fasta, gmap_db_dir=params.gmap_db_dir,
+#                         gmap_db=params.gmap_db, log=log, mt_is_circular=True)
+#     # shell:
+#     #     """
+#     #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
+#     #     """
+# 
+# rule get_gmap_build_nuclear_mt_input:
+#     input:
+#         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+#                                                    ref_genome_mt_file=get_genome_files(reference_tab,
+#                                                                                        wildcards.ref_genome_mt,
+#                                                                                        "ref_genome_mt_file"))[0],
+#         n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
+#                                                   ref_genome_n_file=get_genome_files(reference_tab,
+#                                                                                      wildcards.ref_genome_mt,
+#                                                                                      "ref_genome_n_file"))[0]
+#     output:
+#         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+#     run:
+#         get_gmap_build_nuclear_mt_input(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta)
+# 
+# rule make_mt_n_gmap_db:
+#     input:
+#         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
+#         mt_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+#                                                    ref_genome_mt_file=get_genome_files(reference_tab,
+#                                                                                        wildcards.ref_genome_mt,
+#                                                                                        "ref_genome_mt_file"))[0],
+#     output:
+#         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+#     params:
+#         gmap_db_dir = config["map"]["gmap_db_dir"],
+#         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
+#     message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
+#     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
+#     run:
+#         run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_fasta,
+#                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
 
 rule fastqc_filtered:
     input:

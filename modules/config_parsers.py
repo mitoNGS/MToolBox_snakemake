@@ -35,7 +35,7 @@ def parse_config_tabs(analysis_tab_file=None, reference_tab_file=None, datasets_
     # TODO:
     # - test!
     analysis_tab = parse_config_tab(tab_file=analysis_tab_file, index=["sample"])
-    reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_genome_mt", "ref_genome_n"])
+    reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
     datasets_tab = parse_config_tab(tab_file=datasets_tab_file, index=["sample", "library"])
     return analysis_tab, reference_tab, datasets_tab
 
