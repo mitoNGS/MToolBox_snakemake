@@ -566,31 +566,31 @@ rule merge_bam:
         samtools index {output.merged_bam} {output.merged_bam_index}
         """
 
-rule index_genome:
-    input:
-        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
-        #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-    output:
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
-    message: "Indexing {input.mt_n_fasta} with samtools faidx"
-    log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
-    #conda: "envs/samtools_biopython.yaml"
-    shell:
-        """
-        samtools faidx {input.mt_n_fasta} &> {log}
-        """
-
-rule dict_genome:
-    input:
-        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
-        #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-    output:
-        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
-    message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
-    log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
-    #conda: "envs/samtools_biopython.yaml"
-    run:
-        shell("picard CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}")
+# rule index_genome:
+#     input:
+#         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
+#         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+#     output:
+#         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+#     message: "Indexing {input.mt_n_fasta} with samtools faidx"
+#     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
+#     #conda: "envs/samtools_biopython.yaml"
+#     shell:
+#         """
+#         samtools faidx {input.mt_n_fasta} &> {log}
+#         """
+# 
+# rule dict_genome:
+#     input:
+#         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
+#         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+#     output:
+#         genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+#     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
+#     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
+#     #conda: "envs/samtools_biopython.yaml"
+#     run:
+#         shell("picard CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}")
 
 rule left_align_merged_bam:
     input:
