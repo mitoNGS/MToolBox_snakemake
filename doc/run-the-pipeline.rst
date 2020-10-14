@@ -58,8 +58,7 @@ At this point, if you run the command :code:`tree` the structure of your directo
     │   ├── analysis.tab
     │   ├── datasets.tab
     │   ├── genomes
-    │   ├── reads
-    │   └── reference_genomes.tab
+    │   └── reads
     └── logs
         └── cluster_jobs
 
