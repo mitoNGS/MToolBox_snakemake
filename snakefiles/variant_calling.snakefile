@@ -8,78 +8,73 @@ import shutil
 import subprocess
 import sys
 import time
+import yaml
 
 from Bio import SeqIO
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
 
+current_dir = os.getcwd()
 for path in sys.path:
     if "snakefiles" in path:
         sys.path.append(path.replace("/snakefiles", ""))
+        rootdir = path.replace("/snakefiles", "")
+        snakedir = path
 
 from modules.BEDoutput import bed_output, fasta_output
 from modules.config_parsers import (
     fastqc_outputs, get_bed_files, get_datasets_for_symlinks,
     get_fasta_files, get_genome_files, get_genome_single_vcf_files,
-    get_genome_single_vcf_index_files, get_genome_vcf_files, get_mt_genomes, get_mt_fasta,
-    get_sample_bamfiles, get_symlinks, parse_config_tabs, get_inputs_for_rule_map_nuclear_MT_SE
+    get_genome_single_vcf_index_files, get_genome_vcf_files, get_inputs_for_rule_map_nuclear_MT_SE,
+    get_mt_genomes, get_mt_fasta, get_sample_bamfiles, get_symlinks, parse_config_tabs, parse_config_tab
 )
 from modules.filter_alignments import filter_alignments, cat_alignments
 from modules.general import (
     check_tmp_dir, gapped_fasta2contigs, get_seq_name, sam_to_fastq, sam_cov_handle2gapped_fasta,
-    trimmomatic_input, sam_to_ids, run_seqtk_subset, get_SAM_header
+    trimmomatic_input, sam_to_ids, run_seqtk_subset, get_mt_AC, get_SAM_header
 )
-from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input
+from modules.genome_db import (
+    run_gmap_build, get_gmap_build_nuclear_mt_input, check_ref_organism
+)
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
 source_dir = Path(os.path.dirname(workflow.snakefile)).parent
-#source_dir = os.path.abspath(os.path.join(".", os.pardir))
-#localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
-localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, symlink_libraries_uncompressed, get_gmap_build_nuclear_mt_input
-#ruleorder: sam_to_ids_keep_orphans > sam_to_ids
-
-for path in sys.path:
-    if "snakefiles" in path:
-        rootdir = path.replace("/snakefiles", "/")
-        #print(rootdir)
+localrules: merge_VCF, index_VCF, symlink_libraries, symlink_libraries_uncompressed
 
 genome_db_data_file = os.path.join(rootdir, "data/genome_dbs.yaml")
-#print(genome_db_data_file)
 reference_tab_file =  os.path.join(rootdir, "data/reference_genomes.tab")
+with open(genome_db_data_file) as file:
+    genome_db_data = yaml.full_load(file)
 
-# fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
+# keep in mind there's a parse_config function that calls these three functions
+# analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
+analysis_tab = parse_config_tab(tab_file="data/analysis.tab", index=["sample"])
+reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
+datasets_tab = parse_config_tab(tab_file="data/datasets.tab", index=["sample", "library"])
 
 configfile: "config.yaml"
 res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
-gmap_db_dir = config["map"]["gmap_db_dir"]
+gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
 keep_orphans = config["keep_orphans"]
 
-# if species is not defined by config.yaml, should be parsed for each analysis
-species = config["species"]
-if species is None:
-    # should be parsed with the reference_genome.tab
-    pass
-else:
-    if species in list(reference_tab["species"]):
-        analysis_tab = analysis_tab.assign(species=species)
-    else:
-        sys.exit("Provided species {} in not present in reference_genomes.tab.".format(species))
-
-include: "genome_db.snakefile"
+ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab)
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
-    ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
-    ref_genome_n = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_n']))])
+    ref_organism = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_organism']))]),
+    # ref_genome_mt = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_mt']))]),
+    # ref_genome_n = '|'.join([re.escape(x) for x in list(set(analysis_tab['ref_genome_n']))])
 
-outpaths = get_mt_genomes(analysis_tab)
-
-target_inputs = [
-    outpaths ]
+subworkflow genome_db:
+    workdir:
+        #snakedir
+        current_dir
+    snakefile:
+        os.path.join(rootdir, "snakefiles", "genome_db.snakefile")
+    configfile:
+        os.path.join(current_dir, "config.yaml")
 
 rule all:
     input:
@@ -146,62 +141,6 @@ rule fastqc_raw:
         mkdir -p {params.outDir}
         fastqc -t {threads} -o {params.outDir} {input} &> {log}
         """
-
-### rules moved to genome_db.snakefile
-# rule make_mt_gmap_db:
-#     input:
-#         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-#                                                    ref_genome_mt_file=get_genome_files(reference_tab,
-#                                                                                        wildcards.ref_genome_mt,
-#                                                                                        "ref_genome_mt_file"))[0]
-#     output:
-#         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
-#     params:
-#         gmap_db_dir = config["map"]["gmap_db_dir"],
-#         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
-#     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
-#     log: "logs/gmap_build/{ref_genome_mt}.log"
-#     #conda: "envs/environment.yaml"
-#     run:
-#         run_gmap_build(mt_genome_file=input.mt_genome_fasta, gmap_db_dir=params.gmap_db_dir,
-#                         gmap_db=params.gmap_db, log=log, mt_is_circular=True)
-#     # shell:
-#     #     """
-#     #     gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none -g {input.mt_genome_fasta} 2> /dev/null | gmap_build -D {params.gmap_db_dir} -d {params.gmap_db} -s none {input.mt_genome_fasta} &> {log}
-#     #     """
-# 
-# rule get_gmap_build_nuclear_mt_input:
-#     input:
-#         mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-#                                                    ref_genome_mt_file=get_genome_files(reference_tab,
-#                                                                                        wildcards.ref_genome_mt,
-#                                                                                        "ref_genome_mt_file"))[0],
-#         n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
-#                                                   ref_genome_n_file=get_genome_files(reference_tab,
-#                                                                                      wildcards.ref_genome_mt,
-#                                                                                      "ref_genome_n_file"))[0]
-#     output:
-#         mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-#     run:
-#         get_gmap_build_nuclear_mt_input(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta)
-# 
-# rule make_mt_n_gmap_db:
-#     input:
-#         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
-#         mt_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
-#                                                    ref_genome_mt_file=get_genome_files(reference_tab,
-#                                                                                        wildcards.ref_genome_mt,
-#                                                                                        "ref_genome_mt_file"))[0],
-#     output:
-#         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
-#     params:
-#         gmap_db_dir = config["map"]["gmap_db_dir"],
-#         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
-#     message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
-#     log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
-#     run:
-#         run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_fasta,
-#                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
 
 rule fastqc_filtered:
     input:
@@ -273,20 +212,21 @@ rule map_MT_PE_SE:
         R1 = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
         R2 = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
         U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
+        gmap_db = genome_db(gmap_db_dir + "/{ref_organism}/{ref_organism}.done"),
+        # gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
-        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
+        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt.sam.gz"
     params:
-        gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards: wildcards.ref_genome_mt,
+        gmap_db_dir = gmap_db_dir,
+        gmap_db = lambda wildcards: wildcards.ref_organism,
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
         uncompressed_output = lambda wildcards, output: output.outmt_sam.replace("_outmt.sam.gz", "_outmt.sam")
     log:
-        log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_map_MT_PE_SE.log"
+        log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/{sample}_{library}_{ref_organism}_map_MT_PE_SE.log"
     #conda: "envs/environment.yaml"
     threads:
         config["map"]["gmap_threads"]
-    message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.library} to {wildcards.ref_genome_mt} mt genome"
+    message: "Mapping reads for read dataset {wildcards.sample}_{wildcards.library} to {wildcards.ref_organism} mt genome"
     run:
         if seq_type == "pe":
             print("PE mode")
@@ -300,13 +240,13 @@ rule map_MT_PE_SE:
 
 rule sam_to_ids:
     input:
-        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
+        outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt.sam.gz"
     output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.ids",
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt1.ids",
         #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.ids",
-        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.ids",
-        outmt_U1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.ids",
-        outmt_U2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.ids",   
+        outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt.ids",
+        outmt_U1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt_U1.ids",
+        outmt_U2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt_U2.ids",
     message:
         "Getting ids of mapped reads from {input.outmt_sam}"
     run:
@@ -321,8 +261,8 @@ rule ids_to_fastq_PE:
         R2 = rules.trimmomatic.output.out2P,
         #outmt = rules.sam_to_ids.output.outmt,
     output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt1.fastq.gz",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt2.fastq.gz",
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt1.fastq.gz",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt2.fastq.gz",
         #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
     message:
         "Fetching reads in {input.outmt1}"
@@ -343,7 +283,7 @@ rule ids_to_fastq_SE:
         #U2 = rules.trimmomatic.output.out2U,
         #outmt = rules.sam_to_ids.output.outmt,
     output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt.fastq.gz",
         #outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_2.fastq.gz",
         #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
     message:
@@ -365,8 +305,8 @@ rule ids_to_fastq_orphans:
         R2 = rules.trimmomatic.output.out2P,
         #outmt = rules.sam_to_ids.output.outmt,
     output:
-        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.fastq.gz",
-        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.fastq.gz",
+        outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt_U1.fastq.gz",
+        outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt_U2.fastq.gz",
         #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
     message:
         "Fetching reads in {input.outmt_U1} and {input.outmt_U2}"
@@ -382,14 +322,14 @@ rule ids_to_fastq_orphans:
 rule map_nuclear_MT_SE:
     input:
         lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
-                                                                ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
+                                                                ref_organism=wildcards.ref_organism,
                                                                 keep_orphans=keep_orphans),
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        gmap_db = genome_db(gmap_db_dir + "/{ref_organism}/{ref_organism}.done")
         #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
     output:
-        outS = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
+        outS = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outS.sam.gz"
     params:
-        gmap_db_dir = config["map"]["gmap_db_dir"],
+        gmap_db_dir = gmap_db_dir,
         gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
         uncompressed_output = lambda wildcards, output: output.outS.replace("_outS.sam.gz", "_outS.sam")
     threads:
@@ -401,7 +341,7 @@ rule map_nuclear_MT_SE:
     #     """
     #conda: "envs/environment.yaml"
     log:
-        logS = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
+        logS = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/{sample}_{library}_{ref_organism}_map_nuclear_MT_SE.log"
     message:
         "Mapping onto complete human genome (nuclear + mt)... SE reads"
     run:
@@ -412,13 +352,13 @@ rule map_nuclear_MT_SE:
 
 rule map_nuclear_MT_PE:
     input:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        gmap_db = genome_db(gmap_db_dir + "/{ref_organism}/{ref_organism}.done"),
         outmt1 = rules.ids_to_fastq_PE.output.outmt1,
         outmt2 = rules.ids_to_fastq_PE.output.outmt2,
         # outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_1.fastq.gz",
         # outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_2.fastq.gz",
     output:
-        outP = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
+        outP = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outP.sam.gz"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         #gsnap_db_folder = config['map']['gsnap_db_folder'],
@@ -434,7 +374,7 @@ rule map_nuclear_MT_PE:
     #     """
     #conda: "envs/environment.yaml"
     log:
-        logP = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
+        logP = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/{sample}_{library}_{ref_organism}_map_nuclear_MT_PE.log"
     message:
         "Mapping onto complete human genome (nuclear + mt)... PE reads"
     run:
@@ -448,21 +388,21 @@ rule map_nuclear_MT_PE_SE:
         outmt1 = rules.ids_to_fastq_PE.output.outmt1,
         outmt2 = rules.ids_to_fastq_PE.output.outmt2,
         outmt_SE = lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
-                                                                ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
-                                                                keep_orphans=keep_orphans),
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+                                                                ref_organism=wildcards.ref_organism, keep_orphans=keep_orphans),
+        gmap_db = genome_db(gmap_db_dir + "/{ref_organism}/{ref_organism}.done"),
     output:
-        concordant_uniq = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_uniq",
-        concordant_circular = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_circular",
-        unpaired_uniq = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.unpaired_uniq",
-        unpaired_circular = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.unpaired_circular",
+        concordant_uniq = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_out_mt_n.concordant_uniq",
+        concordant_circular = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_out_mt_n.concordant_circular",
+        unpaired_uniq = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_out_mt_n.unpaired_uniq",
+        unpaired_circular = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_out_mt_n.unpaired_circular",
         # outmt_n = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.sam.gz"
     threads: 4
     log:
-        log = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE_SE.log"
+        log = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/{sample}_{library}_{ref_organism}_map_nuclear_MT_PE_SE.log"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
+        gmap_db = lambda wildcards: wildcards.ref_organism,
+        # gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
         out_basename = lambda wildcards, output: output.concordant_uniq.replace(".concordant_uniq", ""),
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
     run:
@@ -483,24 +423,23 @@ rule map_nuclear_MT_PE_SE:
 rule filtering_mt_alignments:
     input:
         rules.map_nuclear_MT_PE_SE.output,
+#        mt_n_fasta = genome_db(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta")
     output:
-        sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
-    params:
-        ref_mt_fasta_header = lambda wildcards: get_seq_name("data/genomes/{ref_genome_mt_file}".format(
-            ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
-        ))[0]
+        sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT.sam.gz"
     message: "Filtering alignments in files {input}"
     run:
-        filtering_report = cat_alignments(input, outfile=output.sam, ref_mt_fasta_header=params.ref_mt_fasta_header)
+        ref_mt_fasta_header = lambda wildcards: get_mt_AC(genome_db_data=genome_db_data,
+                                                            ref_organism=wildcards.ref_organism, reference_tab=reference_tab)
+        filtering_report = cat_alignments(input, outfile=output.sam, ref_mt_fasta_header=ref_mt_fasta_header)
         print(filtering_report)
 
 rule sam2bam:
     input:
-        sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
+        sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT.sam.gz",
     output:
-        "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT.bam",
+        "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT.bam",
     message: "Converting {input.sam} to {output}"
-    log: log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/sam2bam.log"
+    log: log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/sam2bam.log"
     #group: "variant_calling"
     #conda: "envs/samtools_biopython.yaml"
     shell:
@@ -510,13 +449,13 @@ rule sam2bam:
 
 rule sort_bam:
     input:
-        bam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT.bam"
+        bam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT.bam"
     output:
-        sorted_bam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+        sorted_bam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT-sorted.bam"
     message: "Sorting {input.bam} to {output.sorted_bam}"
     params:
         TMP = check_tmp_dir(config["tmp_dir"])
-    log: log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/sort_bam.log"
+    log: log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/sort_bam.log"
     #conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     shell:
@@ -526,15 +465,15 @@ rule sort_bam:
 
 rule mark_duplicates:
     input:
-        sorted_bam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam"
+        sorted_bam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT-sorted.bam"
     output:
-        sorted_bam_md = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.bam",
-        metrics_file = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.final.metrics.txt"
+        sorted_bam_md = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT-sorted.final.bam",
+        metrics_file = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT-sorted.final.metrics.txt"
     params:
         TMP = check_tmp_dir(config["tmp_dir"]),
         mark_duplicates = config["mark_duplicates"]
     message: "Removing duplicate reads from {input.sorted_bam}: {params.mark_duplicates}. Output: {output.sorted_bam_md}"
-    log: log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/mark_duplicates.log"
+    log: log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/mark_duplicates.log"
     run:
         if params.mark_duplicates == True:
             shell("picard MarkDuplicates \
@@ -553,12 +492,13 @@ rule merge_bam:
     input:
         sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir="results",
                                                             sample=wildcards.sample,
-                                                            ref_genome_mt=wildcards.ref_genome_mt,
-                                                            ref_genome_n=wildcards.ref_genome_n)
+                                                            ref_organism=wildcards.ref_organism)
+                                                            # ref_genome_mt=wildcards.ref_genome_mt,
+                                                            # ref_genome_n=wildcards.ref_genome_n)
     output:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
-        merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai"
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_merge_bam.log"
+        merged_bam = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.bam",
+        merged_bam_index = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.bam.bai"
+    log: log_dir + "/{sample}/{sample}_{ref_organism}_merge_bam.log"
     #conda: "envs/samtools_biopython.yaml"
     shell:
         """
@@ -566,42 +506,16 @@ rule merge_bam:
         samtools index {output.merged_bam} {output.merged_bam_index}
         """
 
-# rule index_genome:
-#     input:
-#         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
-#         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-#     output:
-#         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
-#     message: "Indexing {input.mt_n_fasta} with samtools faidx"
-#     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
-#     #conda: "envs/samtools_biopython.yaml"
-#     shell:
-#         """
-#         samtools faidx {input.mt_n_fasta} &> {log}
-#         """
-# 
-# rule dict_genome:
-#     input:
-#         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
-#         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-#     output:
-#         genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
-#     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
-#     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
-#     #conda: "envs/samtools_biopython.yaml"
-#     run:
-#         shell("picard CreateSequenceDictionary R={input.mt_n_fasta} O={output.genome_dict}")
-
 rule left_align_merged_bam:
     input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
-        merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai",
-        mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
-        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+        merged_bam = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.bam",
+        merged_bam_index = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.bam.bai",
+        mt_n_fasta = genome_db(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta"),
+        genome_index = genome_db(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta.fai"),
+        genome_dict = genome_db(rootdir + "/data/genomes/{ref_organism}.dict")
     output:
-        merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam.log"
+        merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam"
+    log: log_dir + "/{sample}/{sample}_{ref_organism}_left_align_merged_bam.log"
     params:
         source_dir = source_dir
     message: "Realigning indels in {input.merged_bam} with GATK 3.6 - LeftAlignIndels"
@@ -617,10 +531,10 @@ rule left_align_merged_bam:
 
 rule clip_bam:
     input:
-        merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
+        merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam"
     output:
-        merged_bam_left_realigned_clipped = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.bam"
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam_clip.log"
+        merged_bam_left_realigned_clipped = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.clip.bam"
+    log: log_dir + "/{sample}/{sample}_{ref_organism}_left_align_merged_bam_clip.log"
     message: "Clipping alignment ends {input.merged_bam_left_realigned} with bam trimBam"
     run:
         shell("bam trimBam \
@@ -631,15 +545,15 @@ rule clip_bam:
 
 rule clip_bam_recalculate_MD:
     input:
-        merged_bam_left_realigned_clipped = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.bam"
+        merged_bam_left_realigned_clipped = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.clip.bam"
     output:
-        merged_bam_left_realigned_clipped_newMD = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam"
+        merged_bam_left_realigned_clipped_newMD = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.clip.calmd.bam"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
-            ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
-        ),
+        ref_mt_fasta = lambda wildcards: rootdir + "/data/genomes/{ref_genome_mt_file}".format(
+            ref_genome_mt_file=get_mt_fasta(reference_tab, ref_organism=wildcards.ref_organism, field="ref_genome_mt_file")
+            ),
         TMP = check_tmp_dir(config["tmp_dir"])
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam_clip_calmd.log"
+    log: log_dir + "/{sample}/{sample}_{ref_organism}_left_align_merged_bam_clip_calmd.log"
     message: "Recalculating MD string for clipped alignments {input.merged_bam_left_realigned_clipped} with bam trimBam"
     run:
         shell("samtools calmd -b \
@@ -649,52 +563,19 @@ rule clip_bam_recalculate_MD:
             -T {params.TMP} \
             {params.TMP}/$(basename {output.merged_bam_left_realigned_clipped_newMD}) &>> {log}")
 
-# rule bam2pileup:
-#     input:
-#         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
-#         genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
-#     output:
-#         pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-#     params:
-#         genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
-#     message: "Generating pileup {output.pileup} from {input.merged_bam}"
-#     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2pileup.log"
-#     #conda: "envs/samtools_biopython.yaml"
-#     #group: "variant_calling"
-#     shell:
-#         """
-#         samtools mpileup -B -f {params.genome_fasta} -o {output.pileup} {input.merged_bam} &> {log}
-#         """
-#
-# rule pileup2mt_table:
-#     input:
-#         pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-#         # pileup = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-#     output:
-#         mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
-#     params:
-#         ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
-#     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
-#     #conda: "envs/environment.yaml"
-#     #group: "variant_calling"
-#     run:
-#         mt_table_data = pileup2mt_table(pileup=input.pileup, ref_fasta=params.ref_mt_fasta)
-#         write_mt_table(mt_table_data=mt_table_data, mt_table_file=output.mt_table)
-
-#         name="some/file.txt" if config["condition"] else "other/file.txt"
 rule bam2cov:
     input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam" if config["trimBam"] \
-                        else "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
+        merged_bam = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.clip.calmd.bam" if config["trimBam"] \
+                        else "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam",
         #genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
-        bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov"
+        bam_cov = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam.cov"
     # params:
     #     genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
         quality = config['mtvcf_main_analysis']['Q'],
     message: "Generating coverage file {output.bam_cov} from {input.merged_bam}"
-    log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2cov.log"
+    log: log_dir + "/{sample}/{sample}_{ref_organism}_bam2cov.log"
     #conda: "envs/samtools_biopython.yaml"
     #group: "variant_calling"
     shell:
@@ -707,21 +588,16 @@ rule bam2cov:
 
 rule make_single_VCF:
     input:
-        merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam" if config["trimBam"] \
-                        else "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
-        bam_cov = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam.cov",
-        # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
-        #mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt",
-        #pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
-        # sam = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz",
-        # mt_table = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
+        merged_bam = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.clip.calmd.bam" if config["trimBam"] \
+                        else "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam",
+        bam_cov = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam.cov",
     output:
-        single_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
-        single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed",
-        single_fasta = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta"
+        single_vcf = "results/{sample}/{sample}_{ref_organism}.vcf.gz",
+        single_bed = "results/{sample}/{sample}_{ref_organism}.bed",
+        single_fasta = "results/{sample}/{sample}_{ref_organism}.fasta"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
-            ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
+        ref_mt_fasta = lambda wildcards: rootdir + "/data/genomes/{ref_genome_mt_file}".format(
+            ref_genome_mt_file=get_mt_fasta(reference_tab, ref_organism=wildcards.ref_organism, field="ref_genome_mt_file")
             ),
         TMP = check_tmp_dir(config["tmp_dir"]),
         tail = config['mtvcf_main_analysis']['tail'],
@@ -729,8 +605,6 @@ rule make_single_VCF:
         minrd = config['mtvcf_main_analysis']['minrd'],
         tail_mismatch = config['mtvcf_main_analysis']['tail_mismatch']
     message: "Processing {input.merged_bam} to get VCF {output.single_vcf}"
-    #conda: "envs/samtools_biopython.yaml"
-    #group: "variant_calling"
     run:
         # function (and related ones) from mtVariantCaller
         tmp_sam = os.path.split(input.merged_bam)[1].replace(".bam", ".sam")
@@ -745,7 +619,7 @@ rule make_single_VCF:
         # ref_genome_mt will be used in the VCF descriptive field
         # seq_name in the VCF data
         seq_name, seq_length = get_seq_name(params.ref_mt_fasta)
-        VCF_RECORDS = VCFoutput(vcf_dict, reference=wildcards.ref_genome_mt, seq_name=seq_name, seq_length=seq_length,
+        VCF_RECORDS = VCFoutput(vcf_dict, reference=seq_name, seq_name=seq_name, seq_length=seq_length,
                                 vcffile=output.single_vcf)
         bed_output(VCF_RECORDS, seq_name=seq_name, bedfile=output.single_bed)
         # fasta output
@@ -759,9 +633,9 @@ rule make_single_VCF:
 
 rule index_VCF:
     input:
-        single_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
+        single_vcf = "results/{sample}/{sample}_{ref_organism}.vcf.gz",
     output:
-        index_vcf = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
+        index_vcf = "results/{sample}/{sample}_{ref_organism}.vcf.gz.csi"
     #conda: "envs/bcftools.yaml"
     message: "Compressing and indexing {input.single_vcf}"
     run:
@@ -770,14 +644,14 @@ rule index_VCF:
 rule merge_VCF:
     input:
         single_vcf_list = lambda wildcards: get_genome_single_vcf_files(analysis_tab,
-                                                                        ref_genome_mt=wildcards.ref_genome_mt),
+                                                                        ref_organism=wildcards.ref_organism),
         index_vcf = lambda wildcards: get_genome_single_vcf_index_files(analysis_tab,
-                                                                        ref_genome_mt=wildcards.ref_genome_mt),
+                                                                        ref_organism=wildcards.ref_organism),
         #single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
         #index_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
     output:
-        merged_vcf = "results/vcf/{ref_genome_mt}_{ref_genome_n}.vcf"
-    message: "Merging vcf files for mt reference genome: {wildcards.ref_genome_mt}"
+        merged_vcf = "results/vcf/{ref_organism}.vcf"
+    message: "Merging vcf files for reference organism: {wildcards.ref_organism}"
     #conda: "envs/bcftools.yaml"
     run:
         if len(input.single_vcf_list) == 1:
