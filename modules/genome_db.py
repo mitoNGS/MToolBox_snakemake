@@ -73,3 +73,23 @@ def run_gmap_build(mt_n_genome_file=None, mt_genome_file=None,
         shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {g_flag} {c_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
                                                                                         gmap_db=gmap_db, input_fasta=mt_genome_file,
                                                                                         log=log, g_flag=g_flag, c_flag=c_flag))
+
+# if species is not defined by config.yaml, should be parsed for each analysis
+def check_ref_organism(config=None, analysis_tab=None):
+    ref_organism_config = config["ref_organism"]
+    if ref_organism_config is not None:
+        # ref_organism is defined through config (either config.yaml or command line)
+        if len(ref_organism_config.split(",")) > 1:
+            sys.exit("Please provide only one reference organism (--config ref_organism)")
+        else:
+            ref_organism = ref_organism_config
+            if ref_organism in list(reference_tab["ref_organism"]) or ref_organism in genome_db_data:
+                analysis_tab = analysis_tab.assign(ref_organism=ref_organism)
+            else:
+                sys.exit("Provided species {} in not present in reference_genomes.tab.".format(species))
+    else:
+        # ref_organism is defined through analysis_tab
+        ref_organism_config = list(set(analysis_tab['ref_organism']))
+        if ref_organism_config is None:
+            sys.exit("Please provide at least one reference organism (--config ref_organism)")
+    return ref_organism_config, analysis_tab
