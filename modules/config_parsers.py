@@ -131,32 +131,29 @@ def get_symlinks(df, analysis_tab=None,
     return outpaths
 
 
-def get_genome_single_vcf_files(df, res_dir="results", ref_genome_mt=None):
+def get_genome_single_vcf_files(df, res_dir="results", ref_organism=None):
     outpaths = []
     for row in df.itertuples():
-        if getattr(row, "ref_genome_mt") == ref_genome_mt:
-            outpaths.append(("{results}/{sample}/{sample}_{ref_genome_mt}_"
-                             "{ref_genome_n}.vcf.gz").format(
+        if getattr(row, "ref_organism") == ref_organism:
+            outpaths.append(("{results}/{sample}/{sample}_{ref_organism}.vcf.gz").format(
                 results=res_dir,
                 sample=getattr(row, "sample"),
-                ref_genome_mt=getattr(row, "ref_genome_mt"),
-                ref_genome_n=getattr(row, "ref_genome_n")))
+                ref_organism=getattr(row, "ref_organism")))
 
     return list(set(outpaths))
 
 
 # TODO: library is not used anywhere
 def get_sample_bamfiles(df, res_dir="results", sample=None, library=None,
-                        ref_genome_mt=None, ref_genome_n=None):
+                        ref_organism=None):
+                        # ref_genome_mt=None, ref_genome_n=None):
     outpaths = []
     for row in df.itertuples():
         if getattr(row, "sample") == sample:
-            bam_file = ("{sample}_{library}_{ref_genome_mt}_"
-                        "{ref_genome_n}_OUT-sorted.final.bam").format(
+            bam_file = ("{sample}_{library}_{ref_organism}_OUT-sorted.final.bam").format(
                 sample=sample,
                 library=getattr(row, "library"),
-                ref_genome_mt=ref_genome_mt,
-                ref_genome_n=ref_genome_n)
+                ref_organism=ref_organism)
             out_folder = "OUT_{base}".format(
                 base=bam_file.replace("_OUT-sorted.final.bam", ""))
             outpaths.append("{results}/{sample}/map/{out_folder}/{bam_file}".format(
@@ -168,17 +165,15 @@ def get_sample_bamfiles(df, res_dir="results", sample=None, library=None,
     return outpaths
 
 
-def get_genome_single_vcf_index_files(df, res_dir="results", ref_genome_mt=None):
+def get_genome_single_vcf_index_files(df, res_dir="results", ref_organism=None):
     outpaths = []
     for row in df.itertuples():
-        if getattr(row, "ref_genome_mt") == ref_genome_mt:
+        if getattr(row, "ref_organism") == ref_organism:
             outpaths.append(
-                ("{results}/{sample}/{sample}_{ref_genome_mt}_"
-                 "{ref_genome_n}.vcf.gz.csi").format(
+                ("{results}/{sample}/{sample}_{ref_organism}.vcf.gz.csi").format(
                     results=res_dir,
                     sample=getattr(row, "sample"),
-                    ref_genome_mt=getattr(row, "ref_genome_mt"),
-                    ref_genome_n=getattr(row, "ref_genome_n")))
+                    ref_organism=getattr(row, "ref_organism")))
 
     return list(set(outpaths))
 
@@ -205,10 +200,11 @@ def get_genome_vcf_files(df: pd.DataFrame,
     #   then removes duplicates, there is a better way for this
     for row in df.itertuples():
         outpaths.add(
-            "{results}/{ref_genome_mt}_{ref_genome_n}{annotated}.vcf".format(
+            "{results}/{ref_organism}{annotated}.vcf".format(
                 results=res_dir,
-                ref_genome_mt=row.ref_genome_mt,
-                ref_genome_n=row.ref_genome_n,
+                ref_organism=row.ref_organism,
+                # ref_genome_mt=row.ref_genome_mt,
+                # ref_genome_n=row.ref_genome_n,
                 annotated=annotated
             )
         )
@@ -230,11 +226,10 @@ def get_bed_files(df: pd.DataFrame,
     for row in df.itertuples():
         outpaths.append(
             ("{results}/{sample}/{sample}_"
-             "{ref_genome_mt}_{ref_genome_n}.bed").format(
+             "{ref_organism}.bed").format(
                 results=res_dir,
                 sample=getattr(row, "sample"),
-                ref_genome_mt=row.ref_genome_mt,
-                ref_genome_n=row.ref_genome_n
+                ref_organism=row.ref_organism,
             )
         )
     return outpaths
@@ -255,11 +250,10 @@ def get_fasta_files(df: pd.DataFrame,
     for row in df.itertuples():
         outpaths.append(
             ("{results}/{sample}/{sample}_"
-             "{ref_genome_mt}_{ref_genome_n}.fasta").format(
+             "{ref_organism}.fasta").format(
                 results=res_dir,
                 sample=getattr(row, "sample"),
-                ref_genome_mt=row.ref_genome_mt,
-                ref_genome_n=row.ref_genome_n
+                ref_organism=row.ref_organism,
             )
         )
     return outpaths
@@ -307,8 +301,8 @@ def get_mt_genomes(df: pd.DataFrame) -> List[str]:
     return df["ref_genome_mt"].unique().tolist()
 
 
-def get_mt_fasta(df, ref_genome_mt, field):
-    return df.loc[df['ref_genome_mt'] == ref_genome_mt, field][0]
+def get_mt_fasta(df, ref_organism=None, field=None):
+    return df.loc[df['ref_organism'] == ref_organism, field][0]
 
 
 def fastqc_outputs(datasets_tab: pd.DataFrame,
@@ -374,14 +368,14 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
                 )
     return fastqc_out
 
-def get_inputs_for_rule_map_nuclear_MT_SE(sample=None, library=None, ref_genome_n=None, ref_genome_mt=None, keep_orphans=True):
+def get_inputs_for_rule_map_nuclear_MT_SE(sample=None, library=None, ref_organism=None, keep_orphans=True):
     outpaths = []
-    outpaths.append("results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz")
+    outpaths.append("results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt.fastq.gz")
     if keep_orphans:
         outpaths.append(
-            "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.fastq.gz"
+            "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt_U1.fastq.gz"
             )
         outpaths.append(
-            "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.fastq.gz"
+            "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt_U2.fastq.gz"
             )
     return outpaths
