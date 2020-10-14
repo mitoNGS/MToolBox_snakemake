@@ -44,7 +44,8 @@ Setting up a working directory
     # copy configuration files you will edit later
     cp $MTOOLBOX_DIR/config.yaml .
     cp $MTOOLBOX_DIR/cluster.yaml .
-    cp $MTOOLBOX_DIR/data/*.tab data
+    cp $MTOOLBOX_DIR/data/analysis.tab data
+    cp $MTOOLBOX_DIR/data/datasets.tab data
 
 At this point, if you run the command :code:`tree` the structure of your directory should look like
 
