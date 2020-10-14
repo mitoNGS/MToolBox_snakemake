@@ -4,7 +4,6 @@ import os
 import time
 
 import pandas as pd
-from sqlalchemy import create_engine
 from types import SimpleNamespace
 
 from modules.general import get_SAM_header, memory_usage_resource
