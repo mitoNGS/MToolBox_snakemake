@@ -12,7 +12,7 @@ for path in sys.path:
         sys.path.append(path.replace("/snakefiles", ""))
         rootdir = path.replace("/snakefiles", "")
 
-from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input
+from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input, check_ref_organism
 
 from modules.config_parsers import (
     get_analysis_species, parse_config_tabs, parse_config_tab, get_genome_files
@@ -26,22 +26,29 @@ with open(genome_db_data_file) as file:
     genome_db_data = yaml.full_load(file)
 
 reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
-#print(reference_tab)
-# print(genome_db_data)
-# print(genome_db_data["ggallus"]["zenodo_id"])
+genome_fasta_dir = os.path.join(rootdir, "data/genomes")
 
-configfile: "config.yaml"
-# res_dir = config["results"]
-# map_dir = config["map_dir"]
-log_dir = config["log_dir"]
-gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
-ref_organisms_config = config["ref_organism"].split(",")
-genome_fasta_dir = "data/genomes"
+# not sure it should be like that
+if config == False:
+    # this is not run as subworkflow
+    configfile: "config.yaml"
+    log_dir = config["log_dir"]
+    gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
+    # res_dir = config["results"]
+    # map_dir = config["map_dir"]
+    if config["ref_organism"]:
+        ref_organism_config = config["ref_organism"].split(",")
+    else:
+        sys.exit("Please provide at least one ref_organism.")
+else:
+    # this is a part of a workflow, likely variant_calling
+    analysis_tab = parse_config_tab(tab_file="data/analysis.tab", index=["sample"])
+    ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab)
 
 # Build ref_organism_dict. This will be the source
 # for final output files of the pipeline.
 ref_organism_dict = {}
-for r in ref_organisms_config:
+for r in ref_organism_config:
     if os.path.isdir("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
                                                         ref_organism=r)):
         pass
@@ -134,8 +141,6 @@ def get_genome_indexes_dicts_outputs(ref_organism_dict=None):
         genome_indexes_dicts_outputs.append(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta.fai".format(ref_organism=ref_organism))
     return genome_indexes_dicts_outputs
     
-    
-#print(get_gmap_db_outputs(ref_organism_dict))
 
 # a target rule to define the desired final output
 rule all:
