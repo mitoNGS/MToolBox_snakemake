@@ -192,6 +192,7 @@ rule download_mt_genome_fasta:
         #ref_genome_mt_file = lambda wildcards: "{ref_genome_mt_file}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_mt_file)
     run:
         gmap_db_status = yaml.full_load(open(input.ref_organism_flag, 'r'))
+        os.makedirs("{genome_fasta_dir}".format(genome_fasta_dir=os.path.split(params.mt_genome_fasta)[0]), exist_ok=True)
         #print(input.ref_organism_flag, gmap_db_status)
         if gmap_db_status["fetch_mt_genome"] == True:
             shell("esearch -db nucleotide -query '{params.ref_genome_mt}' | efetch -format fasta > {params.mt_genome_fasta} && touch {output.ref_organism_fetch}")
@@ -213,6 +214,7 @@ rule download_mt_n_genome_fasta:
         #ref_genome_n_file = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt_file=ref_organism_dict[wildcards.ref_organism].ref_genome_n_file)
     run:
         gmap_db_status = yaml.full_load(open(input.ref_organism_flag, 'r'))
+        os.makedirs("{genome_fasta_dir}".format(genome_fasta_dir=os.path.split(params.n_genome_fasta)[0]), exist_ok=True)
         if gmap_db_status["fetch_n_genome"] == True:
             if ref_organism_dict[wildcards.ref_organism].ref_genome_n.startswith("GCA"):
                 db = "insdc"
