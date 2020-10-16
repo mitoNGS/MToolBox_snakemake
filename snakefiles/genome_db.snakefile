@@ -7,6 +7,8 @@ import yaml
 #import wget
 import tarfile
 
+configfile: "config.yaml"
+
 for path in sys.path:
     if "snakefiles" in path:
         sys.path.append(path.replace("/snakefiles", ""))
@@ -46,7 +48,7 @@ if config == False:
 else:
     # this is a part of a workflow, likely variant_calling
     analysis_tab = parse_config_tab(tab_file="data/analysis.tab", index=["sample"])
-    ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab)
+    ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab, reference_tab=reference_tab)
 
 # Build ref_organism_dict. This will be the source
 # for final output files of the pipeline.
@@ -289,7 +291,7 @@ rule dict_genome:
         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         # genome_dict = rootdir + "/data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
-        genome_dict = rootdir + "/data/genomes/{ref_organism}_mt_n.dict"
+        genome_dict = rootdir + "/data/genomes/{ref_organism}.dict"
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
     log: log_dir + "/{ref_organism}.picard_dict.log"
     #conda: "envs/samtools_biopython.yaml"

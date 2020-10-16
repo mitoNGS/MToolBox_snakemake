@@ -92,7 +92,7 @@ def run_gmap_build(mt_n_genome_file=None, mt_genome_file=None,
                                                                                         log=log, g_flag=g_flag, c_flag=c_flag))
 
 # if species is not defined by config.yaml, should be parsed for each analysis
-def check_ref_organism(config=None, analysis_tab=None):
+def check_ref_organism(config=None, analysis_tab=None, reference_tab=None):
     ref_organism_config = config["ref_organism"]
     if ref_organism_config is not None:
         # ref_organism is defined through config (either config.yaml or command line)
