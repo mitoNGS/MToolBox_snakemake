@@ -465,8 +465,9 @@ rule map_nuclear_MT_PE_SE:
                         shutil.copyfileobj(rfp, input_files_SE_cat)
             input_files_SE = [input_files_SE_all]
         shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} --split-output={params.out_basename} -A sam --gunzip --nofails --pairmax-dna=500 --query-unk-mismatch=1 {params.RG_tag} -n 1 -Q -O -t {threads} {input_files_PE} {input_files_SE} &> {log}")#" && gzip {params.uncompressed_output} &>> {log}")
-        # delete the single SE file
-        os.remove(input_files_SE_all)
+        # delete the single SE file if it exists
+        if os.isfile(input_files_SE_all):
+            os.remove(input_files_SE_all)
 
 rule filtering_mt_alignments:
     input:
