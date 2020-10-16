@@ -34,7 +34,7 @@ from modules.general import (
     trimmomatic_input, sam_to_ids, run_seqtk_subset, get_mt_AC, get_SAM_header
 )
 from modules.genome_db import (
-    run_gmap_build, get_gmap_build_nuclear_mt_input, check_ref_organism
+    check_ref_organism, make_ref_organism_dict
 )
 from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
@@ -58,8 +58,13 @@ map_dir = config["map_dir"]
 log_dir = config["log_dir"]
 gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
 keep_orphans = config["keep_orphans"]
+genome_fasta_dir = os.path.join(rootdir, "data/genomes")
 
 ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab)
+
+ref_organism_dict = make_ref_organism_dict(ref_organism_config=ref_organism_config,
+                                            gmap_db_dir=gmap_db_dir, genome_db_data=genome_db_data,
+                                            genome_fasta_dir=genome_fasta_dir, reference_tab=reference_tab)
 
 wildcard_constraints:
     sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
@@ -217,8 +222,8 @@ rule map_MT_PE_SE:
     output:
         outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outmt.sam.gz"
     params:
-        gmap_db_dir = gmap_db_dir,
-        gmap_db = lambda wildcards: wildcards.ref_organism,
+        gmap_db_dir =  lambda wildcards: os.path.join(gmap_db_dir, wildcards.ref_organism),
+        gmap_db = lambda wildcards: ref_organism_dict[wildcards.ref_organism].ref_genome_mt,
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
         uncompressed_output = lambda wildcards, output: output.outmt_sam.replace("_outmt.sam.gz", "_outmt.sam")
     log:
@@ -329,8 +334,9 @@ rule map_nuclear_MT_SE:
     output:
         outS = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_outS.sam.gz"
     params:
-        gmap_db_dir = gmap_db_dir,
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
+        gmap_db_dir =  lambda wildcards: os.path.join(gmap_db_dir, wildcards.ref_organism),
+        gmap_db =      lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_organism_dict[wildcards.ref_organism].ref_genome_mt,
+                                                                                 ref_organism_dict[wildcards.ref_organism].ref_genome_n),
         uncompressed_output = lambda wildcards, output: output.outS.replace("_outS.sam.gz", "_outS.sam")
     threads:
         config["map"]["gmap_remap_threads"]

@@ -12,7 +12,10 @@ for path in sys.path:
         sys.path.append(path.replace("/snakefiles", ""))
         rootdir = path.replace("/snakefiles", "")
 
-from modules.genome_db import run_gmap_build, get_gmap_build_nuclear_mt_input, check_ref_organism
+from modules.genome_db import (
+    check_ref_organism, get_gmap_build_nuclear_mt_input,
+    make_ref_organism_dict, run_gmap_build
+)
 
 from modules.config_parsers import (
     get_analysis_species, parse_config_tabs, parse_config_tab, get_genome_files
@@ -47,68 +50,9 @@ else:
 
 # Build ref_organism_dict. This will be the source
 # for final output files of the pipeline.
-ref_organism_dict = {}
-for r in ref_organism_config:
-    if os.path.isdir("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
-                                                        ref_organism=r)):
-        pass
-    else:
-        os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
-                                                        ref_organism=r), exist_ok=True)
-    ref_organism_dict[r] = SimpleNamespace()
-    # check if it's in genome_db_data
-    if r in genome_db_data:
-        os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
-                                                                    ref_organism=r), exist_ok=True)
-        for f in genome_db_data[r]:
-            setattr(ref_organism_dict[r], f, genome_db_data[r][f])
-            setattr(ref_organism_dict[r], "status", "download")
-            setattr(ref_organism_dict[r], "fetch_mt_genome", "no")
-            setattr(ref_organism_dict[r], "fetch_n_genome", "no")
-            # otherwise in reference_tab
-    elif r in reference_tab.index:
-        # reference_tab.loc["ggallus_2"]["ref_genome_mt"]
-        for attribute in ["ref_genome_mt", "ref_genome_n"]:
-            # these attributes MUST be set
-            try:
-                a = reference_tab.loc[r][attribute]
-            except KeyError:
-                sys.exit("{r} doesn't have a valid {attribute}".format(r=r, attribute=attribute))
-            setattr(ref_organism_dict[r], attribute, a)
-        for attribute in ["ref_genome_mt_file", "ref_genome_n_file"]:
-            # these attributes might not be set and their values
-            # will be set based on their related attributes, ie
-            # ref_genome_mt_file from ref_genome_mt
-            # ref_genome_n_file  from ref_genome_n
-            try:
-                a = reference_tab.loc[r][attribute]
-            except KeyError:
-                # eg if ref_genome_mt_file is not set in the reference_tab,
-                # its value will be set as <ref_genome_mt>.fasta
-                a = "{ref}.fasta".format(ref=reference_tab.loc[r][attribute.replace("_file", "")])
-            setattr(ref_organism_dict[r], attribute, a)
-        setattr(ref_organism_dict[r], "status", "new")
-        # for attribute in ["ref_genome_mt", "ref_genome_n", "ref_genome_mt_file", "ref_genome_n_file"]:
-        #     try:
-        #         a = reference_tab.loc[r][attribute]
-        #     except KeyError:
-        #         sys.exit("{r} doesn't have a valid {attribute}".format(r=r, attribute=attribute))
-        #     setattr(ref_organism_dict[r], attribute, a)
-        # setattr(ref_organism_dict[r], "status", "new")
-        if os.path.isfile(os.path.join(genome_fasta_dir, ref_organism_dict[r].ref_genome_mt_file)):
-            setattr(ref_organism_dict[r], "fetch_mt_genome", "no")
-            #open(gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched".format(ref_organism=r), 'a').close()
-        else:
-            setattr(ref_organism_dict[r], "fetch_mt_genome", "yes")
-        if os.path.isfile(os.path.join(genome_fasta_dir, ref_organism_dict[r].ref_genome_n_file)):
-            setattr(ref_organism_dict[r], "fetch_n_genome", "no")
-            #open(gmap_db_dir + "/{ref_organism}/{ref_organism}_n.fetched".format(ref_organism=r), 'a').close()
-        else:
-            setattr(ref_organism_dict[r], "fetch_n_genome", "yes")
-    # otherwise drop it
-    else:
-        "{r} is not a reference organism neither in the default genome_db nor in the reference_genomes.tab file. It will be discarded.".format(r=r)
-        pass
+ref_organism_dict = make_ref_organism_dict(ref_organism_config=ref_organism_config,
+                                            gmap_db_dir=gmap_db_dir, genome_db_data=genome_db_data,
+                                            genome_fasta_dir=genome_fasta_dir, reference_tab=reference_tab)
 
 #print(ref_organism_dict)
 
@@ -121,12 +65,6 @@ for r in ref_organism_config:
 #                                                     species="ggallus",
 #                                                     status="download",
 #                                                     zenodo_id="bwe")}
-
-# for ref_organism in ref_organism_dict:
-#     os.makedirs("{gmap_db_dir}/{ref_organism}".format(gmap_db_dir=gmap_db_dir,
-#                                                         ref_organism=ref_organism), exist_ok=True)
-    # os.makedirs("{gmap_db_dir}/{ref_organism}/{ref_organism}.status".format(gmap_db_dir=gmap_db_dir,
-    #                                                                         ref_organism=ref_organism), exist_ok=True)
 
 def get_gmap_db_outputs(ref_organism_dict=None):
     gmap_db_mt_outputs = []
