@@ -407,8 +407,8 @@ rule map_nuclear_MT_PE_SE:
         log = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_organism}/map/{sample}_{library}_{ref_organism}_map_nuclear_MT_PE_SE.log"
     params:
         gmap_db_dir =  lambda wildcards: os.path.join(gmap_db_dir, wildcards.ref_organism),
-        gmap_db =      lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_organism_dict[wildcards.ref_organism].ref_genome_mt,
-                                                                                 ref_organism_dict[wildcards.ref_organism].ref_genome_n),
+        gmap_db =      lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt,
+                                                                                 ref_genome_n=ref_organism_dict[wildcards.ref_organism].ref_genome_n),
         # gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
         out_basename = lambda wildcards, output: output.concordant_uniq.replace(".concordant_uniq", ""),
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
