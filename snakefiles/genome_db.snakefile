@@ -7,7 +7,7 @@ import yaml
 #import wget
 import tarfile
 
-configfile: "config.yaml"
+#configfile: "config.yaml"
 
 for path in sys.path:
     if "snakefiles" in path:
@@ -32,8 +32,6 @@ with open(genome_db_data_file) as file:
 
 reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
 genome_fasta_dir = os.path.join(rootdir, "data/genomes")
-gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
-log_dir = config["log_dir"]
 
 # not sure it should be like that
 if config == False:
@@ -49,6 +47,9 @@ else:
     # this is a part of a workflow, likely variant_calling
     analysis_tab = parse_config_tab(tab_file="data/analysis.tab", index=["sample"])
     ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab, reference_tab=reference_tab)
+
+gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
+log_dir = config["log_dir"]
 
 # Build ref_organism_dict. This will be the source
 # for final output files of the pipeline.
