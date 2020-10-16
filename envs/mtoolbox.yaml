@@ -41,6 +41,7 @@ dependencies:
   - decorator=4.4.2
   - docutils=0.16
   - dropbox=10.4.1
+  - entrez-direct=13.9
   - expat=2.2.9
   - fastqc=0.11.9
   - fftw=3.3.8
