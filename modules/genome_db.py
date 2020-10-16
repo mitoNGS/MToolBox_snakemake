@@ -16,6 +16,20 @@ def open_genome_file(genome_file=None):
     else:
         return SeqIO.parse(genome_file, 'fasta')
 
+def check_mt_in_n(s_n_handle=None, mt_genome_id=None):
+    """
+    s_n_handle is a SeqRecord instance
+    mt_genome_id is a string
+    """
+    mt_in_n = False
+    if "mitochondri" in s_n_handle.description:
+        mt_in_n = True
+    elif s_n_handle.id == mt_genome_id:
+        mt_in_n = True
+    elif "chrM" in s.id or "chrMT" in s.id:
+        mt_in_n = True
+    return mt_in_n
+
 def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_mt_file=None):
     """Takes a Bio.SeqIO parsed nuclear genome and mt genome,
     checks if the mt genome is already in the nuclear genome handle,
@@ -38,7 +52,8 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
         mt_genome_id = s.id
         mt_genome_seq = str(s.seq)
     for s in n_handle:
-        if s.id != mt_genome_id:
+        # if s.id != mt_genome_id:
+        if check_mt_in_n(s_n_handle=s_n_handle, mt_genome_id=mt_genome_id) == False:
             mt_n_fasta.write(">{}\n{}\n".format(s.id, str(s.seq)))
     mt_n_fasta.write(">{}\n{}\n".format(mt_genome_id, mt_genome_seq))
     mt_n_fasta.close()
