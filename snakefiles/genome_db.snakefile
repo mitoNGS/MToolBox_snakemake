@@ -27,13 +27,13 @@ with open(genome_db_data_file) as file:
 
 reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
 genome_fasta_dir = os.path.join(rootdir, "data/genomes")
+gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
 
 # not sure it should be like that
 if config == False:
     # this is not run as subworkflow
     configfile: "config.yaml"
     log_dir = config["log_dir"]
-    gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
     # res_dir = config["results"]
     # map_dir = config["map_dir"]
     if config["ref_organism"]:
