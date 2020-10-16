@@ -26,7 +26,7 @@ def check_mt_in_n(s_n_handle=None, mt_genome_id=None):
         mt_in_n = True
     elif s_n_handle.id == mt_genome_id:
         mt_in_n = True
-    elif "chrM" in s.id or "chrMT" in s.id:
+    elif "chrM" in s_n_handle.id or "chrMT" in s_n_handle.id:
         mt_in_n = True
     return mt_in_n
 
