@@ -53,7 +53,7 @@ def get_gmap_build_nuclear_mt_input(n_genome_file=None, mt_genome_file=None, n_m
         mt_genome_seq = str(s.seq)
     for s in n_handle:
         # if s.id != mt_genome_id:
-        if check_mt_in_n(s_n_handle=s_n_handle, mt_genome_id=mt_genome_id) == False:
+        if check_mt_in_n(s_n_handle=s, mt_genome_id=mt_genome_id) == False:
             mt_n_fasta.write(">{}\n{}\n".format(s.id, str(s.seq)))
     mt_n_fasta.write(">{}\n{}\n".format(mt_genome_id, mt_genome_seq))
     mt_n_fasta.close()
