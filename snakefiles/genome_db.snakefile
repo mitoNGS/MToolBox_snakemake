@@ -277,7 +277,7 @@ rule make_mt_n_gmap_db:
     output:
         dl_mt_n = gmap_db_dir + "/{ref_organism}/{ref_organism}_mt_n.new",
     params:
-        gmap_db_dir = lambda wildcards, output: os.path.split(output.dl_mt)[0],
+        gmap_db_dir = lambda wildcards, output: os.path.split(output.dl_mt_n)[0],
         gmap_db = lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_genome_mt=ref_organism_dict[wildcards.ref_organism].ref_genome_mt,
                                                                             ref_genome_n=ref_organism_dict[wildcards.ref_organism].ref_genome_n),
         mt_fasta = lambda wildcards: "{rootdir}/data/genomes/{ref_genome_mt_file}".format(rootdir=rootdir,
