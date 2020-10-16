@@ -532,6 +532,15 @@ def collect_bitwise_flags(n, b=[0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 
     return set(flags)
 #gzip.open(outmt2, "wb") as mtoutfastq2, \
 
+def softclipping(i):
+    # source of this function:
+    # https://github.com/mitoNGS/MToolBox/commit/951c26b5c4646a304b15f6b8b73c63d48772e909
+	lseq = len(i[9])
+	sc = re.findall(r'(\d+)S', i[5])
+	sc = map(lambda x:int(x),sc)
+	sc = sum(sc)
+	return lseq, sc
+
 def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_SE=None, keep_orphans=True, return_dict=False, return_files=True):
     """Parses sam file and collect read ids.
     
@@ -573,6 +582,10 @@ def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_
         l = (i.strip()).split("\t")
         if l[2] == "*":
             continue
+        # this is a patch until gmap.2020.10.12 becomes available through conda
+        lseq, sc = softclipping(l)
+        if sc > 10: continue #if soft-clipped read greater than 10nt, discard the read
+        # end of the patch
         bitwise_flags = collect_bitwise_flags(int(l[1]))
         if 2048 in bitwise_flags: # skip supplementary alignments, we've already met this read
             continue
