@@ -519,7 +519,7 @@ rule left_align_merged_bam:
         merged_bam_index = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.bam.bai",
         mt_n_fasta = genome_db(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta"),
         genome_index = genome_db(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta.fai"),
-        genome_dict = genome_db(rootdir + "/data/genomes/{ref_organism}.dict")
+        genome_dict = genome_db(rootdir + "/data/genomes/{ref_organism}_mt_n.dict")
     output:
         merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_organism}_OUT-sorted.realign.bam"
     log: log_dir + "/{sample}/{sample}_{ref_organism}_left_align_merged_bam.log"

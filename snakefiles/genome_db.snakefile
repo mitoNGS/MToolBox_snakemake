@@ -289,7 +289,7 @@ rule dict_genome:
         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         # genome_dict = rootdir + "/data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
-        genome_dict = rootdir + "/data/genomes/{ref_organism}.dict"
+        genome_dict = rootdir + "/data/genomes/{ref_organism}_mt_n.dict"
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
     log: log_dir + "/{ref_organism}.picard_dict.log"
     #conda: "envs/samtools_biopython.yaml"
