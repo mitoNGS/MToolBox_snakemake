@@ -4,7 +4,9 @@
 from modules.general import is_compr_file
 from Bio import SeqIO, bgzf
 from snakemake import shell
+from types import SimpleNamespace
 import gzip
+import os
 
 shell.prefix("set -euo pipefail;")
 
