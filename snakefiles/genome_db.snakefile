@@ -46,7 +46,7 @@ else:
     analysis_tab = parse_config_tab(tab_file="data/analysis.tab", index=["sample"])
     ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab, reference_tab=reference_tab)
 
-print(analysis_tab)
+# print(analysis_tab)
 
 gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
 log_dir = config["log_dir"]
@@ -76,7 +76,7 @@ def get_gmap_db_outputs(ref_organism_dict=None):
 def get_genome_indexes_dicts_outputs(ref_organism_dict=None):
     genome_indexes_dicts_outputs = []
     for ref_organism in ref_organism_dict:
-        genome_indexes_dicts_outputs.append(rootdir + "/data/genomes/{ref_organism}.dict".format(ref_organism=ref_organism))
+        genome_indexes_dicts_outputs.append(rootdir + "/data/genomes/{ref_organism}_mt_n.dict".format(ref_organism=ref_organism))
         genome_indexes_dicts_outputs.append(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta.fai".format(ref_organism=ref_organism))
     return genome_indexes_dicts_outputs
     
