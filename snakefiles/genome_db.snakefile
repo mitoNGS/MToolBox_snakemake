@@ -24,7 +24,6 @@ from modules.config_parsers import (
 )
 
 genome_db_data_file = os.path.join(rootdir, "data/genome_dbs.yaml")
-#print(genome_db_data_file)
 reference_tab_file =  os.path.join(rootdir, "data/reference_genomes.tab")
 
 with open(genome_db_data_file) as file:
@@ -101,19 +100,7 @@ checkpoint check_gmap_db_status:
         # simulate some output value
         shell("echo 'status: {params.status}' > {output.ref_organism_flag}")
         shell("echo 'fetch_mt_genome: {params.fetch_mt}' >> {output.ref_organism_flag}")
-        shell("echo 'fetch_n_genome: {params.fetch_n}' >> {output.ref_organism_flag}")        # shell("echo {params.fetch_n} > {output.fetch_n}")
-        #"echo {params.status} > {output.mt_n}"
-        # create genome "status" file
-
-# ## wanna dl genomes?
-# def evaluate_genome_fasta_mt(wildcards):
-#     with open(checkpoints.check_gmap_db_status.get(ref_organism=wildcards.ref_organism).output.fetch_mt) as f:
-#         if f.read().strip() == "yes":
-#             return gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.fetched", \
-#                 gmap_db_dir + "/{ref_organism}/{ref_organism}_mt_n.fetched"
-#         else:
-#             return gmap_db_dir + "/{ref_organism}/{ref_organism}_mt.new", \
-#                 gmap_db_dir + "/{ref_organism}/{ref_organism}_mt_n.new"
+        shell("echo 'fetch_n_genome: {params.fetch_n}' >> {output.ref_organism_flag}")
 
 rule download_mt_genome_fasta:
     input:
