@@ -33,12 +33,10 @@ with open(genome_db_data_file) as file:
 reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
 genome_fasta_dir = os.path.join(rootdir, "data/genomes")
 
-# not sure it should be like that
-if config == False:
-    # this is not run as subworkflow
+if "ref_organism" in config:
+    # this is not run as subworkflow,
+    # it's invoked directly through MToolBox-genomedb-build
     configfile: "config.yaml"
-    # res_dir = config["results"]
-    # map_dir = config["map_dir"]
     if config["ref_organism"]:
         ref_organism_config = config["ref_organism"].split(",")
     else:
@@ -56,8 +54,6 @@ log_dir = config["log_dir"]
 ref_organism_dict = make_ref_organism_dict(ref_organism_config=ref_organism_config,
                                             gmap_db_dir=gmap_db_dir, genome_db_data=genome_db_data,
                                             genome_fasta_dir=genome_fasta_dir, reference_tab=reference_tab)
-
-#print(ref_organism_dict)
 
 ## toy example of ref_organism_dict
 ## status MUST be "download" or "new"
