@@ -32,7 +32,8 @@ with open(genome_db_data_file) as file:
 reference_tab = parse_config_tab(tab_file=reference_tab_file, index=["ref_organism"])
 genome_fasta_dir = os.path.join(rootdir, "data/genomes")
 
-if "ref_organism" in config:
+print(config)
+if "ref_organism" in config and config["ref_organism"] != None:
     # this is not run as subworkflow,
     # it's invoked directly through MToolBox-genomedb-build
     configfile: "config.yaml"
@@ -44,6 +45,8 @@ else:
     # this is a part of a workflow, likely variant_calling
     analysis_tab = parse_config_tab(tab_file="data/analysis.tab", index=["sample"])
     ref_organism_config, analysis_tab = check_ref_organism(config=config, analysis_tab=analysis_tab, reference_tab=reference_tab)
+
+print(analysis_tab)
 
 gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
 log_dir = config["log_dir"]
@@ -77,6 +80,9 @@ def get_genome_indexes_dicts_outputs(ref_organism_dict=None):
         genome_indexes_dicts_outputs.append(rootdir + "/data/genomes/{ref_organism}_mt_n.fasta.fai".format(ref_organism=ref_organism))
     return genome_indexes_dicts_outputs
     
+wildcard_constraints:
+    # sample = '|'.join([re.escape(x) for x in list(set(analysis_tab['sample']))]),
+    ref_organism = '|'.join([re.escape(x) for x in list(set(ref_organism_dict.keys()))]),
 
 # a target rule to define the desired final output
 rule all:
@@ -275,7 +281,7 @@ rule dict_genome:
         #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
         # genome_dict = rootdir + "/data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
-        genome_dict = rootdir + "/data/genomes/{ref_organism}.dict"
+        genome_dict = rootdir + "/data/genomes/{ref_organism}_mt_n.dict"
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
     log: log_dir + "/{ref_organism}.picard_dict.log"
     #conda: "envs/samtools_biopython.yaml"
