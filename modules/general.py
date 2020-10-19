@@ -221,9 +221,9 @@ def get_seq_name(fasta):
         sys.exit(("Sorry, but MToolBox at the moment only accepts "
                   "single-contig reference mt genomes."))
 
-    for contig, contig_seq in mt_genome.items():
-        seq_name = contig
-        seq_length = len(contig_seq)
+    for contig in SeqIO.parse(fasta, 'fasta'):
+        seq_name = contig.id
+        seq_length = len(contig)
     return seq_name, seq_length
 
 
@@ -641,7 +641,7 @@ def get_mt_AC(genome_db_data=None, ref_organism=None, reference_tab=None):
     if ref_organism in genome_db_data:
         mt_AC = genome_db_data[ref_organism]["mt_AC"]
     else:
-        ref_genome_mt_file = reference_tab.loc['aspergillus_oryzae_RIB40']['ref_genome_mt_file']
+        ref_genome_mt_file = reference_tab.loc[ref_organism]['ref_genome_mt_file']
         mt_AC = get_seq_name(ref_genome_mt_file)[0]
     return mt_AC
 # 
