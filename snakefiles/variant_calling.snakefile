@@ -435,7 +435,7 @@ rule filtering_mt_alignments:
         sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_organism}/{sample}_{library}_{ref_organism}_OUT.sam.gz"
     message: "Filtering alignments in files {input}"
     run:
-        ref_mt_fasta_header = get_mt_AC(genome_db_data=genome_db_data,
+        ref_mt_fasta_header = get_mt_AC(genome_db_data=genome_db_data, genome_fasta_dir=genome_fasta_dir,
                                         ref_organism=wildcards.ref_organism, reference_tab=reference_tab)
         print("REF IS {}".format(ref_mt_fasta_header))
         filtering_report = cat_alignments(input, outfile=output.sam, ref_mt_fasta_header=ref_mt_fasta_header)

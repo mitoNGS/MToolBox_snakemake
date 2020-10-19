@@ -637,11 +637,11 @@ def sam_to_ids(samfile=None, outmt_PE=None, outmt_U1=None, outmt_U2=None, outmt_
 def run_seqtk_subset(seqfile=None, id_list=None, outseqfile=None):
     shell("seqtk subseq {seqfile} {id_list} > {outseqfile}")
 
-def get_mt_AC(genome_db_data=None, ref_organism=None, reference_tab=None):
+def get_mt_AC(genome_db_data=None, ref_organism=None, reference_tab=None, genome_fasta_dir=None):
     if ref_organism in genome_db_data:
         mt_AC = genome_db_data[ref_organism]["mt_AC"]
     else:
-        ref_genome_mt_file = reference_tab.loc[ref_organism]['ref_genome_mt_file']
+        ref_genome_mt_file = os.path.join(genome_fasta_dir, reference_tab.loc[ref_organism]['ref_genome_mt_file'])
         mt_AC = get_seq_name(ref_genome_mt_file)[0]
     return mt_AC
 # 
