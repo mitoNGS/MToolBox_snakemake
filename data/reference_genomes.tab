@@ -5,4 +5,4 @@ NC_001224.1	GCF_000146045.2	NC_001224.1.fa	GCF_000146045.2_R64_genomic.fna	scere
 # example of reference genome with fasta files to be downloaded and then processed by gmap_build
 NC_002333.2	GCF_000000175.5	NC_002333.2.fasta	GCF_000000175.5.fa	drerio	drerio_2
 NC_008282.1	GCA_000184455.3	NC_008282.1.fa	GCA_000184455.3.fa	aspergillus_oryzae_RIB40	aspergillus_oryzae_RIB40
-
+NC_012920.1	GCF_000001405.39	NC_012920.1.fa	GCF_000001405.39.fa	human	human
