@@ -49,7 +49,7 @@ else:
 # print(analysis_tab)
 
 gmap_db_dir = os.path.join(rootdir, config["map"]["gmap_db_dir"])
-log_dir = config["log_dir"]
+log_dir = os.path.join(rootdir, config["log_dir"])
 
 # Build ref_organism_dict. This will be the source
 # for final output files of the pipeline.
