@@ -1,7 +1,7 @@
 name: mtoolbox_test_201014_2
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
   - samtools=1.11
