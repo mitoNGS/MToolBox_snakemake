@@ -621,7 +621,7 @@ def s_encoding(s):
 def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None,
                         name2=None, tail=5, Q=25, minrd=5, ref_mt=None,
                         tail_mismatch=5):
-    
+
     coverage_data = parse_coverage_data_file(coverage_data_file)
 
     if sam_file.endswith("gz"):
@@ -642,7 +642,8 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None
     Coverage = []
     ref = SeqIO.index(ref_mt, 'fasta')
     ref_seq = ref[list(ref.keys())[0]].seq
-    for n in range(len(coverage_data)):
+    #for n in range(len(coverage_data)):
+    for n in range(len(ref_seq)):
         Coverage.append(coverage_data[n + 1])
         mtDNA.append(ref_seq[n])
     mtDNAseq = "".join(mtDNA)
