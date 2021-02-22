@@ -6,6 +6,7 @@ Written by Claudia Calabrese - claudia.calabrese23@gmail.com
 """
 
 from collections import OrderedDict
+import sys
 import glob
 import gzip
 import math
@@ -94,6 +95,9 @@ def parse_sam_row(row):
     for field in row[11:]:
         if field.startswith("MD"):
             md = field.split(':')[2]
+            if '*' in md:
+                sys.stderr.write('SAM field without MD flag or with non-canonical MD flag found. Skip this row\n')
+                md = '0'
     leftmost = row[3]-1
     read_id = row[0]
     seq = list(row[9])
