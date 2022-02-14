@@ -24,6 +24,7 @@ import scipy as sp
 
 
 def extract_mismatches(seq, qs, len_mism, position_in_read):
+    '''extract mismatches from read sequence using MD flag'''
     start = position_in_read - 1
     end = start + len_mism
     mismatch_seq = seq[start:end]
@@ -33,6 +34,7 @@ def extract_mismatches(seq, qs, len_mism, position_in_read):
 
 
 def check_strand(mate):
+    '''check whether read is forward or reverse'''
     if mate & 16 == 16:
         strand = '-'
     else:
@@ -118,8 +120,8 @@ def parse_sam_row(row):
 
 def read_length_from_cigar(cigar_bases, cigar_nt):
     """
-    Cigar bases: ['S', 'M', 'D', 'M', 'I', 'M']
-    Cigar nt:    [10,  30,   5,  15,  10,  20]
+    Cigar nt: ['S', 'M', 'D', 'M', 'I', 'M']
+    Cigar bases:    [10,  30,   5,  15,  10,  20]
 
     The function will compute the effective read length to discard MD variants
     in softclipped regions and to calculate the distance of a mismatch from
@@ -137,8 +139,8 @@ def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
     """
     Logic of this function is:
 
-    - MD flag reflect the **mapped portion of the read**  - no soft clipping no
-        insertions (although some mutations in softclipped regions have been
+    - MD flag reflects the **mapped portion of the read**  - no soft clipping no
+        insertions
     - CIGAR flag reflects the absolute reads length - including soft clipping
         and insertions;
     - The script first equals the length of the read to that of the mapped
@@ -154,13 +156,12 @@ def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
             ins_pos_in_seq += int(cigar_bases[n])
         # cut out from the read sequence and qs the bases representing the ins
         elif cigar_nt[n] == 'I':
-            # original version
-            # ins_len = len(cigar_bases[n])
+        # if insertion found then insert in the read sequence and qs the bases representing the ins
             ins_len = int(cigar_bases[n])
             new_seq = new_seq[:ins_pos_in_seq]+new_seq[(ins_pos_in_seq+ins_len):]
             new_qs = new_qs[:ins_pos_in_seq]+new_qs[(ins_pos_in_seq+ins_len):]
-        # insert in the read sequence and qs the bases representing the ins
-        elif cigar_nt[n] == 'D':
+        elif cigar_nt[n] == 'D': #check this
+        # if deletion found then 
             ins_len = int(cigar_bases[n])
             new_seq = new_seq[:ins_pos_in_seq] + ["I"]*ins_len + new_seq[ins_pos_in_seq:]
             new_qs = new_qs[:ins_pos_in_seq] + ["I"]*ins_len + new_qs[ins_pos_in_seq:]
@@ -216,10 +217,9 @@ def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
                     all_ref.append(bases_ref[x])
                     all_mism.append(new_seq[t])
                     all_qs.append(ord(new_qs[t])-33)
-        except IndexError:
+        except IndexError: #check this  - shouldn't we raise here a more human readable error?
             pass
     return positions_ref_final, positions_read_final, all_ref, all_mism, all_qs, strand
-
 
 def allele_strand_counter(strand):
     """ Initialize a strand counter instance for mismatch detection. """
@@ -249,15 +249,11 @@ def varnames(i):
     refposleft = int(i[3]) - 1
     mate = int(i[1])
     # check strand
-    # TODO: duplicated, can be replaced by check_mate()
-    if mate & 16 == 16:
-        strand = '-'
-    else:
-        strand = '+'
+    strand = check_strand(mate)
     return CIGAR, readNAME, seq, qs, refposleft, strand
 
 
-# defines global variables for MT-table parsing
+# defines global variables for MT-table parsing #check this - this function might be dismissed at some point if we don't use the mt-table anymore
 def varnames2(b, c, i):
     global Position, Ref, Cov, A, C, G, T, A_f, C_f, G_f, T_f, A_r, C_r, G_r, T_r
     Position = int((i[0]).strip())
