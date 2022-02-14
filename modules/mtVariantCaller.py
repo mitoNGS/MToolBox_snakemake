@@ -21,8 +21,6 @@ from Bio import SeqIO
 import scipy as sp
 
 # new functions for MD parsing
-
-
 def extract_mismatches(seq, qs, len_mism, position_in_read):
     '''extract mismatches from read sequence using MD flag'''
     start = position_in_read - 1
@@ -160,7 +158,7 @@ def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
             ins_len = int(cigar_bases[n])
             new_seq = new_seq[:ins_pos_in_seq]+new_seq[(ins_pos_in_seq+ins_len):]
             new_qs = new_qs[:ins_pos_in_seq]+new_qs[(ins_pos_in_seq+ins_len):]
-        elif cigar_nt[n] == 'D': #check this
+        elif cigar_nt[n] == 'D': #TODO
         # if deletion found then 
             ins_len = int(cigar_bases[n])
             new_seq = new_seq[:ins_pos_in_seq] + ["I"]*ins_len + new_seq[ins_pos_in_seq:]
@@ -217,7 +215,7 @@ def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
                     all_ref.append(bases_ref[x])
                     all_mism.append(new_seq[t])
                     all_qs.append(ord(new_qs[t])-33)
-        except IndexError: #check this  - shouldn't we raise here a more human readable error?
+        except IndexError: #TODO  - shouldn't we raise here a more human readable error?
             pass
     return positions_ref_final, positions_read_final, all_ref, all_mism, all_qs, strand
 
@@ -253,7 +251,7 @@ def varnames(i):
     return CIGAR, readNAME, seq, qs, refposleft, strand
 
 
-# defines global variables for MT-table parsing #check this - this function might be dismissed at some point if we don't use the mt-table anymore
+# defines global variables for MT-table parsing #TODO - this function might be dismissed at some point if we don't use the mt-table anymore
 def varnames2(b, c, i):
     global Position, Ref, Cov, A, C, G, T, A_f, C_f, G_f, T_f, A_r, C_r, G_r, T_r
     Position = int((i[0]).strip())
@@ -328,123 +326,106 @@ def error(list):
 
 
 # defines the function searching for and filtering indels within the read sequence
-def SearchINDELsintoSAM(readNAME, mate, CIGAR, seq, qs, refposleft, tail=5):
-    m = re.compile(r'[a-z]', re.I)
+def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5,Q=25): #TODO - change tail and Q to customizable values
+    m=re.compile(r'[a-z]', re.I)
+    res = []
+    #take indexes of letters in CIGAR
+    letter_start = [x.start() for x in m.finditer(CIGAR)]
+    #print letter_start
+    CIGAR_sp = sp.array(list(CIGAR))
+    all_changes = CIGAR_sp[letter_start]
+    letter_start = sp.array(letter_start)
+    list_of_indexes = [[0,letter_start[0]]]
+    i = 0
+    while i < len(letter_start)-1:
+        if i == len(letter_start)-2:
+            t = [letter_start[i]+1,letter_start[-1]]
+            list_of_indexes.append(t)
+        else:
+            t = [letter_start[i]+1,letter_start[i+1]]
+            list_of_indexes.append(t)
+        i += 1
+    #slice CIGAR based on start:end in list_of_indexes
+    all_bp = sp.array(map(lambda x:int(CIGAR[x[0]:x[1]]),list_of_indexes))
+    if 'D' in CIGAR or 'N' in CIGAR: #GMAP can use also N for large deletions
+        #DELETIONS
+        #boolean vector indicating position of D
+        bv_del = sp.in1d(all_changes,'D') | sp.in1d(all_changes,'N')
+        var_type = 'Del'
+        #boolean vector indicating position of Hard clipped (H) and Soft clipped bases (S) to be removed from leftmost count
+        bv_hard_or_soft = (sp.in1d(all_changes,'H')) | (sp.in1d(all_changes,'S'))
+        #dummy vector
+        d = sp.zeros(len(bv_del))
+        #adding leftmost positions, excluding those preceding H and S
+        d[~bv_hard_or_soft] = all_bp[~bv_hard_or_soft]
+        #calculate cumulative number of bp before each del
+        cum_left = sp.cumsum(d)
+        dels_indexes =sp.where((all_changes=='D') | (all_changes=='N'))[0]
+        flanking_dels_indexes = dels_indexes-1
+        #calculate leftmost positions to dels within the read
+        refposleft_dels = cum_left[flanking_dels_indexes]
+        refposleft_dels = refposleft_dels + refposleft
+        refposleft_dels = refposleft_dels.astype(int).tolist()
+        #get Deletion length
+        dels_indexes = letter_start[bv_del]-1
+        dels = map(lambda x:int(x),CIGAR_sp[dels_indexes])
+        #nDels = map(lambda x:range(x[0]+1,x[0]+1+x[1]),zip(refposleft_dels,dels))
+        list_dels = zip(refposleft_dels,dels)
+        Del = map(lambda x:range(x[0]+1,x[0]+1+x[1]),list_dels)
+        #get left and right tails of dels
+        dels_flanking = all_bp[flanking_dels_indexes]
+        left_tail = dels_flanking[0]
+        right_tail = len(seq)-sum(dels_flanking)
+        res_del = indels_results(left_tail, right_tail, tail, Del, var_type, readNAME, mate, dels_flanking,refposleft_dels,qs,Q)
+        res.extend(res_del)
     if 'I' in CIGAR:
-        pcigar = CIGAR.partition('I')
-        if 'S' in pcigar[0]:
-            softclippingleft = int(re.findall(r'(\d+)S', pcigar[0])[0])  # calc softclipped bases left
-        else:
-            softclippingleft = 0  # no softclipped bases left
-        if 'S' in pcigar[-1]:
-            softclippingright = int(re.findall(r'(\d+)S', pcigar[-1])[0])  # calc softclipped bases right
-        else:
-            softclippingright = 0  # no softclipped bases right
-        if 'H' in pcigar[0]:
-            hardclippingleft = int(re.findall(r'(\d+)H', pcigar[0])[0])  # calc hardclipped bases left
-        else:
-            hardclippingleft = 0  # no hardtclipped bases left
-        if 'H' in pcigar[-1]:
-            hardclippingright = int(re.findall(r'(\d+)H', pcigar[-1])[0])  # calc hardclipped bases right
-        else:
-            hardclippingright = 0  # no hardclipped bases right
-        left = m.split(pcigar[0])
-        right = m.split(pcigar[-1])
-        error(right)
-        right = list(map(lambda x: int(x), right))
-        left = list(map(lambda x: int(x), left))
-        numIns = int(left[-1])
-        left.pop(-1)
-        s = sum(left)  # number of 5' flanking positions to Ins
-        lflank = s - (softclippingleft + hardclippingleft)
-        lflank = s - (softclippingleft + hardclippingleft)  # exclude softclipped bases from left pos calculation
-        sr = sum(right) - (hardclippingright+softclippingright)  # number of 3' flanking positions to Ins
-        rLeft = refposleft + lflank  # modified
-        Ins = seq[s:s+numIns]
-        qsInsASCI = qs[s:s+numIns]
-        qsInsASCI.split()
-        qsIns = []
-        type = 'Ins'
-        if lflank >= tail and sr >= tail:
-            for x in qsInsASCI:
-                numeric = (ord(x) - 33)
-                qsIns.append(numeric)
-        else:
-            qsIns = 'delete'
-        res = []
-        res.append(type)
-        res.append(readNAME)
-        res.append(mate)
-        res.append(int(rLeft))
-        res.append(Ins)
-        res.append(qsIns)
-        return res
-    elif 'D' in CIGAR:
-        pcigar = CIGAR.partition('D')
-        if 'S' in pcigar[0]:
-            softclippingleft = int(re.findall(r'(\d+)S', pcigar[0])[0])  # calc softclipped bases left
-        else:
-            softclippingleft = 0  # no softclipped bases left
-        if 'S' in pcigar[-1]:
-            softclippingright = int(re.findall(r'(\d+)S', pcigar[-1])[0])  # calc softclipped bases right
-        else:
-            softclippingright = 0  # no softclipped bases right
-        if 'H' in pcigar[0]:
-            hardclippingleft = int(re.findall(r'(\d+)H', pcigar[0])[0])  # calc hardclipped bases left
-        else:
-            hardclippingleft = 0  # no hardtclipped bases left
-        if 'H' in pcigar[-1]:
-            hardclippingright = int(re.findall(r'(\d+)H', pcigar[-1])[0])  # calc hardclipped bases right
-        else:
-            hardclippingright = 0  # no hardclipped bases right
-        left = m.split(pcigar[0])
-        right = m.split(pcigar[-1])
-        error(right)
-        right = list(map(lambda x: int(x), right))
-        left = list(map(lambda x: int(x), left))
-        nDel = int(left[-1])
-        left.pop(-1)
-        s = sum(left)
-        sr = sum(right) - (hardclippingright + softclippingright)  # number of 3' flanking positions to Del
-        lflank = s - (softclippingleft + hardclippingleft)  # exclude 5' flanking softclipped/hardclipped bases from left pos calculation
-        rLeft = (refposleft + lflank)
-        lowlimit = rLeft + 1
-        rRight = lowlimit + nDel
-        Del = range(lowlimit, rRight)
-        type = 'Del'
-        qsDel = []
-        if lflank >= tail and sr >= tail:
-            qsLeft = qs[(lflank-5):lflank]
-            qsRight = qs[lflank:(lflank + 5)]
-            qsL = []
-            qsR = []
-            for x in qsLeft:
-                qsL.append(ord(x) - 33)
-            for x in qsRight:
-                qsR.append(ord(x) - 33)
-            try:
-                medL = median(qsL)
-                qsDel.append(medL)
-            except:
-                pass
-            try:
-                medR = median(qsR)
-                qsDel.append(medR)
-            except:
-                pass
-        else:
-            qsDel = 'delete'
-        res = []
-        res.append(type)
-        res.append(readNAME)
-        res.append(mate)
-        res.append(int(rLeft))
-        res.append(Del)
-        res.append(qsDel)
-        return res
-    else:
-        pass
-
+        #INSERTIONS
+        ins_indexes =sp.where(all_changes=='I')[0]
+        bv_ins = sp.in1d(all_changes,'I')
+        var_type = 'Ins'
+        #boolean vector indicating position of Hard clipped (H) and Soft clipped bases (S) to be removed from leftmost count
+        bv_hard_or_soft = (sp.in1d(all_changes,'H')) | (sp.in1d(all_changes,'S'))
+        #dummy vector with same length as many ins in the CIGAR
+        i = sp.zeros(len(bv_ins))
+        #adding leftmost positions, excluding those preceding H and S
+        i[~bv_hard_or_soft] = all_bp[~bv_hard_or_soft]
+        #calculate cumulative number of bp before each ins and getting the flanking index in the read
+        i[bv_ins] = 0
+        cum_left = sp.cumsum(i)
+        flanking_ins_indexes = ins_indexes-1
+        #calculate leftmost positions to ins within the read
+        refposleft_ins = cum_left[flanking_ins_indexes]
+        refposleft_ins = refposleft_ins + refposleft
+        refposleft_ins = refposleft_ins.astype(int)
+        #get Insertion length
+        letter_flanking = letter_start[bv_ins]-1
+        ins = map(lambda x:int(x),CIGAR_sp[letter_flanking])
+        list_ins = zip(refposleft_ins,ins)
+        Ins = map(lambda x:range(x[0]+1,x[0]+1+x[1]),list_ins)
+        ins_flanking = all_bp[flanking_ins_indexes]
+        left_tail = ins_flanking[0]
+        right_tail = len(seq)-sum(ins_flanking)
+        res_ins = indels_results(left_tail, right_tail, tail, Ins, var_type, readNAME, mate, ins_flanking,refposleft_ins,qs,Q)
+        #get quality per Ins using Ins positions relative to the read
+        qs = sp.array(list(qs))
+        seq = sp.array(list(seq))
+        i = sp.zeros(len(bv_ins))
+        i[~bv_hard_or_soft] = all_bp[~bv_hard_or_soft]
+        if "bv_del" in locals():
+            i[bv_del] = 0
+        cum_ins = sp.cumsum(i)
+        ins_cum_bases = cum_ins[ins_indexes].astype(int)
+        ins_start_position = ins_cum_bases-1
+        list_ins = zip(ins_start_position,ins)
+        Ins2 = map(lambda x:range(x[0],x[0]+x[1]),list_ins)
+        qsInsASCI = map(lambda x: qs[x].tolist(),Ins2)
+        Ins = map(lambda x: seq[x].tolist(),Ins2)
+        #add to results a list with quality scores of ins
+        for x in xrange(len(qsInsASCI)):
+            res_ins[x].append(map(lambda x:ord(x)-33,qsInsASCI[x])) #adding an extra value to the insertion res list with QS of each insertion
+            res_ins[x][4] = Ins[x]
+        res.extend(res_ins)
+    return res
 
 # TODO: this function is not used anymore
 # defines function searching for point mutations.
@@ -664,7 +645,7 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None
         mm = 0
         if 'I' in CIGAR or 'D' in CIGAR:
             r = SearchINDELsintoSAM(readNAME, mate, CIGAR, seq, qs, refposleft,
-                                    tail=tail)
+                                    tail=tail, Q=Q)
             # r is: ['Ins' or 'Del', readNAME, mate, rLeft, Del, qsDel]
             dic[r[0]].append(r[1:])
 
