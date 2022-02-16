@@ -18,7 +18,7 @@ from modules.general import parse_coverage_data_file
 
 from Bio.bgzf import BgzfWriter
 from Bio import SeqIO
-import scipy as sp
+import numpy as np
 
 # new functions for MD parsing
 def extract_mismatches(seq, qs, len_mism, position_in_read):
@@ -104,7 +104,7 @@ def parse_sam_row(row):
     qs = list(row[10])
     strand = check_strand(int(row[1]))
     bases = re.split('[a-zA-Z]', md)
-    bases = map(lambda x: x.strip('^'), bases)
+    bases = list(map(lambda x: x.strip('^'), bases))
     bases = filter(None, bases)
     bases = list(map(lambda x: int(x), bases))
     nt = list(filter(None, re.split('[0-9]', md)))
@@ -135,8 +135,6 @@ def read_length_from_cigar(cigar_bases, cigar_nt):
 def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
                                    tail_mismatch=5):
     """
-    Logic of this function is:
-
     - MD flag reflects the **mapped portion of the read**  - no soft clipping no
         insertions
     - CIGAR flag reflects the absolute reads length - including soft clipping
@@ -324,17 +322,86 @@ def error(list):
     except ValueError:
         pass
 
+def qs_context_check(qs, Variant_list, list_of_flanking_bases, tail, Q):
+    '''This function checks the median QS of the bases surrounding the Indel. 
+    If the Indel is at a distance below tail from read ends or median right or left qs is below the QS threshold, the Indel will be discarded'''
+    qsLeft = []
+    qsRight = []
+    for i in range(len(Variant_list)):
+        if list_of_flanking_bases[i] >= tail:
+            qsLeft.append(qs[(list_of_flanking_bases[i]-tail):list_of_flanking_bases[i]])
+            qsRight.append(qs[list_of_flanking_bases[i]:(list_of_flanking_bases[i]+tail)])
+        else:
+            qsLeft.append("delete") #number of flanking leftmost bases is below tail
+            qsRight.append("delete") #number of flanking leftmost bases is below tail
+    qsL=[]
+    qsR=[]
+    for q in qsLeft:
+        if "delete" not in q:
+            median_qs_left = median(list(map(lambda x:(ord(x)-33),q))) #calculate the median qs around 5nt leftmost to variant
+            if median_qs_left >= Q:
+                qsL.append(median_qs_left)
+            else:
+                qsL.append("delete")
+        else:
+            qsL.append("delete")
+    for q in qsRight:
+        if "delete" not in q:
+            median_qs_right = median(list(map(lambda x:(ord(x)-33),q))) #calculate the median qs around 5nt rightmost to variant
+            if median_qs_right >= Q:
+                qsR.append(median_qs_right)
+            else:
+                qsR.append("delete")
+        else:
+            qsR.append("delete")
+    qs_median = list(map(lambda x:[x[0],x[1]],zip(qsL,qsR))) #list of tuples
+    return qs_median
+
+def indels_results(left_tail, right_tail, tail, Indel, var_type, readNAME, strand, indels_flanking,refposleft,qs,Q):
+    res = []
+    if len(Indel) >= 1 and left_tail >= tail and right_tail >= tail: #check if the first Del and last Del are far more then X nt (tail) from read ends
+        res.append([var_type]*len(Indel))
+        res.append([readNAME]*len(Indel))
+        res.append(strand*len(Indel))
+        res.append(refposleft)
+        res.append(Indel)
+        res.append(qs_context_check(qs,Indel,indels_flanking,tail,Q)) #keep Del
+    elif len(Indel) > 1 and left_tail >= tail and right_tail < tail:
+        res.append([var_type]*len(Indel))
+        res.append([readNAME]*len(Indel))
+        res.append(strand*len(Indel))
+        res.append(refposlef)
+        res.append(Indel)
+        res.append(qs_context_check(qs,Indel,indels_flanking,tail,Q))
+        res[-1][-1] = ['delete','delete'] #remove the last indel
+    elif len(Indel) > 1 and left_tail < tail and right_tail >= tail:
+        res.append([var_type]*len(Indel))
+        res.append([readNAME]*len(Indel))
+        res.append(strand*len(Indel))
+        res.append(refposleft)
+        res.append(Indel)
+        res.append(qs_context_check(qs,Indel,indels_flanking,tail,Q))
+        res[-1][0] = ['delete','delete'] #remove the first indel
+    else:
+        res.append([var_type]*len(Indel))
+        res.append([readNAME]*len(Indel))
+        res.append(strand*len(Indel))
+        res.append(refposleft)
+        res.append(Indel)
+        res.append([("delete","delete")]) #remove indel
+    res_final =  list(map(lambda x:[x[0],x[1],x[2],x[3],x[4],x[5]],zip(res[0],res[1],res[2],res[3],res[4],res[5]))) #create list of lists of Indels
+    return res_final
 
 # defines the function searching for and filtering indels within the read sequence
-def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5,Q=25): #TODO - change tail and Q to customizable values
+def SearchINDELsintoSAM(readNAME,strand,CIGAR,seq,qs,refposleft,tail=5,Q=25): #TODO - change tail and Q to customizable values
     m=re.compile(r'[a-z]', re.I)
     res = []
     #take indexes of letters in CIGAR
     letter_start = [x.start() for x in m.finditer(CIGAR)]
     #print letter_start
-    CIGAR_sp = sp.array(list(CIGAR))
+    CIGAR_sp = np.array(list(CIGAR))
     all_changes = CIGAR_sp[letter_start]
-    letter_start = sp.array(letter_start)
+    letter_start = np.array(letter_start)
     list_of_indexes = [[0,letter_start[0]]]
     i = 0
     while i < len(letter_start)-1:
@@ -346,21 +413,21 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5,Q=25): #TOD
             list_of_indexes.append(t)
         i += 1
     #slice CIGAR based on start:end in list_of_indexes
-    all_bp = sp.array(map(lambda x:int(CIGAR[x[0]:x[1]]),list_of_indexes))
+    all_bp = np.array(list(map(lambda x:int(CIGAR[x[0]:x[1]]),list_of_indexes)))
     if 'D' in CIGAR or 'N' in CIGAR: #GMAP can use also N for large deletions
         #DELETIONS
         #boolean vector indicating position of D
-        bv_del = sp.in1d(all_changes,'D') | sp.in1d(all_changes,'N')
+        bv_del = np.in1d(all_changes,'D') | np.in1d(all_changes,'N')
         var_type = 'Del'
         #boolean vector indicating position of Hard clipped (H) and Soft clipped bases (S) to be removed from leftmost count
-        bv_hard_or_soft = (sp.in1d(all_changes,'H')) | (sp.in1d(all_changes,'S'))
+        bv_hard_or_soft = (np.in1d(all_changes,'H')) | (np.in1d(all_changes,'S'))
         #dummy vector
-        d = sp.zeros(len(bv_del))
+        d = np.zeros(len(bv_del))
         #adding leftmost positions, excluding those preceding H and S
         d[~bv_hard_or_soft] = all_bp[~bv_hard_or_soft]
         #calculate cumulative number of bp before each del
-        cum_left = sp.cumsum(d)
-        dels_indexes =sp.where((all_changes=='D') | (all_changes=='N'))[0]
+        cum_left = np.cumsum(d)
+        dels_indexes = np.where((all_changes=='D') | (all_changes=='N'))[0]
         flanking_dels_indexes = dels_indexes-1
         #calculate leftmost positions to dels within the read
         refposleft_dels = cum_left[flanking_dels_indexes]
@@ -368,30 +435,29 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5,Q=25): #TOD
         refposleft_dels = refposleft_dels.astype(int).tolist()
         #get Deletion length
         dels_indexes = letter_start[bv_del]-1
-        dels = map(lambda x:int(x),CIGAR_sp[dels_indexes])
-        #nDels = map(lambda x:range(x[0]+1,x[0]+1+x[1]),zip(refposleft_dels,dels))
+        dels = list(map(lambda x:int(x),CIGAR_sp[dels_indexes]))
         list_dels = zip(refposleft_dels,dels)
-        Del = map(lambda x:range(x[0]+1,x[0]+1+x[1]),list_dels)
+        Del = list(map(lambda x:range(x[0]+1,x[0]+1+x[1]),list_dels))
         #get left and right tails of dels
         dels_flanking = all_bp[flanking_dels_indexes]
         left_tail = dels_flanking[0]
         right_tail = len(seq)-sum(dels_flanking)
-        res_del = indels_results(left_tail, right_tail, tail, Del, var_type, readNAME, mate, dels_flanking,refposleft_dels,qs,Q)
+        res_del = indels_results(left_tail, right_tail, tail, Del, var_type, readNAME, strand, dels_flanking,refposleft_dels,qs,Q)
         res.extend(res_del)
     if 'I' in CIGAR:
         #INSERTIONS
-        ins_indexes =sp.where(all_changes=='I')[0]
-        bv_ins = sp.in1d(all_changes,'I')
+        ins_indexes = np.where(all_changes=='I')[0]
+        bv_ins = np.in1d(all_changes,'I')
         var_type = 'Ins'
         #boolean vector indicating position of Hard clipped (H) and Soft clipped bases (S) to be removed from leftmost count
-        bv_hard_or_soft = (sp.in1d(all_changes,'H')) | (sp.in1d(all_changes,'S'))
+        bv_hard_or_soft = (np.in1d(all_changes,'H')) | (np.in1d(all_changes,'S'))
         #dummy vector with same length as many ins in the CIGAR
-        i = sp.zeros(len(bv_ins))
+        i = np.zeros(len(bv_ins))
         #adding leftmost positions, excluding those preceding H and S
         i[~bv_hard_or_soft] = all_bp[~bv_hard_or_soft]
         #calculate cumulative number of bp before each ins and getting the flanking index in the read
         i[bv_ins] = 0
-        cum_left = sp.cumsum(i)
+        cum_left = np.cumsum(i)
         flanking_ins_indexes = ins_indexes-1
         #calculate leftmost positions to ins within the read
         refposleft_ins = cum_left[flanking_ins_indexes]
@@ -399,33 +465,34 @@ def SearchINDELsintoSAM(readNAME,mate,CIGAR,seq,qs,refposleft,tail=5,Q=25): #TOD
         refposleft_ins = refposleft_ins.astype(int)
         #get Insertion length
         letter_flanking = letter_start[bv_ins]-1
-        ins = map(lambda x:int(x),CIGAR_sp[letter_flanking])
+        ins = list(map(lambda x:int(x),CIGAR_sp[letter_flanking]))
         list_ins = zip(refposleft_ins,ins)
-        Ins = map(lambda x:range(x[0]+1,x[0]+1+x[1]),list_ins)
+        Ins = list(map(lambda x:range(x[0]+1,x[0]+1+x[1]),list_ins))
         ins_flanking = all_bp[flanking_ins_indexes]
         left_tail = ins_flanking[0]
         right_tail = len(seq)-sum(ins_flanking)
-        res_ins = indels_results(left_tail, right_tail, tail, Ins, var_type, readNAME, mate, ins_flanking,refposleft_ins,qs,Q)
+        res_ins = indels_results(left_tail, right_tail, tail, Ins, var_type, readNAME, strand, ins_flanking,refposleft_ins,qs,Q)
         #get quality per Ins using Ins positions relative to the read
-        qs = sp.array(list(qs))
-        seq = sp.array(list(seq))
-        i = sp.zeros(len(bv_ins))
+        qs = np.array(list(qs))
+        seq = np.array(list(seq))
+        i = np.zeros(len(bv_ins))
         i[~bv_hard_or_soft] = all_bp[~bv_hard_or_soft]
         if "bv_del" in locals():
             i[bv_del] = 0
-        cum_ins = sp.cumsum(i)
+        cum_ins = np.cumsum(i)
         ins_cum_bases = cum_ins[ins_indexes].astype(int)
         ins_start_position = ins_cum_bases-1
         list_ins = zip(ins_start_position,ins)
-        Ins2 = map(lambda x:range(x[0],x[0]+x[1]),list_ins)
-        qsInsASCI = map(lambda x: qs[x].tolist(),Ins2)
-        Ins = map(lambda x: seq[x].tolist(),Ins2)
+        Ins2 = list(map(lambda x:range(x[0],x[0]+x[1]),list_ins))
+        qsInsASCI = list(map(lambda x: qs[x].tolist(),Ins2))
+        Ins = list(map(lambda x: seq[x].tolist(),Ins2))
         #add to results a list with quality scores of ins
-        for x in xrange(len(qsInsASCI)):
-            res_ins[x].append(map(lambda x:ord(x)-33,qsInsASCI[x])) #adding an extra value to the insertion res list with QS of each insertion
+        for x in range(len(qsInsASCI)):
+            res_ins[x].append(list(map(lambda x:ord(x)-33,qsInsASCI[x]))) #adding an extra value to the insertion res list with QS of each insertion
             res_ins[x][4] = Ins[x]
         res.extend(res_ins)
     return res
+
 
 # TODO: this function is not used anymore
 # defines function searching for point mutations.
@@ -641,12 +708,12 @@ def mtvcf_main_analysis(mtable_file=None, coverage_data_file=None, sam_file=None
             continue
         i = i.split('\t')
         # mate is the flag (second field of SAM file)
-        [CIGAR, readNAME, seq, qs, refposleft, mate] = varnames(i)
+        [CIGAR, readNAME, seq, qs, refposleft, strand] = varnames(i)
         mm = 0
         if 'I' in CIGAR or 'D' in CIGAR:
-            r = SearchINDELsintoSAM(readNAME, mate, CIGAR, seq, qs, refposleft,
+            r = SearchINDELsintoSAM(readNAME, strand, CIGAR, seq, qs, refposleft,
                                     tail=tail, Q=Q)
-            # r is: ['Ins' or 'Del', readNAME, mate, rLeft, Del, qsDel]
+            # r is: ['Ins' or 'Del', readNAME, strand, rLeft, Del, qsDel]
             dic[r[0]].append(r[1:])
 
     rposIns = {}
@@ -1013,13 +1080,13 @@ def get_consensus_single(i, hf_max=0.8, hf_min=0.2):
                 res = [var[0], [basevar], 'mism']
                 consensus_value.append(res)
             elif var[-1] == 'mism' and max(var[7]) >= hf_min and max(var[7]) <= hf_max:
-                basevar=sp.array([var[1]] + var[3])
+                basevar=np.array([var[1]] + var[3])
                 # keep only basevar >= hf_min for IUPAC
-                ref_hf = 1-sp.sum(var[7])
+                ref_hf = 1-np.sum(var[7])
                 hf_var = [ref_hf]
                 hf_var.extend(var[7])
-                hf_var = sp.array(hf_var)
-                ii = sp.where(hf_var >= hf_min)[0]
+                hf_var = np.array(hf_var)
+                ii = np.where(hf_var >= hf_min)[0]
                 basevar = basevar[ii].tolist()
                 basevar.sort()
                 a = getIUPAC(basevar, dIUPAC)
