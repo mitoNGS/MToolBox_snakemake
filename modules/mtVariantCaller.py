@@ -22,7 +22,7 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 
-# new functions for MD parsing
+
 def extract_mismatches(seq, qs, len_mism, position_in_read):
     '''extract mismatches from read sequence using MD flag
        
@@ -141,9 +141,7 @@ def parse_sam_row(row):
 
 
 def read_length_from_cigar(cigar_bases, cigar_nt):
-    """ Computes the effective read length to discard MD variants
-    in softclipped regions and to calculate the distance of a mismatch from
-    the read end.
+    """ Computes the effective read length of a CIGAR operator taking soft-clipped and deletions into account
 
     Parameters
     ----------
@@ -165,13 +163,25 @@ def read_length_from_cigar(cigar_bases, cigar_nt):
 
 def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
                                    tail_mismatch=5):
-    """
+    """Extracts mismatch substitutions using MD SAM flag
+    
     - MD flag reflects the **mapped portion of the read**  - no soft clipping no
         insertions
     - CIGAR flag reflects the absolute reads length - including soft clipping
         and insertions;
     - The script first equals the length of the read to that of the mapped
         portion and then extracts the variants using the MD flag.
+ 
+    Parameters
+    ----------
+    sam_record: pandas series
+    minqs: int
+    tail: int
+    tail_mismatch: 5
+
+    Returns
+    -------
+    list of values
     """
     (md, leftmost, new_seq, new_qs, strand, bases, nt, cigar, cigar_bases, cigar_nt) = parse_sam_row(sam_record)
     # Calculate effective read length (cigar without S and D)
@@ -249,7 +259,16 @@ def parse_mismatches_from_cigar_md(sam_record, minqs=25, tail=5,
     return positions_ref_final, positions_read_final, all_ref, all_mism, all_qs, strand
 
 def allele_strand_counter(strand):
-    """ Initialize a strand counter instance for mismatch detection. """
+    """ Initialize a strand counter instance for mismatch detection. 
+         
+    Parameters
+    ----------
+    strand: str
+
+    Returns
+    -------
+    l: list
+    """
     if strand == "+":
         l = [1, 0]
     elif strand == "-":
@@ -258,7 +277,17 @@ def allele_strand_counter(strand):
 
 
 def allele_strand_updater(l, allele_strand_count=None):
-    """ Updates a strand counter instance for mismatch detection. """
+    """ Updates a strand counter instance for mismatch detection. 
+    
+    Parameters
+    ----------
+    l: list
+    allele_strand_count: type, default=None
+   
+    Returns
+    -------
+    allele_strand_count_new: list
+    """
     if allele_strand_count is None:
         allele_strand_count = []
     allele_strand_count_new = []
@@ -267,7 +296,18 @@ def allele_strand_updater(l, allele_strand_count=None):
     return allele_strand_count_new
 
 def get_per_strand_read_depth(df,rleft, genotype):
-    """ Function to calculate per strand read depth. """
+    """ Function to calculate per strand read depth used only for indels 
+    
+    Parameters
+    ----------
+    df: pandas dataframe
+    rleft: int
+    genotype: str
+   
+    Returns
+    -------
+    sdr: str
+    """
     boolean_vector = (df.rleft == rleft) & (df.genotype.astype(str) == genotype)
     strand=df[boolean_vector]['strand'].values[0]
     o = df[boolean_vector]['read_depth_x'].values.tolist()
@@ -277,40 +317,28 @@ def get_per_strand_read_depth(df,rleft, genotype):
         else:
             o.insert(0,0) #if there is no fwd read supporting
     sdr = str(o[0])+';'+str(o[1])
-    return(sdr)
+    return sdr
 
-# defines global variables for Indels
+
 def varnames(i):
+    """ defines global variables for Indels searching
+    
+    Parameters
+    ----------
+    i: list
+ 
+    Returns
+    -------
+    global variables
+    """
     CIGAR = i[5]
     readNAME = i[0]
     seq = i[9]
     qs = i[10]
     refposleft = int(i[3]) - 1
     mate = int(i[1])
-    # check strand
     strand = check_strand(mate)
     return CIGAR, readNAME, seq, qs, refposleft, strand
-
-
-# defines global variables for MT-table parsing #TODO - this function might be dismissed at some point if we don't use the mt-table anymore
-def varnames2(b, c, i):
-    global Position, Ref, Cov, A, C, G, T, A_f, C_f, G_f, T_f, A_r, C_r, G_r, T_r
-    Position = int((i[0]).strip())
-    Ref = (i[1]).strip()
-    Cov = int((i[3]).strip())
-    A = b[0]
-    C = b[1]
-    G = b[2]
-    T = b[3]
-    A_f = c[0]
-    C_f = c[1]
-    G_f = c[2]
-    T_f = c[3]
-    A_r = c[4]
-    C_r = c[5]
-    G_r = c[6]
-    T_r = c[7]
-    return Position, Ref, Cov, A, C, G, T, A_f, C_f, G_f, T_f, A_r, C_r, G_r, T_r
 
 
 # Heteroplasmic fraction quantification
@@ -913,11 +941,7 @@ def mismatch_detection(sam=None, coverage_data=None, tail_mismatch=5):
                                                      allele_strand_count=[allele_strand_counter(strand)])
     sam_handle.close()
     return mismatch_dict
-### END OF MAIN ANALYSIS
 
-
-# The dictionary with all the samples variations found
-# applies the analysis only to OUT folders with OUT.sam, mt-table.txt and fasta sequence files.
 def get_consensus_single(i, hf_max=0.8, hf_min=0.2):
     consensus_value = []
     if len(i) != 0:
