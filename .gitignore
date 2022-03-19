@@ -12,3 +12,4 @@ envs/environment.yaml
 envs/samtools_biopython.yaml
 .snakemake/
 MToolBox-variant-calling-*
+doc/_build
