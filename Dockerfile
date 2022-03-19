@@ -8,6 +8,9 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 ENV PATH=/opt/conda/bin:$PATH
 ENV CONFIGFLAGS $CONFIGFLAGS" -lz"
 
+# Identify the maintainer of an image
+LABEL maintainer="dome.simone@gmail.com"
+
 # upgrade OS
 RUN apt-get update --fix-missing
 RUN apt-get install -y locales
@@ -24,12 +27,8 @@ RUN apt-get install -y --no-install-recommends \
     echo "conda activate base" >> ~/.bashrc && \
     conda update conda && \
 	# install MToolBox
-    git clone https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
+    git clone --branch devel_docker https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
     conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y && \
-	# install bamUtils
-    git clone https://github.com/statgen/bamUtil.git && cd bamUtil && \
-    make cloneLib && make && make install INSTALLDIR=$(dirname $(which python)) && \
-    cd .. && rm -R libStatGen && rm -R bamUtil && \
 	# the mtoolbox conda env is activated by directly adding dir to PATH
     echo "export PATH=/opt/conda/envs/mtoolbox/bin/:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH" >> /root/.bashrc && \
 	# fancy CLI prompt :)
