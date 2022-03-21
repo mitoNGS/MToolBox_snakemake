@@ -29,9 +29,14 @@ RUN apt-get install -y --no-install-recommends \
 	# install MToolBox dependencies
     git clone --branch devel_docker https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
     conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y
-#SHELL ["/bin/bash", "-c"]
+
+# activates mtoolbox conda env in interactive mode (docker run --rm -it mtoolbox)
 RUN echo "conda activate mtoolbox" >> ~/.bashrc
-ENV PATH="/opt/conda/envs/mtoolbox/bin:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH"
+RUN echo "export PATH=/opt/conda/envs/mtoolbox/bin:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH" >> ~/.bashrc
+# bonus: fancy CLI :)
 RUN echo "export PS1=\"\[\e[0m\e[47m\e[1;30m\] :: MToolBox :: \[\e[0m\e[0m \[\e[1;34m\]\]\w\[\e[m\] \[\e[1;32m\]>>>\[\e[m\] \[\e[0m\]\"" >> ~/.bashrc
+
+# activates mtoolbox conda env in non-interactive mode (docker run --rm mtoolbox <some-command>)
+ENV PATH="/opt/conda/envs/mtoolbox/bin:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH"
 
 CMD ["/bin/bash", "-l"]
