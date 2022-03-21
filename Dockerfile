@@ -31,8 +31,7 @@ RUN apt-get install -y --no-install-recommends \
     conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y
 #SHELL ["/bin/bash", "-c"]
 RUN echo "conda activate mtoolbox" >> ~/.bashrc
-ENV PATH="/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH"
-#RUN echo "export PATH=/opt/conda/envs/mtoolbox/bin/:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH" >> ~/.bashrc
+ENV PATH="/opt/conda/envs/mtoolbox/bin:/MToolBox_snakemake:/MToolBox_snakemake/scripts:$PATH"
 RUN echo "export PS1=\"\[\e[0m\e[47m\e[1;30m\] :: MToolBox :: \[\e[0m\e[0m \[\e[1;34m\]\]\w\[\e[m\] \[\e[1;32m\]>>>\[\e[m\] \[\e[0m\]\"" >> ~/.bashrc
 
 CMD ["/bin/bash", "-l"]
