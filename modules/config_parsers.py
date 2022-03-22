@@ -189,7 +189,7 @@ def get_genome_vcf_files(df: pd.DataFrame,
     """ Return a list of output filenames where VCF files will be stored.
 
     Args:
-        df: input pandas DataFrame
+        df: input pandas DataFrame (analysis.tab)
         annotation: are these annotated vcfs?
         res_dir: output directory name
 
