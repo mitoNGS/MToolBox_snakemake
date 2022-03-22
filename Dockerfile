@@ -31,8 +31,10 @@ LABEL maintainer="dome.simone@gmail.com"
 #     conda update conda && \
 	# install MToolBox dependencies
 RUN \
-    git clone --branch devel_docker https://github.com/mitoNGS/MToolBox_snakemake.git && cd MToolBox_snakemake && \
-    conda env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y
+    git clone --branch devel_docker https://github.com/mitoNGS/MToolBox_snakemake.git && \
+    cd MToolBox_snakemake && \
+    conda install -c conda-forge mamba && \
+    mamba env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y
 
 # activates mtoolbox conda env in interactive mode (docker run --rm -it mtoolbox)
 RUN echo "conda activate mtoolbox" >> ~/.bashrc
