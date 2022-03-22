@@ -1,7 +1,8 @@
-results:    "results"
-map_dir:    "map"
-log_dir:    "logs"
-tmp_dir:    "/tmp"
+results:            "results"
+map_dir:            "map"
+log_dir:            "logs"
+tmp_dir:            "/tmp"
+genome_fasta_dir:
 species: 
 use_custom_n_genome: False
 
