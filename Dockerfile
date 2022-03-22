@@ -31,7 +31,7 @@ LABEL maintainer="dome.simone@gmail.com"
 #     conda update conda && \
 	# install MToolBox dependencies
 RUN \
-    git clone --branch devel_docker https://github.com/mitoNGS/MToolBox_snakemake.git && \
+    git clone --branch devel_docker_alpine https://github.com/mitoNGS/MToolBox_snakemake.git && \
     cd MToolBox_snakemake && \
     conda install -c conda-forge mamba && \
     mamba env create -n mtoolbox -f envs/mtoolbox.yaml && conda clean -a -y
