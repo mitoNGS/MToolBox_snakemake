@@ -1,4 +1,4 @@
-import bz2
+genome_dir + "import bz2
 import gzip
 import os
 import re
@@ -49,6 +49,7 @@ configfile: "config.yaml"
 res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
+genome_dir  = config["genome_fasta"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 
 wildcard_constraints:
@@ -104,7 +105,7 @@ rule fastqc_raw:
 
 rule make_mt_gmap_db:
     input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+        mt_genome_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file"))
@@ -124,17 +125,17 @@ rule make_mt_gmap_db:
 
 rule make_mt_n_gmap_db:
     input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+        mt_genome_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file")),
-        n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
+        n_genome_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_n_file}",
                                                   ref_genome_n_file=get_genome_files(reference_tab,
                                                                                      wildcards.ref_genome_mt,
                                                                                      "ref_genome_n_file"))
     output:
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].split(".")[0]
@@ -325,7 +326,7 @@ rule filtering_mt_alignments:
     output:
         sam = "results/{sample}/map/OUT_{dataset_basename}_{ref_genome_mt}_{ref_genome_n}/{dataset_basename}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+        ref_mt_fasta = lambda wildcards: genome_dir + "/{ref_genome_mt_file}".format(ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     #conda: "envs/environment.yaml"
     threads: 1
     message: "Filtering alignments in file {input.outmt} by checking alignments in {input.outS} and {input.outP}"
@@ -412,9 +413,9 @@ rule merge_bam:
 
 rule index_genome:
     input:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+        genome_index = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     message: "Indexing {input.mt_n_fasta} with samtools faidx"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
     #conda: "envs/samtools_biopython.yaml"
@@ -425,9 +426,9 @@ rule index_genome:
 
 rule dict_genome:
     input:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
-        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+        genome_dict = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.dict"
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
     #conda: "envs/samtools_biopython.yaml"
@@ -438,9 +439,9 @@ rule left_align_merged_bam:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai",
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta",
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
-        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+        mt_n_fasta = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta",
+        genome_index = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
+        genome_dict = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.dict"
     output:
         merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam.log"
@@ -460,11 +461,11 @@ rule left_align_merged_bam:
 rule bam2pileup:
     input:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam",
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+        genome_index = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     output:
         pileup = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.pileup"
     params:
-        genome_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        genome_fasta = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta"
     message: "Generating pileup {output.pileup} from {input.merged_bam}"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_bam2pileup.log"
     #conda: "envs/samtools_biopython.yaml"
@@ -481,7 +482,7 @@ rule pileup2mt_table:
     output:
         mt_table = "results/{sample}/variant_calling/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-mt_table.txt"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
+        ref_mt_fasta = lambda wildcards: genome_dir + "/{ref_genome_mt_file}".format(ref_genome_mt_file = get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file"))
     message: "Generating mt_table {output.mt_table} from {input.pileup}, ref mt: {params.ref_mt_fasta}"
     #conda: "envs/environment.yaml"
     #group: "variant_calling"
@@ -502,7 +503,7 @@ rule make_single_VCF:
         single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed",
         single_fasta = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
+        ref_mt_fasta = lambda wildcards: genome_dir + "/{ref_genome_mt_file}".format(
             ref_genome_mt_file=get_mt_fasta(reference_tab,
                                             wildcards.ref_genome_mt,
                                             "ref_genome_mt_file")
