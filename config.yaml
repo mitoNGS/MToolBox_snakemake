@@ -2,7 +2,7 @@ results:            "results"
 map_dir:            "map"
 log_dir:            "logs"
 tmp_dir:            "/tmp"
-genome_fasta_dir:
+genome_fasta_dir:   "genome_fasta"
 species: 
 use_custom_n_genome: False
 
@@ -16,7 +16,7 @@ read_processing:
         threads: 4
 
 map:
-    gmap_db_dir:        "gmap_db"
+    gmap_db_dir:        "genome_db"
     gmap_threads:       4
     gmap_remap_threads: 4
 
