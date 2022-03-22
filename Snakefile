@@ -62,9 +62,9 @@ wildcard_constraints:
         [re.escape(x) for x in analysis_tab['ref_genome_n'].unique().tolist()]
     )
 
-outpaths = get_mt_genomes(analysis_tab)
-
-target_inputs = [outpaths]
+# outpaths = get_mt_genomes(analysis_tab)
+# 
+# target_inputs = [outpaths]
 
 rule all:
     input:
