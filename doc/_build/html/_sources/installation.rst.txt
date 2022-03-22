@@ -8,22 +8,23 @@ Install Anaconda
 
 To this purpose, please follow instructions at http://docs.anaconda.com/anaconda/install/linux/ (hint: download the Anaconda installer in your personal directory with  `wget https://repo.continuum.io/archive/Anaconda3-2018.12-Linux-x86_64.sh`).
 
-Install MToolBox
-----------------
+Install MToolBox-snakemake
+--------------------------
 
-MToolBox is hosted on `GitHub`_. You can get a copy of the repository by running this commands:
+We recommend to download MToolBox-snakemake by cloning the official repo on `GitHub`_:
 
 .. code-block:: bash
-
+    
+    # Pick a folder for your installation
+    # and replace /path/to/MToolBox_snakemake with it
     cd /path/to/MToolBox_snakemake
-
-    # update git
-    conda install git
 
     # fetch repo
     git clone https://github.com/mitoNGS/MToolBox_snakemake.git
 
-Installing MToolBox is as easy as running
+Please note: you could also conveniently download MToolBox-snakemake at `this link`_, but by doing so you will miss the chance to easily integrate future updates!
+
+Once you have cloned (or downloaded and unzipped) the repo, installing MToolBox should be as easy as running
 
 .. code-block:: bash
 
@@ -38,3 +39,4 @@ The setup script ``install.sh`` will:
 .. _`MToolBox_snakemake`: https://github.com/mitoNGS/MToolBox_snakemake
 .. _`MToolBox pipeline`: https://github.com/mitoNGS/MToolBox
 .. _`GitHub`: https://github.com/
+.. _`this link`: https://github.com/mitoNGS/MToolBox_snakemake/archive/master.zip

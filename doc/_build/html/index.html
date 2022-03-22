@@ -1,12 +1,10 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Welcome to the MToolBox documentation! &#8212; MToolBox  documentation</title>
+    <meta charset="utf-8" />
+    <title>Welcome to the MToolBox-snakemake documentation! &#8212; MToolBox  documentation</title>
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
@@ -14,6 +12,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -37,19 +36,23 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-the-mtoolbox-documentation">
-<h1>Welcome to the MToolBox documentation!<a class="headerlink" href="#welcome-to-the-mtoolbox-documentation" title="Permalink to this headline">¶</a></h1>
-<p>MToolBox rocks the world.</p>
+  <div class="section" id="welcome-to-the-mtoolbox-snakemake-documentation">
+<h1>Welcome to the MToolBox-snakemake documentation!<a class="headerlink" href="#welcome-to-the-mtoolbox-snakemake-documentation" title="Permalink to this headline">¶</a></h1>
+<p><strong>MToolBox</strong> is a pipeline for SNP calling and annotation in mitochondrial genomes. <a class="reference external" href="https://pubmed.ncbi.nlm.nih.gov/25028726">Since its first publication in 2014</a>, it has been used in <strong>&gt;30 peer-reviewed clinical studies</strong>. We have developed a <strong>new snakemake implementation</strong> (available <a class="reference external" href="https://github.com/mitoNGS/MToolBox_snakemake">here</a>), which includes the <a class="reference external" href="https://github.com/mitoNGS/mtoolnote">mtoolnote</a> module for variant functional annotation in order to facilitate its usage and to offer an integrated and user-friendly tool, with the aim of providing results, tables and plots ready to be discussed and used to drive downstream analyses and wet-lab experiments.</p>
+<p>And with this new implementation, MToolBox is also capable of analysing also mt data from <strong>other species</strong>!</p>
+<p><strong>Eager to use MToolBox? Follow our tutorials to install and run the pipeline!</strong></p>
 <div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#install-anaconda">Install Anaconda</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#install-mtoolbox">Install MToolBox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install-mtoolbox-snakemake">Install MToolBox-snakemake</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="run-the-pipeline.html">Run MToolBox</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="run-the-pipeline.html">The MToolBox-snakemake workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="run-the-pipeline.html#an-overview">An overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run-the-pipeline.html#setting-up-a-working-directory">Setting up a working directory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run-the-pipeline.html#compiling-configuration-files">Compiling configuration files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run-the-pipeline.html#how-to-run-the-mtoolbox-wrappers">How to run the MToolBox wrappers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run-the-pipeline.html#available-wrappers">Available wrappers</a></li>
 </ul>
@@ -60,9 +63,9 @@
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
 </div>
 
@@ -74,7 +77,7 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to the MToolBox documentation!</a></li>
+<li><a class="reference internal" href="#">Welcome to the MToolBox-snakemake documentation!</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
@@ -89,13 +92,11 @@
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
@@ -118,7 +119,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Domenico Simone.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.1.2.
     </div>
   </body>
 </html>
