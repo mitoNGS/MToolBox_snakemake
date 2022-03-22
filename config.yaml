@@ -4,14 +4,12 @@ log_dir:            "logs"
 tmp_dir:            "/tmp"
 genome_fasta_dir:   "genome_fasta"
 species: 
-use_custom_n_genome: False
 
 read_processing:
     trimmomatic:
         options: "-phred33"
         processing_options: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
         java_cmd: "java"
-        #jar_file: "/crex/proj/uppstore2018171/conda_envs/mtoolbox-ark/share/trimmomatic/trimmomatic.jar"
         java_vm_mem: "4G"
         threads: 4
 
@@ -20,16 +18,21 @@ map:
     gmap_threads:       4
     gmap_remap_threads: 4
 
+# wanna keep reads that lost their mate after the first mapping round?
 keep_orphans: True
+# remove duplicates before variant detection?
 mark_duplicates: False
-
+# mask (soft-clip) 10nt of alignments at the reads' ends before variant detection?
+# this is suggested to minimize spurious variant calling due to
+# misalignments at the ends of reads
 trimBam: False
 
 mtvcf_main_analysis:
-    # minumum distance from read end to keep in a mutation
+    # minumum distance from read end to keep in an indel
     tail:  5
+    # minumum distance from read end to keep in a non-indel mutation
+    tail_mismatch: 5
     # minimum QS for mutation
     Q:    25
     # minimum coverage depth for a mutation to be kept
     minrd: 5
-    tail_mismatch: 5

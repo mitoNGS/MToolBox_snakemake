@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installation &#8212; MToolBox  documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Run MToolBox" href="run-the-pipeline.html" />
+    <link rel="prev" title="Welcome to the MToolBox-snakemake documentation!" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="run-the-pipeline.html" title="Run MToolBox"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to the MToolBox-snakemake documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="install-anaconda">
+<h2>Install Anaconda<a class="headerlink" href="#install-anaconda" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/mitoNGS/MToolBox_snakemake">MToolBox_snakemake</a>, an update of the <a class="reference external" href="https://github.com/mitoNGS/MToolBox">MToolBox pipeline</a>, is deployed in a conda environment, <em>i.e.</em> a virtual environment with all the needed tools/modules. Installing Anaconda is therefore essential, before installing the pipeline.</p>
+<p>To this purpose, please follow instructions at <a class="reference external" href="http://docs.anaconda.com/anaconda/install/linux/">http://docs.anaconda.com/anaconda/install/linux/</a> (hint: download the Anaconda installer in your personal directory with  <cite>wget https://repo.continuum.io/archive/Anaconda3-2018.12-Linux-x86_64.sh</cite>).</p>
+</div>
+<div class="section" id="install-mtoolbox-snakemake">
+<h2>Install MToolBox-snakemake<a class="headerlink" href="#install-mtoolbox-snakemake" title="Permalink to this headline">¶</a></h2>
+<p>We recommend to download MToolBox-snakemake by cloning the official repo on <a class="reference external" href="https://github.com/">GitHub</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Pick a folder for your installation</span>
+<span class="c1"># and replace /path/to/MToolBox_snakemake with it</span>
+<span class="nb">cd</span> /path/to/MToolBox_snakemake
+
+<span class="c1"># fetch repo</span>
+git clone https://github.com/mitoNGS/MToolBox_snakemake.git
+</pre></div>
+</div>
+<p>Please note: you could also conveniently download MToolBox-snakemake at <a class="reference external" href="https://github.com/mitoNGS/MToolBox_snakemake/archive/master.zip">this link</a>, but by doing so you will miss the chance to easily integrate future updates!</p>
+<p>Once you have cloned (or downloaded and unzipped) the repo, installing MToolBox should be as easy as running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> MToolBox_snakemake
+bash install.sh
+</pre></div>
+</div>
+<p>The setup script <code class="docutils literal notranslate"><span class="pre">install.sh</span></code> will:</p>
+<ul class="simple">
+<li><p>install the <code class="docutils literal notranslate"><span class="pre">mtoolbox</span></code> conda environment with all the required dependencies</p></li>
+<li><p>create a command (<code class="docutils literal notranslate"><span class="pre">mtoolbox-activate</span></code>) which will be used to activate the MToolBox conda environment and add the folders of MToolBox executables and utilities to your <code class="docutils literal notranslate"><span class="pre">PATH</span></code>.</p></li>
+</ul>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
+<li><a class="reference internal" href="#install-anaconda">Install Anaconda</a></li>
+<li><a class="reference internal" href="#install-mtoolbox-snakemake">Install MToolBox-snakemake</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to the MToolBox-snakemake documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="run-the-pipeline.html"
+                        title="next chapter">Run MToolBox</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/installation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="run-the-pipeline.html" title="Run MToolBox"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to the MToolBox-snakemake documentation!"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">MToolBox  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Installation</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Domenico Simone.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>
