@@ -11,7 +11,7 @@ import time
 from Bio import SeqIO
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
+#from sqlalchemy import create_engine
 
 # TODO: this is bad!! import only what really needed
 #   for example: FASTAoutput is both in BEDoutput.py and mtVariantCaller.py!
