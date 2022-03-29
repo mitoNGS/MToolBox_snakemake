@@ -12,7 +12,7 @@ import time
 from Bio import SeqIO
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
+# from sqlalchemy import create_engine
 
 for path in sys.path:
     if "snakefiles" in path:
@@ -46,6 +46,7 @@ configfile: "config.yaml"
 res_dir = config["results"]
 map_dir = config["map_dir"]
 log_dir = config["log_dir"]
+genome_dir  = config["genome_fasta_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 keep_orphans = config["keep_orphans"]
 
