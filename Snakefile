@@ -1,4 +1,4 @@
-genome_dir + "import bz2
+import bz2
 import gzip
 import os
 import re
