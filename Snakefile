@@ -35,10 +35,8 @@ from modules.mtVariantCaller import mtvcf_main_analysis, VCFoutput
 
 source_dir = os.path.dirname(workflow.snakefile)
 
-#localrules: bam2pileup, index_genome, pileup2mt_table, make_single_VCF
 localrules: index_genome, merge_VCF, index_VCF, dict_genome
 
-# fields: sample  ref_genome_mt   ref_genome_n
 analysis_tab = pd.read_table("data/analysis.tab", sep="\t", comment='#')
 reference_tab = (pd.read_table("data/reference_genomes.tab", sep="\t",
                                comment='#')
