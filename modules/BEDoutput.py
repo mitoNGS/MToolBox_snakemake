@@ -46,6 +46,7 @@ def get_bed_score(entry, x):
     clueless
         Don't know.
     """
+    print(entry._sample_indexes)
     return entry._sample_indexes[0][1][2][x] * 100
 
 
@@ -109,7 +110,9 @@ def bed_output(vcf_records: List, seq_name: str = "seq",
 
                 START = r.POS + (len(r.REF[0]) - 1) - 1
                 END = START + 1
-                SCORE = get_bed_score(r, x)
+                print(r)
+                #SCORE = get_bed_score(r, x) #TODO I change this because something is wrong with the get_bed_score function. Need to fix that first
+                SCORE = 0
 
                 if r.TYPEVAR[x] == 'ins':
                     # TODO: this goes into the docstring

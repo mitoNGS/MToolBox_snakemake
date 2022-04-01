@@ -5,6 +5,7 @@ import time
 
 import pandas as pd
 from sqlalchemy import create_engine
+from types import SimpleNamespace
 
 from modules.general import get_SAM_header, memory_usage_resource
 
@@ -118,3 +119,31 @@ def filter_alignments(outmt=None, outS=None, outP=None, OUT=None,
     os.system("gzip {}".format(OUT_uncompressed))
     print("OUT.sam compressed, memory: {} MB".format(memory_usage_resource()))
     print("Total alignments extracted: {}".format(n_extracted_alignments))
+
+def cat_alignment(samfile=None, outfile=None, ref_mt_fasta_header=None):
+    #samhandle = gzip.open(samfile, 'rt')
+    samhandle = open(samfile, 'r')
+    outhandle = gzip.open(outfile, 'at')
+    total_alignments = 0
+    filtered_alignments = 0
+    for l in samhandle:
+        total_alignments += 1
+        if l.startswith("@") == False and l.split()[2] == ref_mt_fasta_header:
+            filtered_alignments += 1
+            outhandle.write(l)
+    samhandle.close()
+    outhandle.close()
+    return total_alignments, filtered_alignments
+
+def cat_alignments(*samfiles, outfile=None, ref_mt_fasta_header=None):
+    filtering_report = {}
+    header_lines, comment_count = get_SAM_header(samfiles[0][0])
+    outhandle = gzip.open(outfile, 'at')
+    for l in header_lines:
+        outhandle.write(l)
+    outhandle.close()
+    for samfile in samfiles[0]:
+        print(samfile)
+        total_alignments, filtered_alignments = cat_alignment(samfile=samfile, outfile=outfile, ref_mt_fasta_header=ref_mt_fasta_header)
+        filtering_report[samfile] = SimpleNamespace(samfile=samfile, total_alignments=total_alignments, filtered_alignments=filtered_alignments, ref=ref_mt_fasta_header)
+    return filtering_report
