@@ -1,5 +1,4 @@
 results:            "results"
-map_dir:            "map"
 log_dir:            "logs"
 tmp_dir:            "/tmp"
 genome_fasta_dir:   "genome_fasta"
