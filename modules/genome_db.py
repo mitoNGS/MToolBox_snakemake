@@ -58,10 +58,10 @@ def run_gmap_build(mt_n_genome_file=None, mt_genome_file=None,
     g_flag = ""
     if mt_is_circular:
         mt_id = get_mt_header(mt_genome_file=mt_genome_file)
-        c_flag = "-c {}".format(mt_id)
+        c_flag = "-o {}".format(mt_id)
     if mt_n_genome_file:
         #get_gmap_build_nuclear_mt_input(n_genome_file=n_genome_file, mt_genome_file=mt_genome_file, n_mt_file=n_mt_file)
-        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {c_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
+        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {c_flag} -s none {input_fasta} &> {log} && touch {gmap_db_dir}/{gmap_db}/done".format(gmap_db_dir=gmap_db_dir,
                                                                                             gmap_db=gmap_db, c_flag=c_flag, input_fasta=mt_n_genome_file,
                                                                                             log=log))
     # mt db
@@ -70,6 +70,6 @@ def run_gmap_build(mt_n_genome_file=None, mt_genome_file=None,
             g_flag = "-g"
         # else:
         #     g_flag = ""
-        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {g_flag} {c_flag} -s none {input_fasta} &> {log}".format(gmap_db_dir=gmap_db_dir,
+        shell("gmap_build -D {gmap_db_dir} -d {gmap_db} {g_flag} {c_flag} -s none {input_fasta} &> {log} && touch {gmap_db_dir}/{gmap_db}/done".format(gmap_db_dir=gmap_db_dir,
                                                                                         gmap_db=gmap_db, input_fasta=mt_genome_file,
                                                                                         log=log, g_flag=g_flag, c_flag=c_flag))

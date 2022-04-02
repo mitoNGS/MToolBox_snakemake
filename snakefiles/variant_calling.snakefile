@@ -154,10 +154,12 @@ rule make_mt_gmap_db:
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file"))[0]
     output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
+        # gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}/done"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
+        gmap_db = lambda wildcards: "{ref_genome_mt}".format(ref_genome_mt=wildcards.ref_genome_mt),
+        # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
     log: log_dir + "/gmap_build/{ref_genome_mt}.log"
     #conda: "envs/environment.yaml"
@@ -192,10 +194,13 @@ rule make_mt_n_gmap_db:
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file"))[0],
     output:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/done",
+        # gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
+        gmap_db = lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_genome_mt=wildcards.ref_genome_mt,
+                                                                            ref_genome_n=wildcards.ref_genome_n)
+        # gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
     log: log_dir + "/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     run:
@@ -279,7 +284,7 @@ rule map_MT_PE_SE:
         R1 = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
         R2 = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
         U = reads_dir + "/filtered/{sample}_{library}_qc_U.fastq.gz",
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}/done"
     output:
         outmt_sam = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
     params:
@@ -385,69 +390,69 @@ rule ids_to_fastq_orphans:
         shell("gzip {params.out1_temp}")
         shell("gzip {params.out2_temp}")
 
-rule map_nuclear_MT_SE:
-    input:
-        lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
-                                                                ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
-                                                                keep_orphans=keep_orphans, outfolder=res_dir),
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
-        #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
-    output:
-        outS = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
-    params:
-        gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
-        uncompressed_output = lambda wildcards, output: output.outS.replace("_outS.sam.gz", "_outS.sam")
-    threads:
-        config["map"]["gmap_remap_threads"]
-    # version:
-    #     subprocess.getoutput(
-    #       gsnap --version
-    #       )
-    #     """
-    #conda: "envs/environment.yaml"
-    log:
-        logS = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
-    message:
-        "Mapping onto complete human genome (nuclear + mt)... SE reads"
-    run:
-        if os.path.isfile(input.outmt):
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input[:-1]} &> {log.logS} && gzip {params.uncompressed_output} &>> {log.logS}")
-        else:
-            open(output.outS, 'a').close()
-
-rule map_nuclear_MT_PE:
-    input:
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
-        outmt1 = rules.ids_to_fastq_PE.output.outmt1,
-        outmt2 = rules.ids_to_fastq_PE.output.outmt2,
-        # outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_1.fastq.gz",
-        # outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_2.fastq.gz",
-    output:
-        outP = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
-    params:
-        gmap_db_dir = config["map"]["gmap_db_dir"],
-        #gsnap_db_folder = config['map']['gsnap_db_folder'],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
-        uncompressed_output = lambda wildcards, output: output.outP.replace("_outP.sam.gz", "_outP.sam")
-        #gsnap_db = config['map']['gsnap_n_mt_db']
-    threads:
-        config["map"]["gmap_remap_threads"]
-    # version:
-    #     subprocess.getoutput(
-    #       gsnap --version
-    #       )
-    #     """
-    #conda: "envs/environment.yaml"
-    log:
-        logP = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
-    message:
-        "Mapping onto complete human genome (nuclear + mt)... PE reads"
-    run:
-        if os.path.isfile(input.outmt1):
-            shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} &> {log.logP} && gzip {params.uncompressed_output} &>> {log.logP}")
-        else:
-            open(output.outP, 'a').close()
+# rule map_nuclear_MT_SE:
+#     input:
+#         lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
+#                                                                 ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
+#                                                                 keep_orphans=keep_orphans, outfolder=res_dir),
+#         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/done",
+#         #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
+#     output:
+#         outS = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outS.sam.gz"
+#     params:
+#         gmap_db_dir = config["map"]["gmap_db_dir"],
+#         gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
+#         uncompressed_output = lambda wildcards, output: output.outS.replace("_outS.sam.gz", "_outS.sam")
+#     threads:
+#         config["map"]["gmap_remap_threads"]
+#     # version:
+#     #     subprocess.getoutput(
+#     #       gsnap --version
+#     #       )
+#     #     """
+#     #conda: "envs/environment.yaml"
+#     log:
+#         logS = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_SE.log"
+#     message:
+#         "Mapping onto complete human genome (nuclear + mt)... SE reads"
+#     run:
+#         if os.path.isfile(input.outmt):
+#             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input[:-1]} &> {log.logS} && gzip {params.uncompressed_output} &>> {log.logS}")
+#         else:
+#             open(output.outS, 'a').close()
+# 
+# rule map_nuclear_MT_PE:
+#     input:
+#         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/done",
+#         outmt1 = rules.ids_to_fastq_PE.output.outmt1,
+#         outmt2 = rules.ids_to_fastq_PE.output.outmt2,
+#         # outmt1 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_1.fastq.gz",
+#         # outmt2 = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_PE_2.fastq.gz",
+#     output:
+#         outP = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_outP.sam.gz"
+#     params:
+#         gmap_db_dir = config["map"]["gmap_db_dir"],
+#         #gsnap_db_folder = config['map']['gsnap_db_folder'],
+#         gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
+#         uncompressed_output = lambda wildcards, output: output.outP.replace("_outP.sam.gz", "_outP.sam")
+#         #gsnap_db = config['map']['gsnap_n_mt_db']
+#     threads:
+#         config["map"]["gmap_remap_threads"]
+#     # version:
+#     #     subprocess.getoutput(
+#     #       gsnap --version
+#     #       )
+#     #     """
+#     #conda: "envs/environment.yaml"
+#     log:
+#         logP = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE.log"
+#     message:
+#         "Mapping onto complete human genome (nuclear + mt)... PE reads"
+#     run:
+#         if os.path.isfile(input.outmt1):
+#             shell("gsnap -D {params.gmap_db_dir} -d {params.gmap_db} -o {params.uncompressed_output} --gunzip -A sam --nofails --query-unk-mismatch=1 -O -t {threads} {input.outmt1} {input.outmt2} &> {log.logP} && gzip {params.uncompressed_output} &>> {log.logP}")
+#         else:
+#             open(output.outP, 'a').close()
 
 rule map_nuclear_MT_PE_SE:
     input:
@@ -456,7 +461,7 @@ rule map_nuclear_MT_PE_SE:
         outmt_SE = lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
                                                                 ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
                                                                 keep_orphans=keep_orphans, outfolder=res_dir),
-        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
+        gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/done",
     output:
         concordant_uniq = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_uniq",
         concordant_circular = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_circular",
@@ -468,7 +473,9 @@ rule map_nuclear_MT_PE_SE:
         log = log_dir + "/{sample}/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/map/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_map_nuclear_MT_PE_SE.log"
     params:
         gmap_db_dir = config["map"]["gmap_db_dir"],
-        gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
+        gmap_db = lambda wildcards: "{ref_genome_mt}_{ref_genome_n}".format(ref_genome_mt=wildcards.ref_genome_mt,
+                                                                            ref_genome_n=wildcards.ref_genome_n),
+        # gmap_db = lambda wildcards, input: os.path.split(input.gmap_db)[1].replace(".chromosome", ""),
         out_basename = lambda wildcards, output: output.concordant_uniq.replace(".concordant_uniq", ""),
         RG_tag = '--read-group-id=sample --read-group-name=sample --read-group-library=sample --read-group-platform=sample',
     run:
