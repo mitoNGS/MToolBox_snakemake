@@ -39,9 +39,6 @@ source_dir = Path(os.path.dirname(workflow.snakefile)).parent
 localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, symlink_libraries_uncompressed, get_gmap_build_nuclear_mt_input
 #ruleorder: sam_to_ids_keep_orphans > sam_to_ids
 
-# fields: sample  ref_genome_mt   ref_genome_n
-analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file="data/analysis.tab", reference_tab_file="data/reference_genomes.tab", datasets_tab_file="data/datasets.tab")
-
 configfile: "config.yaml"
 res_dir = config["results"]
 map_dir = config["map_dir"]
@@ -49,6 +46,12 @@ log_dir = config["log_dir"]
 genome_dir  = config["genome_fasta_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 keep_orphans = config["keep_orphans"]
+
+analysis_tab_file = config["analysis_tab"]
+datasets_tab_file = config["datasets_tab"]
+reference_genomes_file = config["reference_genomes"]
+
+analysis_tab, reference_tab, datasets_tab = parse_config_tabs(analysis_tab_file=analysis_tab_file, reference_tab_file=reference_genomes_file, datasets_tab_file=datasets_tab_file)
 
 # if species is not defined by config.yaml, should be parsed for each analysis
 species = config["species"]
