@@ -77,21 +77,21 @@ target_inputs = [
 
 rule all:
     input:
-        get_symlinks(datasets_tab, analysis_tab=analysis_tab, infolder=reads_dir,
-                     outfolder=reads_dir),
-        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw", outfolder_root = qc_dir),
-        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered", outfolder_root = qc_dir),
-        get_genome_vcf_files(analysis_tab, res_dir=res_dir),
+        get_symlinks(datasets_tab, analysis_tab=analysis_tab, infolder=os.path.join(reads_dir, "raw"),
+                     outfolder=os.path.join(reads_dir, "raw")),
+        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw", outfolder_root = os.path.join(qc_dir, "reads")),
+        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered", outfolder_root = os.path.join(qc_dir, "reads")),
+        get_genome_vcf_files(analysis_tab, res_dir=os.path.join(res_dir, "vcf")),
         get_bed_files(analysis_tab, res_dir=res_dir),
         get_fasta_files(analysis_tab, res_dir=res_dir)
 
 rule symlink_libraries:
     input:
         R1 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
-                                                         outfolder=reads_dir,
+                                                         outfolder=os.path.join(reads_dir, "raw"),
                                                          library=wildcards.library, d="R1"),
         R2 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
-                                                         outfolder=reads_dir,
+                                                         outfolder=os.path.join(reads_dir, "raw"),
                                                          library=wildcards.library, d="R2")
     output:
         R1 = reads_dir + "/raw/{sample}_{library}.R1.fastq.gz",
@@ -124,9 +124,9 @@ rule symlink_libraries_uncompressed:
 rule fastqc_raw:
     input:
         R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
-                                                    library=wildcards.library, readpath=reads_dir)[0],
+                                                    library=wildcards.library, readpath=os.path.join(reads_dir, "raw"))[0],
         R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
-                                                    library=wildcards.library, readpath=reads_dir)[1]
+                                                    library=wildcards.library, readpath=os.path.join(reads_dir, "raw"))[1]
     output:
         html_report_R1 = qc_dir + "/reads/raw/{sample}_{library}.R1_fastqc.html",
         html_report_R2 = qc_dir + "/reads/raw/{sample}_{library}.R2_fastqc.html",
@@ -202,11 +202,50 @@ rule make_mt_n_gmap_db:
         run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_fasta,
                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
 
+rule trimmomatic:
+    """ QCing and cleaning reads """
+    params:
+        java_cmd = config['read_processing']['trimmomatic']['java_cmd'],
+        #jar_file = config['read_processing']['trimmomatic']['jar_file'],
+        mem = config['read_processing']['trimmomatic']['java_vm_mem'],
+        options = config['read_processing']['trimmomatic']['options'],
+        processing_options = config['read_processing']['trimmomatic']['processing_options'],
+        out1P = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
+        out2P = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
+        out1U = reads_dir + "/filtered/{sample}_{library}_qc_1U.fastq.gz",
+        out2U = reads_dir + "/filtered/{sample}_{library}_qc_2U.fastq.gz"
+    input:
+        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
+                                                    library=wildcards.library, readpath=os.path.join(reads_dir, "raw"))[0],
+        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
+                                                    library=wildcards.library, readpath=os.path.join(reads_dir, "raw"))[1],
+        # R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
+        # R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
+        # R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
+        # R2 = "data/reads/{sample}_{library}.R2.fastq.gz"
+    output:
+        out1P = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
+        out2P = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
+        out1U = reads_dir + "/filtered/{sample}_{library}_qc_U.fastq.gz",
+    threads:
+        config['read_processing']['trimmomatic']['threads']
+    # version:
+    #     subprocess.check_output("trimmomatic -version", shell=True)
+    message:
+        "Filtering read dataset {wildcards.sample}_{wildcards.library} with Trimmomatic. {wildcards}" # v{version}"
+    log:
+        log_dir + "/trimmomatic/{sample}_{library}_trimmomatic.log"
+    #conda: "envs/environment.yaml"
+    run:
+        #trimmomatic_adapters_path = get_trimmomatic_adapters_path()
+        shell("export tap=$(which trimmomatic | sed 's/bin\/trimmomatic/share\/trimmomatic\/adapters\/TruSeq3-PE.fa/g'); trimmomatic PE {params.options} -threads {threads} {input.R1} {input.R2} {params.out1P} {params.out1U} {params.out2P} {params.out2U} ILLUMINACLIP:$tap:2:30:10 {params.processing_options} &> {log}")
+        shell("zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}")
+
 rule fastqc_filtered:
     input:
-        out1P = rule.trimmomatic.output.out1P,
-        out2P = rule.trimmomatic.output.out2P,
-        out1U = rule.trimmomatic.output.out1U,
+        out1P = rules.trimmomatic.output.out1P,
+        out2P = rules.trimmomatic.output.out2P,
+        out1U = rules.trimmomatic.output.out1U,
         # out1P = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
         # out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
         # out1U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
@@ -232,45 +271,6 @@ rule fastqc_filtered:
         fastqc -t {threads} -o {params.outDir} {input} &> {log}
 
         """
-
-rule trimmomatic:
-    """ QCing and cleaning reads """
-    params:
-        java_cmd = config['read_processing']['trimmomatic']['java_cmd'],
-        #jar_file = config['read_processing']['trimmomatic']['jar_file'],
-        mem = config['read_processing']['trimmomatic']['java_vm_mem'],
-        options = config['read_processing']['trimmomatic']['options'],
-        processing_options = config['read_processing']['trimmomatic']['processing_options'],
-        out1P = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
-        out2P = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
-        out1U = reads_dir + "/filtered/{sample}_{library}_qc_1U.fastq.gz",
-        out2U = reads_dir + "/filtered/{sample}_{library}_qc_2U.fastq.gz"
-    input:
-        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
-                                                    library=wildcards.library, readpath=reads_dir)[0],
-        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
-                                                    library=wildcards.library, readpath=reads_dir)[1],
-        # R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
-        # R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
-        # R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
-        # R2 = "data/reads/{sample}_{library}.R2.fastq.gz"
-    output:
-        out1P = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
-        out2P = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
-        out1U = reads_dir + "/filtered/{sample}_{library}_qc_U.fastq.gz",
-    threads:
-        config['read_processing']['trimmomatic']['threads']
-    # version:
-    #     subprocess.check_output("trimmomatic -version", shell=True)
-    message:
-        "Filtering read dataset {wildcards.sample}_{wildcards.library} with Trimmomatic. {wildcards}" # v{version}"
-    log:
-        log_dir + "/trimmomatic/{sample}_{library}_trimmomatic.log"
-    #conda: "envs/environment.yaml"
-    run:
-        #trimmomatic_adapters_path = get_trimmomatic_adapters_path()
-        shell("export tap=$(which trimmomatic | sed 's/bin\/trimmomatic/share\/trimmomatic\/adapters\/TruSeq3-PE.fa/g'); trimmomatic PE {params.options} -threads {threads} {input.R1} {input.R2} {params.out1P} {params.out1U} {params.out2P} {params.out2U} ILLUMINACLIP:$tap:2:30:10 {params.processing_options} &> {log}")
-        shell("zcat {params.out1U} {params.out2U} | gzip > {output.out1U} && rm {params.out1U} {params.out2U}")
 
 seq_type = "both"
 
