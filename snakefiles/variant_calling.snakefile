@@ -79,8 +79,8 @@ rule all:
     input:
         get_symlinks(datasets_tab, analysis_tab=analysis_tab, infolder=reads_dir,
                      outfolder=reads_dir),
-        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw"),
-        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered"),
+        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw", outfolder_root = qc_dir),
+        fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered", outfolder_root = qc_dir),
         get_genome_vcf_files(analysis_tab),
         get_bed_files(analysis_tab),
         get_fasta_files(analysis_tab)
