@@ -1,7 +1,20 @@
+## set results dir
+# if you're using Docker, results should be a subfolder of the folder(s) to be
+# mounted in the container, eg
+#
+# docker run --rm -it \
+# -v "$(pwd)"/220322:/220322 \
+# mitongs/mtoolbox:data_genomes \
+# MToolBox-variant-calling ...
+#
+# means you should set
+# results: "220322/results"
+#
+# otherwise you won't get results :)
 results:            "results"
 log_dir:            "logs"
-tmp_dir:            "/tmp"
 genome_fasta_dir:   "genome_fasta"
+tmp_dir:            "/tmp"
 species: 
 
 # run configuration files
