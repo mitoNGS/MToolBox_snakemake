@@ -41,8 +41,9 @@ localrules: index_genome, merge_VCF, index_VCF, dict_genome, symlink_libraries, 
 
 configfile: "config.yaml"
 res_dir = config["results"]
-map_dir = config["map_dir"]
 log_dir = config["log_dir"]
+reads_dir = config["reads_dir"]
+qc_dir = config["qc_dir"]
 genome_dir  = config["genome_fasta_dir"]
 gmap_db_dir = config["map"]["gmap_db_dir"]
 keep_orphans = config["keep_orphans"]
@@ -76,8 +77,8 @@ target_inputs = [
 
 rule all:
     input:
-        get_symlinks(datasets_tab, analysis_tab=analysis_tab, infolder="data/reads",
-                     outfolder="data/reads"),
+        get_symlinks(datasets_tab, analysis_tab=analysis_tab, infolder=reads_dir,
+                     outfolder=reads_dir),
         fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw"),
         fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered"),
         get_genome_vcf_files(analysis_tab),
@@ -91,11 +92,11 @@ rule symlink_libraries:
         R2 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
                                                          library=wildcards.library, d="R2")
     output:
-        R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
-        R2 = "data/reads/{sample}_{library}.R2.fastq.gz",
+        R1 = reads_dir + "/raw/{sample}_{library}.R1.fastq.gz",
+        R2 = reads_dir + "/raw/{sample}_{library}.R2.fastq.gz",
     shell:
         """
-        cd data/reads/
+        cd {{reads_dir}}
         ln -sf $(basename {input.R1}) $(basename {output.R1})
         ln -sf $(basename {input.R2}) $(basename {output.R2})
         """
@@ -107,11 +108,11 @@ rule symlink_libraries_uncompressed:
         R2 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
                                                          library=wildcards.library, d="R2")
     output:
-        R1 = "data/reads/{sample}_{library}.R1.fastq",
-        R2 = "data/reads/{sample}_{library}.R2.fastq",
+        R1 = reads_dir + "/raw/{sample}_{library}.R1.fastq",
+        R2 = reads_dir + "/raw/{sample}_{library}.R2.fastq",
     shell:
         """
-        cd data/reads/
+        cd {{reads_dir}}
         ln -sf $(basename {input.R1}) $(basename {output.R1})
         ln -sf $(basename {input.R2}) $(basename {output.R2})
         """
@@ -121,10 +122,10 @@ rule fastqc_raw:
         R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
         R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
     output:
-        html_report_R1 = "results/fastqc_raw/{sample}_{library}.R1_fastqc.html",
-        html_report_R2 = "results/fastqc_raw/{sample}_{library}.R2_fastqc.html",
+        html_report_R1 = qc_dir + "/reads/raw/{sample}_{library}.R1_fastqc.html",
+        html_report_R2 = qc_dir + "/reads/raw/{sample}_{library}.R2_fastqc.html",
     params:
-        outDir = "results/fastqc_raw/",
+        outDir = qc_dir + "/reads/raw/",
     threads:
         2
     # version:
@@ -132,7 +133,7 @@ rule fastqc_raw:
     # message:
     #     "QC of raw read files {input} with {version}, {wildcards}"
     log:
-        "logs/fastqc_raw/{sample}_{library}.log"
+        log_dir + "qc/reads/raw/{sample}_{library}.log"
     #conda: "envs/environment.yaml"
     shell:
         """
@@ -142,7 +143,7 @@ rule fastqc_raw:
 
 rule make_mt_gmap_db:
     input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+        mt_genome_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file"))[0]
@@ -152,7 +153,7 @@ rule make_mt_gmap_db:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt genome: {input.mt_genome_fasta}.\nWildcards: {wildcards}"
-    log: "logs/gmap_build/{ref_genome_mt}.log"
+    log: log_dir + "/gmap_build/{ref_genome_mt}.log"
     #conda: "envs/environment.yaml"
     run:
         run_gmap_build(mt_genome_file=input.mt_genome_fasta, gmap_db_dir=params.gmap_db_dir,
@@ -164,23 +165,23 @@ rule make_mt_gmap_db:
 
 rule get_gmap_build_nuclear_mt_input:
     input:
-        mt_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+        mt_genome_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file"))[0],
-        n_genome_fasta = lambda wildcards: expand("data/genomes/{ref_genome_n_file}",
+        n_genome_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_n_file}",
                                                   ref_genome_n_file=get_genome_files(reference_tab,
                                                                                      wildcards.ref_genome_mt,
                                                                                      "ref_genome_n_file"))[0]
     output:
-        mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
+        mt_n_fasta = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta"
     run:
         get_gmap_build_nuclear_mt_input(n_genome_file=input.n_genome_fasta, mt_genome_file=input.mt_genome_fasta, n_mt_file=output.mt_n_fasta)
 
 rule make_mt_n_gmap_db:
     input:
         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
-        mt_fasta = lambda wildcards: expand("data/genomes/{ref_genome_mt_file}",
+        mt_fasta = lambda wildcards: expand(genome_dir + "/{ref_genome_mt_file}",
                                                    ref_genome_mt_file=get_genome_files(reference_tab,
                                                                                        wildcards.ref_genome_mt,
                                                                                        "ref_genome_mt_file"))[0],
@@ -190,22 +191,25 @@ rule make_mt_n_gmap_db:
         gmap_db_dir = config["map"]["gmap_db_dir"],
         gmap_db = lambda wildcards, output: os.path.split(output.gmap_db)[1].replace(".chromosome", "")
     message: "Generating gmap db for mt + n genome: {input.mt_n_fasta}"
-    log: "logs/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
+    log: log_dir + "/gmap_build/{ref_genome_mt}_{ref_genome_n}.log"
     run:
         run_gmap_build(mt_n_genome_file=input.mt_n_fasta, mt_genome_file=input.mt_fasta,
                             gmap_db_dir=params.gmap_db_dir, gmap_db=params.gmap_db, log=log, mt_is_circular=True)
 
 rule fastqc_filtered:
     input:
-        out1P = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
-        out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
-        out1U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
+        out1P = rule.trimmomatic.output.out1P,
+        out2P = rule.trimmomatic.output.out2P,
+        out1U = rule.trimmomatic.output.out1U,
+        # out1P = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
+        # out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
+        # out1U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
     output:
-        html_report_R1 = "results/fastqc_filtered/{sample}_{library}_qc_R1_fastqc.html",
-        html_report_R2 = "results/fastqc_filtered/{sample}_{library}_qc_R2_fastqc.html",
-        html_report_U = "results/fastqc_filtered/{sample}_{library}_qc_U_fastqc.html",
+        html_report_R1 = qc_dir + "/reads/filtered/{sample}_{library}_qc_R1_fastqc.html",
+        html_report_R2 = qc_dir + "/reads/filtered/{sample}_{library}_qc_R2_fastqc.html",
+        html_report_U =  qc_dir + "/reads/filtered/{sample}_{library}_qc_U_fastqc.html",
     params:
-        outDir = "results/fastqc_filtered/"
+        outDir = qc_dir + "/reads/filtered/"
     threads:
         3
     # version:
@@ -213,7 +217,7 @@ rule fastqc_filtered:
     # message:
     #     "QC of filtered read files {input} with {version}"
     log:
-        "logs/fastqc_filtered/{sample}_{library}.log"
+        log_dir + "qc/reads/filtered/{sample}_{library}.log"
     #conda: "envs/environment.yaml"
     shell:
         """
@@ -231,19 +235,19 @@ rule trimmomatic:
         mem = config['read_processing']['trimmomatic']['java_vm_mem'],
         options = config['read_processing']['trimmomatic']['options'],
         processing_options = config['read_processing']['trimmomatic']['processing_options'],
-        out1P = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
-        out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
-        out1U = "data/reads_filtered/{sample}_{library}_qc_1U.fastq.gz",
-        out2U = "data/reads_filtered/{sample}_{library}_qc_2U.fastq.gz"
+        out1P = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
+        out2P = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
+        out1U = reads_dir + "/filtered/{sample}_{library}_qc_1U.fastq.gz",
+        out2U = reads_dir + "/filtered/{sample}_{library}_qc_2U.fastq.gz"
     input:
         R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
         R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
         # R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
         # R2 = "data/reads/{sample}_{library}.R2.fastq.gz"
     output:
-        out1P = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
-        out2P = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
-        out1U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
+        out1P = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
+        out2P = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
+        out1U = reads_dir + "/filtered/{sample}_{library}_qc_U.fastq.gz",
     threads:
         config['read_processing']['trimmomatic']['threads']
     # version:
@@ -262,9 +266,9 @@ seq_type = "both"
 
 rule map_MT_PE_SE:
     input:
-        R1 = "data/reads_filtered/{sample}_{library}_qc_R1.fastq.gz",
-        R2 = "data/reads_filtered/{sample}_{library}_qc_R2.fastq.gz",
-        U = "data/reads_filtered/{sample}_{library}_qc_U.fastq.gz",
+        R1 = reads_dir + "/filtered/{sample}_{library}_qc_R1.fastq.gz",
+        R2 = reads_dir + "/filtered/{sample}_{library}_qc_R2.fastq.gz",
+        U = reads_dir + "/filtered/{sample}_{library}_qc_U.fastq.gz",
         gmap_db = gmap_db_dir + "/{ref_genome_mt}/{ref_genome_mt}.chromosome"
     output:
         outmt_sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.sam.gz"
@@ -479,7 +483,7 @@ rule filtering_mt_alignments:
     output:
         sam = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_OUT.sam.gz"
     params:
-        ref_mt_fasta_header = lambda wildcards: get_seq_name("data/genomes/{ref_genome_mt_file}".format(
+        ref_mt_fasta_header = lambda wildcards: get_seq_name(genome_dir + "/{ref_genome_mt_file}".format(
             ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
         ))[0]
     message: "Filtering alignments in files {input}"
@@ -562,9 +566,8 @@ rule merge_bam:
 rule index_genome:
     input:
         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
-        #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
+        genome_index = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta.fai"
     message: "Indexing {input.mt_n_fasta} with samtools faidx"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.samtools_index.log"
     #conda: "envs/samtools_biopython.yaml"
@@ -576,9 +579,8 @@ rule index_genome:
 rule dict_genome:
     input:
         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta
-        #mt_n_fasta = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta"
     output:
-        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+        genome_dict = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.dict"
     message: "Creating .dict of {input.mt_n_fasta} with picard CreateSequenceDictionary"
     log: log_dir + "/{ref_genome_mt}_{ref_genome_n}.picard_dict.log"
     #conda: "envs/samtools_biopython.yaml"
@@ -590,8 +592,8 @@ rule left_align_merged_bam:
         merged_bam = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam",
         merged_bam_index = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.bam.bai",
         mt_n_fasta = rules.get_gmap_build_nuclear_mt_input.output.mt_n_fasta,
-        genome_index = "data/genomes/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
-        genome_dict = "data/genomes/{ref_genome_mt}_{ref_genome_n}.dict"
+        genome_index = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.fasta.fai",
+        genome_dict = genome_dir + "/{ref_genome_mt}_{ref_genome_n}.dict"
     output:
         merged_bam_left_realigned = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.bam"
     log: log_dir + "/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}_left_align_merged_bam.log"
@@ -628,7 +630,7 @@ rule clip_bam_recalculate_MD:
     output:
         merged_bam_left_realigned_clipped_newMD = "results/{sample}/map/{sample}_{ref_genome_mt}_{ref_genome_n}_OUT-sorted.realign.clip.calmd.bam"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
+        ref_mt_fasta = lambda wildcards: genome_dir + "/{ref_genome_mt_file}".format(
             ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
         ),
         TMP = check_tmp_dir(config["tmp_dir"])
@@ -713,7 +715,7 @@ rule make_single_VCF:
         single_bed = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.bed",
         single_fasta = "results/{sample}/{sample}_{ref_genome_mt}_{ref_genome_n}.fasta"
     params:
-        ref_mt_fasta = lambda wildcards: "data/genomes/{ref_genome_mt_file}".format(
+        ref_mt_fasta = lambda wildcards: genome_dir + "/{ref_genome_mt_file}".format(
             ref_genome_mt_file=get_mt_fasta(reference_tab, wildcards.ref_genome_mt, "ref_genome_mt_file")
             ),
         TMP = check_tmp_dir(config["tmp_dir"]),
