@@ -4,6 +4,11 @@ tmp_dir:            "/tmp"
 genome_fasta_dir:   "genome_fasta"
 species: 
 
+# run configuration files
+analysis_tab:       "data/analysis.tab"
+datasets_tab:       "data/datasets.tab"
+reference_genomes:  "data/reference_genomes.tab"
+
 read_processing:
     trimmomatic:
         options: "-phred33"
