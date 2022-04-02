@@ -73,7 +73,7 @@ def get_analysis_species(ref_genome_mt, reference_tab=None, config_species=None)
 
 # TODO: infolder is not used anywhere
 def get_datasets_for_symlinks(df, sample=None, library=None, d=None,
-                              infolder="data/reads", outfolder="data/reads"):
+                              outfolder="data/reads"):
     dataset_file = None
     for row in df.itertuples():
         if (getattr(row, "sample") == sample and
