@@ -389,7 +389,7 @@ rule map_nuclear_MT_SE:
     input:
         lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
                                                                 ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
-                                                                keep_orphans=keep_orphans),
+                                                                keep_orphans=keep_orphans, outfolder=res_dir),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
         #outmt = "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz",
     output:
@@ -455,7 +455,7 @@ rule map_nuclear_MT_PE_SE:
         outmt2 = rules.ids_to_fastq_PE.output.outmt2,
         outmt_SE = lambda wildcards: get_inputs_for_rule_map_nuclear_MT_SE(sample=wildcards.sample, library=wildcards.library,
                                                                 ref_genome_mt=wildcards.ref_genome_mt, ref_genome_n=wildcards.ref_genome_n,
-                                                                keep_orphans=keep_orphans),
+                                                                keep_orphans=keep_orphans, outfolder=res_dir),
         gmap_db = gmap_db_dir + "/{ref_genome_mt}_{ref_genome_n}/{ref_genome_mt}_{ref_genome_n}.chromosome",
     output:
         concordant_uniq = res_dir + "/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_{ref_genome_n}_out_mt_n.concordant_uniq",
@@ -558,7 +558,7 @@ rule mark_duplicates:
 
 rule merge_bam:
     input:
-        sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir=res_dir + "",
+        sorted_bams = lambda wildcards: get_sample_bamfiles(datasets_tab, res_dir=res_dir,
                                                             sample=wildcards.sample,
                                                             ref_genome_mt=wildcards.ref_genome_mt,
                                                             ref_genome_n=wildcards.ref_genome_n)
@@ -775,9 +775,11 @@ rule index_VCF:
 rule merge_VCF:
     input:
         single_vcf_list = lambda wildcards: get_genome_single_vcf_files(analysis_tab,
-                                                                        ref_genome_mt=wildcards.ref_genome_mt),
+                                                                        ref_genome_mt=wildcards.ref_genome_mt,
+                                                                        res_dir=res_dir),
         index_vcf = lambda wildcards: get_genome_single_vcf_index_files(analysis_tab,
-                                                                        ref_genome_mt=wildcards.ref_genome_mt),
+                                                                        ref_genome_mt=wildcards.ref_genome_mt,
+                                                                        res_dir=res_dir),
         #single_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz",
         #index_vcf = "results/OUT_{sample}_{ref_genome_mt}_{ref_genome_n}/{sample}_{ref_genome_mt}_{ref_genome_n}.vcf.gz.csi"
     output:

@@ -97,7 +97,7 @@ def get_symlinks(df, analysis_tab=None,
     # TODO: convert .iterrows() to .itertuples() for efficiency
     for i, l in df.iterrows():
         if l["sample"] in list(analysis_tab["sample"]):
-            if is_compr_file("data/reads/{}".format(l["R1"])):
+            if is_compr_file("{infolder}/{orient}".format(infolder=infolder, orient=l["R1"])):
                 outpaths.append(
                     os.path.join(
                         outfolder,
@@ -381,12 +381,12 @@ def get_inputs_for_rule_map_nuclear_MT_SE(sample=None, library=None,
                                             ref_genome_n=None, ref_genome_mt=None, 
                                             keep_orphans=True, outfolder = "results"):
     outpaths = []
-    outpaths.append("results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz")
+    outpaths.append(os.path.join(outfolder, "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz"))
     if keep_orphans:
         outpaths.append(
-            "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.fastq.gz"
-            )
+            os.path.join(outfolder, "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U1.fastq.gz"
+            ))
         outpaths.append(
-            "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.fastq.gz"
-            )
+            os.path.join(outfolder, "results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt_U2.fastq.gz"
+            ))
     return outpaths
