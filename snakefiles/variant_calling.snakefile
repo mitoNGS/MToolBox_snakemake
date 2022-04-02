@@ -106,8 +106,10 @@ rule symlink_libraries:
 rule symlink_libraries_uncompressed:
     input:
         R1 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
+                                                         outfolder=reads_dir,
                                                          library=wildcards.library, d="R1"),
         R2 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
+                                                         outfolder=reads_dir,
                                                          library=wildcards.library, d="R2")
     output:
         R1 = reads_dir + "/raw/{sample}_{library}.R1.fastq",
@@ -121,8 +123,10 @@ rule symlink_libraries_uncompressed:
 
 rule fastqc_raw:
     input:
-        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
-        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
+        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
+                                                    library=wildcards.library, readpath=reads_dir)[0],
+        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
+                                                    library=wildcards.library, readpath=reads_dir)[1]
     output:
         html_report_R1 = qc_dir + "/reads/raw/{sample}_{library}.R1_fastqc.html",
         html_report_R2 = qc_dir + "/reads/raw/{sample}_{library}.R2_fastqc.html",
@@ -242,8 +246,12 @@ rule trimmomatic:
         out1U = reads_dir + "/filtered/{sample}_{library}_qc_1U.fastq.gz",
         out2U = reads_dir + "/filtered/{sample}_{library}_qc_2U.fastq.gz"
     input:
-        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
-        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
+        R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
+                                                    library=wildcards.library, readpath=reads_dir)[0],
+        R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample,
+                                                    library=wildcards.library, readpath=reads_dir)[1],
+        # R1 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[0],
+        # R2 = lambda wildcards: trimmomatic_input(datasets_tab=datasets_tab, sample=wildcards.sample, library=wildcards.library)[1]
         # R1 = "data/reads/{sample}_{library}.R1.fastq.gz",
         # R2 = "data/reads/{sample}_{library}.R2.fastq.gz"
     output:
