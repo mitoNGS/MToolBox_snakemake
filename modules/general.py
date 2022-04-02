@@ -34,7 +34,7 @@ def trimmomatic_input(datasets_tab=None, sample=None, library=None, readpath=Non
         if l["sample"] == sample and str(l["library"]) == str(library):
             #print(l)
             # if is_compr_file("data/reads/{}".format(l["R1"])):
-            if is_compr_file("{readpath}/{orient}".format(readpath=readpath, orient=l["R1"]))
+            if is_compr_file("{readpath}/{orient}".format(readpath=readpath, orient=l["R1"])):
                 outpaths.append("{readpath}/{sample}_{library}.R1.fastq.gz".format(readpath=readpath, sample=l["sample"], library=l["library"]))
                 outpaths.append("{readpath}/{sample}_{library}.R2.fastq.gz".format(readpath=readpath, sample=l["sample"], library=l["library"]))
             else:
