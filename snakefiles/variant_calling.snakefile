@@ -81,15 +81,17 @@ rule all:
                      outfolder=reads_dir),
         fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="raw", outfolder_root = qc_dir),
         fastqc_outputs(datasets_tab, analysis_tab=analysis_tab, out="filtered", outfolder_root = qc_dir),
-        get_genome_vcf_files(analysis_tab),
-        get_bed_files(analysis_tab),
-        get_fasta_files(analysis_tab)
+        get_genome_vcf_files(analysis_tab, res_dir=res_dir),
+        get_bed_files(analysis_tab, res_dir=res_dir),
+        get_fasta_files(analysis_tab, res_dir=res_dir)
 
 rule symlink_libraries:
     input:
         R1 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
+                                                         outfolder=reads_dir,
                                                          library=wildcards.library, d="R1"),
         R2 = lambda wildcards: get_datasets_for_symlinks(datasets_tab, sample=wildcards.sample,
+                                                         outfolder=reads_dir,
                                                          library=wildcards.library, d="R2")
     output:
         R1 = reads_dir + "/raw/{sample}_{library}.R1.fastq.gz",
