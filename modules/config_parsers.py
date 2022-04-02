@@ -313,23 +313,26 @@ def get_mt_fasta(df, ref_genome_mt, field):
 
 def fastqc_outputs(datasets_tab: pd.DataFrame,
                    analysis_tab: pd.DataFrame,
+                   outfolder_root: str = "qc/reads", 
                    out: str = "raw") -> List[str]:
     """ Return a list of output filenames where FastQC results will be stored.
 
     Args:
         datasets_tab: input pandas DataFrame with fastq filenames
         analysis_tab: input pandas DataFrame with analysis details
+        outfolder_root: output folder
         out: either 'raw' or 'filtered', determines the output
             directory where FastQC results will be stored
 
     Returns:
         list of paths
     """
+    outfolder = os.path.join(outfolder_root, out)
     if out == "raw":
-        outfolder = "results/fastqc_raw"
+        # outfolder = "results/fastqc_raw"
         suffixes = {"R1" : ".R1_fastqc.html", "R2" : ".R2_fastqc.html", "U" : ".U_fastqc.html"}
     elif out == "filtered":
-        outfolder = "results/fastqc_filtered"
+        # outfolder = "results/fastqc_filtered"
         suffixes = {"R1" : "_qc_R1_fastqc.html", "R2" : "_qc_R2_fastqc.html", "U" : "_qc_U_fastqc.html"}
     else:
         raise ValueError(f"{out} is not a valid argument")
@@ -374,7 +377,9 @@ def fastqc_outputs(datasets_tab: pd.DataFrame,
                 )
     return fastqc_out
 
-def get_inputs_for_rule_map_nuclear_MT_SE(sample=None, library=None, ref_genome_n=None, ref_genome_mt=None, keep_orphans=True):
+def get_inputs_for_rule_map_nuclear_MT_SE(sample=None, library=None, 
+                                            ref_genome_n=None, ref_genome_mt=None, 
+                                            keep_orphans=True, outfolder = "results"):
     outpaths = []
     outpaths.append("results/{sample}/map/OUT_{sample}_{library}_{ref_genome_mt}_{ref_genome_n}/{sample}_{library}_{ref_genome_mt}_outmt.fastq.gz")
     if keep_orphans:
