@@ -441,7 +441,7 @@ def indels_results(left_tail, right_tail, tail, Indel, var_type, readNAME, stran
         res.append([var_type]*len(Indel))
         res.append([readNAME]*len(Indel))
         res.append(strand*len(Indel))
-        res.append(refposlef)
+        res.append(refposleft)
         res.append(Indel)
         res.append(qs_context_check(qs,Indel,indels_flanking,tail,Q))
         res[-1][-1] = ['delete','delete'] #remove the last indel
